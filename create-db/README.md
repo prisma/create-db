@@ -15,7 +15,7 @@ Creates a new database project with interactive prompts for:
 - Database name (default: `My Prisma Postgres Database`)
 - Region (default: `us-east-1`)
 
-#### Flags
+##### `create-db` Flags
 
 | Flag | Description | Default | Implemented |
 |------|-------------|---------|-------------|
@@ -52,15 +52,14 @@ cd create-db
 npm i
 ```
 
-## Usage
-
-```bash
-# Install globally
-npm install -g create-db
-
-# Or use npx
+```
 npx create-db
 npx create-db claim
+
+# OR
+
+npx .
+npx . claim
 ```
 
 ## Dependencies
