@@ -105,7 +105,9 @@ async function createDatabase(name, region) {
     })
   );
 
-  console.log("\nTo claim this database, run:");
+  console.log(
+    "\nThis database will be deleted in 24 hours. To claim this database, run:"
+  );
   console.log(
     boxen(`npx create-db claim ${result.databases[0].connectionString}`, {
       padding: 1,
