@@ -7,23 +7,26 @@ This CLI tool creates and claims Prisma Postgres databases. By default, a set na
 ## Commands
 
 ### Create Database
+
 ```bash
 npx create-db
 ```
 
 Creates a new database project with interactive prompts for:
+
 - Database name (default: `My Prisma Postgres Database`)
 - Region (default: `us-east-1`)
 
 ##### `create-db` Flags
 
-| Flag | Description | Default | Implemented |
-|------|-------------|---------|-------------|
-| `--name` | Name of the database project | `My Prisma Project` | ❌ |
-| `--region` | Region for the database | `us-east-1` | ❌ |
-| `--prompt` | Whether to prompt for user input | `false` | ❌ |
+| Flag       | Description                      | Default             | Implemented |
+| ---------- | -------------------------------- | ------------------- | ----------- |
+| `--name`   | Name of the database project     | `My Prisma Project` | ✅          |
+| `--region` | Region for the database          | `us-east-1`         | ✅          |
+| `--prompt` | Whether to prompt for user input | `false`             | ✅          |
 
 ### Claim Database
+
 ```bash
 npx create-db claim <connection_string>
 ```
@@ -67,5 +70,3 @@ npx . claim
 - `chalk` - Terminal styling
 - `commonjs-ora` - Loading spinners
 - `enquirer` - Interactive prompts
-
-
