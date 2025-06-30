@@ -6,11 +6,11 @@ This worker creates a db with `https://api.prisma.io/projects` with a default na
 
 ## Flags
 
-| Flag | Description | Default | Implemented |
-|------|-------------|---------|-------------|
-| `--name` | Name of the database project | `My Prisma Project` | ❌ |
-| `--region` | Region for the database | `us-east-1` | ❌ |
-| `--prompt` | Whether to prompt for user input | `false` | ❌ |
+| Flag       | Description                      | Default             | Implemented |
+| ---------- | -------------------------------- | ------------------- | ----------- |
+| `--name`   | Name of the database project     | `My Prisma Project` | ✅          |
+| `--region` | Region for the database          | `us-east-1`         | ✅          |
+| `--prompt` | Whether to prompt for user input | `false`             | ✅          |
 
 ## Delete Workflow
 
