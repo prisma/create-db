@@ -6,9 +6,18 @@ This worker accepts database connection strings. The user is prompted to log in,
 
 ## Rate Limiting
 
-Not implemented yet. The goal is to set up rate limiting at 100 requests per minute. IP rate limiting is not an option due to places like universities sharing the same IP accross many students. A possible idea is to set local rate limiting within the CLI command itself
+Set up for 100 requests per minute max. You can edit the amount here, in `src/index.ts`:
 
-[CF Rate Limiting on Workers Docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
+```typescript
+const { allowed, reset } = await checkRateLimit({
+	kv: env.CLAIM_DB_RATE_LIMIT_KV,
+	key: 'global-rate-limit',
+	limit: 100,
+	period: 60,
+});
+```
+
+I opted for a custom solution in `src/rate-limiter.ts` instead as I could not get their version to work. It is in beta/unsafe so that could be the reasoning. [CF Rate Limiting on Workers Docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
 
 ## Development
 
