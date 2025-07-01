@@ -20,8 +20,26 @@ export default {
 			});
 		}
 
-		const url = new URL(request.url);
-		const connectionString = url.searchParams.get('connectionString');
+		let connectionString: string | null = null;
+		if (request.method === 'POST') {
+			try {
+				const body = await request.json();
+				if (typeof body === 'object' && body !== null && 'connectionString' in body) {
+					connectionString = (body as { connectionString?: string }).connectionString || null;
+				} else {
+					connectionString = null;
+				}
+			} catch (e) {
+				return new Response(JSON.stringify({ error: 'Invalid JSON body.' }), {
+					status: 400,
+					headers: { 'Content-Type': 'application/json' },
+				});
+			}
+		} else {
+			const url = new URL(request.url);
+			connectionString = url.searchParams.get('connectionString');
+		}
+
 		if (!connectionString) {
 			return new Response(JSON.stringify({ error: 'No connection string provided.' }), {
 				status: 400,
