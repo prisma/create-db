@@ -6,11 +6,11 @@ This worker creates a db with `https://api.prisma.io/projects` with a default na
 
 ## Flags
 
-| Flag       | Description                      | Default             | Implemented |
-| ---------- | -------------------------------- | ------------------- | ----------- |
-| `--name`   | Name of the database project     | `My Prisma Project` | ✅          |
-| `--region` | Region for the database          | `us-east-1`         | ✅          |
-| `--prompt` | Whether to prompt for user input | `false`             | ✅          |
+| Flag                    | Description                      | Default             | Implemented |
+| ----------------------- | -------------------------------- | ------------------- | ----------- |
+| `--name`                | Name of the database project     | `My Prisma Project` | ✅          |
+| `--region`              | Region for the database          | `us-east-1`         | ✅          |
+| `--prompt or --prompts` | Whether to prompt for user input | `false`             | ✅          |
 
 ## Delete Workflow
 
@@ -18,9 +18,20 @@ The delete workflow works, one a DB is created, it passed the DB `id` to the `DE
 
 ## Rate Limiting
 
-Not implemented yet. The goal is to set up rate limiting at 100 requests per minute. IP rate limiting is not an option due to places like universities sharing the same IP accross many students. A possible idea is to set local rate limiting within the CLI command itself
+## Rate Limiting
 
-[CF Rate Limiting on Workers Docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
+Set up for 100 requests per minute max. You can edit the amount here, in `src/index.ts`:
+
+```typescript
+const { allowed, reset } = await checkRateLimit({
+	kv: env.CREATE_DB_RATE_LIMIT_KV,
+	key: 'global-rate-limit',
+	limit: 100,
+	period: 60,
+});
+```
+
+I opted for a custom solution in `src/rate-limiter.ts` instead as I could not get their version to work. It is in beta/unsafe so that could be the reasoning. [CF Rate Limiting on Workers Docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
 
 ## Development
 
