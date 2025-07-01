@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { Input, Select, Password } = require("enquirer");
+const { Input, Select } = require("enquirer");
 const ora = require("commonjs-ora");
 const chalk = require("chalk");
 
@@ -29,44 +29,6 @@ function parseArgs() {
   }
 
   return { flags, positional };
-}
-
-// Claim a database
-
-async function claimDatabase(connectionStringArg) {
-  let connectionString = connectionStringArg;
-  if (!connectionString) {
-    connectionString = await new Password({
-      message: "Enter the connection string:",
-    }).run();
-  }
-
-  const spinner = ora("Claiming database...").start();
-  const claimUrl = `https://claim-db-worker.raycast-0ef.workers.dev/claim?connectionString=${encodeURIComponent(
-    connectionString
-  )}`;
-
-  const res = await fetch(claimUrl);
-  let data;
-  try {
-    data = await res.json();
-  } catch (err) {
-    spinner.fail("Failed to parse response from worker.");
-    console.error("Raw response:", await res.text());
-    process.exit(1);
-  }
-
-  if (data && data.success) {
-    spinner.succeed("Claimed!");
-    console.log("Response:\n", data);
-  } else if (data && data.error) {
-    spinner.fail(`Failed to claim database: ${data.error}`);
-    process.exit(1);
-  } else {
-    spinner.fail("Unexpected response from worker.");
-    console.error("Response:", data);
-    process.exit(1);
-  }
 }
 
 // Get database name from user input
@@ -137,6 +99,48 @@ async function createDatabase(name, region) {
   );
 }
 
+// Claim function. This does nothing other return the connection string. No funcitonalities.
+async function claimDatabase(connectionStringArg) {
+  let connectionString = connectionStringArg;
+  if (!connectionString) {
+    const { Input } = require("enquirer");
+    connectionString = await new Input({
+      message: "Enter the connection string:",
+    }).run();
+  }
+
+  const ora = require("commonjs-ora");
+  const chalk = require("chalk");
+  const spinner = ora("Claiming database...").start();
+
+  try {
+    const res = await fetch("https://claim-db-worker.raycast-0ef.workers.dev", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ connectionString }),
+    });
+    const data = await res.json();
+    if (data && data.success) {
+      spinner.succeed("Database claimed successfully!");
+      console.log(chalk.green("\n✅ Database has been transferred!"));
+      if (data.message) {
+        console.log(chalk.blue(data.message));
+      }
+    } else if (data && data.error) {
+      spinner.fail(`Failed to claim database: ${data.error}`);
+      process.exit(1);
+    } else {
+      spinner.fail("Unexpected response from worker.");
+      console.error("Response:", data);
+      process.exit(1);
+    }
+  } catch (err) {
+    spinner.fail("Failed to contact worker.");
+    console.error(err);
+    process.exit(1);
+  }
+}
+
 // Main function
 
 async function main() {
@@ -145,7 +149,7 @@ async function main() {
     const { flags, positional } = parseArgs();
     const [subcommand, connectionStringArg] = positional;
 
-    // Handle 'claim' subcommand
+    // Handle 'claim' subcommand (minimal, no auth)
     if (subcommand === "claim") {
       await claimDatabase(connectionStringArg);
       return;
