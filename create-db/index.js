@@ -2,7 +2,7 @@
 
 const { Input, Select, Password } = require("enquirer");
 const ora = require("commonjs-ora");
-const boxen = require("boxen");
+const chalk = require("chalk");
 
 // Parse command line arguments into flags and positional arguments
 
@@ -33,14 +33,12 @@ function parseArgs() {
 
 // Claim a database
 
-async function claimDatabase() {
-  const connectionString = await new Password({
-    message: "Enter the connection string:",
-  }).run();
-
+async function claimDatabase(connectionStringArg) {
+  let connectionString = connectionStringArg;
   if (!connectionString) {
-    console.error("A connection string is required.");
-    process.exit(1);
+    connectionString = await new Password({
+      message: "Enter the connection string:",
+    }).run();
   }
 
   const spinner = ora("Claiming database...").start();
@@ -49,9 +47,26 @@ async function claimDatabase() {
   )}`;
 
   const res = await fetch(claimUrl);
-  const data = await res.json();
-  spinner.succeed("Claimed!");
-  console.log("Response:\n", data);
+  let data;
+  try {
+    data = await res.json();
+  } catch (err) {
+    spinner.fail("Failed to parse response from worker.");
+    console.error("Raw response:", await res.text());
+    process.exit(1);
+  }
+
+  if (data && data.success) {
+    spinner.succeed("Claimed!");
+    console.log("Response:\n", data);
+  } else if (data && data.error) {
+    spinner.fail(`Failed to claim database: ${data.error}`);
+    process.exit(1);
+  } else {
+    spinner.fail("Unexpected response from worker.");
+    console.error("Response:", data);
+    process.exit(1);
+  }
 }
 
 // Get database name from user input
@@ -93,26 +108,32 @@ async function createDatabase(name, region) {
     body: JSON.stringify({ region, name }),
   });
 
+  // Rate limit exceeded
+
+  if (resp.status === 429) {
+    spinner.fail(
+      chalk.bold(
+        " We're experiencing a high volume of requests. Please try again later."
+      )
+    );
+    process.exit(1);
+  }
+
   const result = await resp.json();
   spinner.succeed("Database created successfully!");
 
   // Display connection string
-  console.log("\n🔗 CONNECTION STRING");
-  console.log(
-    boxen(result.databases[0].connectionString, {
-      padding: 1,
-      borderStyle: "round",
-    })
-  );
+  console.log(chalk.bold("\nConnection string:"));
+  console.log(chalk.green(result.databases[0].connectionString));
 
   console.log(
-    "\nThis database will be deleted in 24 hours. To claim this database, run:"
+    chalk.red.bold("\nThis database will be deleted in 24 hours."),
+    chalk.bold("To claim it, run: ")
   );
   console.log(
-    boxen(`npx create-db claim ${result.databases[0].connectionString}`, {
-      padding: 1,
-      borderStyle: "round",
-    })
+    chalk.blue(
+      `npx create-db claim "${result.databases[0].connectionString}"\n`
+    )
   );
 }
 
@@ -122,11 +143,11 @@ async function main() {
   try {
     // Parse command line arguments
     const { flags, positional } = parseArgs();
-    const [subcommand] = positional;
+    const [subcommand, connectionStringArg] = positional;
 
     // Handle 'claim' subcommand
     if (subcommand === "claim") {
-      await claimDatabase();
+      await claimDatabase(connectionStringArg);
       return;
     }
 

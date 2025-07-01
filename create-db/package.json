@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "boxen": "^5.1.2",
+    "chalk": "^4.1.2",
     "commonjs-ora": "^1.0.2",
     "enquirer": "^2.4.1"
   }
