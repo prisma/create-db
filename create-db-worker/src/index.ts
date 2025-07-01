@@ -1,14 +1,34 @@
 import DeleteDbWorkflow from './delete-workflow';
+import { checkRateLimit } from './rate-limiter';
 
 interface Env {
 	INTEGRATION_TOKEN: string;
 	DELETE_DB_WORKFLOW: Workflow;
+	CREATE_DB_RATE_LIMIT_KV: KVNamespace;
 }
 
 export { DeleteDbWorkflow };
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		console.log('Received request:', request.method, request.url);
+
+		const { allowed, reset } = await checkRateLimit({
+			kv: env.CREATE_DB_RATE_LIMIT_KV,
+			key: 'global-rate-limit',
+			limit: 100,
+			period: 60,
+		});
+
+		if (!allowed) {
+			return new Response('Rate limit exceeded', { status: 429 });
+		}
+
+		const url = new URL(request.url);
+		if (url.pathname === '/health') {
+			return new Response('Worker is running!', { status: 200 });
+		}
+
 		if (request.method === 'GET') {
 			const regionsResponse = await fetch('https://api.prisma.io/regions', {
 				headers: { Authorization: `Bearer ${env.INTEGRATION_TOKEN}` },
