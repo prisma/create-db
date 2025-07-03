@@ -1,58 +1,131 @@
 # Claim DB Worker
 
-## What it does
+## Overview
 
-This worker accepts database connection strings. The user is prompted to log in, then the DB will be claimed and transferred to their account via `https://api.prisma.io/projects/{id}/transfer`
+This Cloudflare Worker enables users to claim ownership of a Prisma database project by providing a connection string. The worker handles authentication, rate limiting, and project transfer, making it easy to securely transfer DB ownership to a user’s Prisma account.
 
-## Rate Limiting
+---
 
-Set up for 100 requests per minute max. You can edit the amount here, in `src/index.ts`:
+## How it Works: Flow & Steps
 
-```typescript
-const { allowed, reset } = await checkRateLimit({
-	kv: env.CLAIM_DB_RATE_LIMIT_KV,
-	key: 'global-rate-limit',
-	limit: 100,
-	period: 60,
-});
-```
+1. **User visits the claim page** with a `projectID` query parameter (e.g., `/claim?projectID=...`).
+2. **Claim Page Rendered:**
+   - The worker serves an HTML page with a "Claim" button (see [`src/templates/claim-template.ts`](src/templates/claim-template.ts)).
+   - The button links to Prisma’s OAuth login, passing the `projectID` as state.
+3. **User Authenticates:**
+   - User logs in via Prisma OAuth.
+   - On success, Prisma redirects to `/auth/callback` with an auth `code` and the original `projectID` as `state`.
+4. **Token Exchange:**
+   - The worker exchanges the `code` for an access token using Prisma’s OAuth token endpoint.
+5. **Project Transfer:**
+   - The worker calls `https://api.prisma.io/projects/{projectID}/transfer` with the user’s access token, using the integration token for authorization.
+6. **Success or Error:**
+   - On success, a confirmation HTML page is shown (see [`src/templates/claim-success-template.ts`](src/templates/claim-success-template.ts)).
+   - On error, a generic error message is shown.
 
-I opted for a custom solution in `src/rate-limiter.ts` instead as I could not get their version to work. It is in beta/unsafe so that could be the reasoning. [CF Rate Limiting on Workers Docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
+---
 
-## Development
+## Where to Edit Code
 
-Clone all 3 projects into one parent folder (for testing. These 3 don't need to be together, but the DX is much better to just swap between all 3 in the same IDE (imo))
+- **Main Logic:** [`src/index.ts`](src/index.ts)
+  - Handles routing, OAuth, project transfer, and rate limiting.
+  - **Edit rate limit:** See the `checkRateLimit` call near the top of the `fetch` handler.
+- **Rate Limiter Implementation:** [`src/rate-limiter.ts`](src/rate-limiter.ts)
+  - Custom logic for request limiting (default: 100 requests/minute, global).
+- **Claim Page HTML:** [`src/templates/claim-template.ts`](src/templates/claim-template.ts)
+  - Edit the UI/UX for the initial claim page.
+- **Success Page HTML:** [`src/templates/claim-success-template.ts`](src/templates/claim-success-template.ts)
+  - Edit the UI/UX for the post-claim success page.
+- **Environment Variables & KV:** [`wrangler.jsonc`](wrangler.jsonc)
+  - Configure KV namespace and deployment settings.
+  - Secrets (integration token, client secret) are managed in Cloudflare, not in code.
 
-```bash
-mkdir claim-db-parent-folder
-cd claim-db-parent-folder
-```
+---
 
-```bash
-git clone https://github.com/prisma/create-db-worker.git
-git clone https://github.com/prisma/claim-db-worker.git
-git clone https://github.com/prisma/create-db.git
-```
+## Development & Deployment
 
-As this is specifically `claim-db-worker`, cd into it.
+1.  **Clone all related projects for best DX:**
 
-```bash
-cd claim-db-worker
-npm i
-```
+    ```bash
+    mkdir claim-db-parent-folder
+    cd claim-db-parent-folder
+    git clone https://github.com/prisma/create-db-worker.git
+    git clone https://github.com/prisma/claim-db-worker.git
+    git clone https://github.com/prisma/create-db.git
+    ```
 
-```bash
-# Deploy to staging if you want (change the endpoints in `create-db` to use the staging URL)
-npx wrangler deploy --staging
+2.  **Install dependencies:**
 
-# Deploy to production
-npx wrangler deploy
-```
+    ```bash
+    cd claim-db-worker
+    npm i
+    ```
 
-## Credentials
+3.  **Testing Locally**
 
-The integration token is located as a secret within cloudflare itself, there is nothing local that needs to be set up.
+    **Switch URLs in `create-db`**
+
+    - In your `create-db/.env` file, **comment out the production API URL** and **uncomment the local URL** (or set the base URL to your local worker/dev endpoint).
+    - Example:
+
+      ````env # LOCAL # CREATE_DB_WORKER_URL="http://127.0.0.1:8787" # CLAIM_DB_WORKER_URL="http://127.0.0.1:8787"
+
+           # PROD
+           CREATE_DB_WORKER_URL="https://create-db-worker.raycast-0ef.workers.dev"
+           CLAIM_DB_WORKER_URL="https://claim-db-worker.raycast-0ef.workers.dev"
+           ```
+
+      **Start the worker in dev mode:**
+      ````
+
+    ```bash
+    npx wrangler dev
+    ```
+
+    **If running both workers locally:**
+
+    - Use a different port for one of them, e.g. `npx wrangler dev --port 9999`.
+    - Update the `URL` in your `.env` to match the port:
+      ```env
+      CLAIM_DB_WORKER_URL=http://127.0.0.1:9999
+      ```
+
+    **Note:** For this worker, the OAuth callback URL (`/auth/callback`) is still set to the deployed version. You only need to update the base part of the URL for local testing; the callback will still hit the deployed worker for OAuth, but you can retain the info from the URL.
+
+    ````txt
+    	# Turn
+    	https://claim-db-worker.raycast-0ef.workers.dev/auth/callback?state=...&code=...
+    	# Into
+    	http://127.0.0.1:8787/auth/callback?state=...&code=...
+    	```
+
+    ````
+
+4.  **Deploy:**
+
+    ```bash
+    npx wrangler deploy
+    ```
+
+---
+
+## Credentials & Secrets
+
+- **Integration Token & Client Secret:**
+  - Managed as Cloudflare secrets (not in repo).
+  - For local use, create a `.dev.vars` file in the root. The integration token and client secret are in 1password.
+
+---
 
 ## Monitoring
 
-[Cloudflare Dashboard](https://dash.cloudflare.com/0ef7f922ce028e16c1a44d98c86511b0/workers/services/view/claim-db-worker/production/metrics)
+- [Cloudflare Dashboard](https://dash.cloudflare.com/0ef7f922ce028e16c1a44d98c86511b0/workers/services/view/claim-db-worker/production/metrics)
+
+---
+
+## Quick Reference
+
+- **Edit rate limit:** `src/index.ts` and `src/rate-limiter.ts`
+- **Edit claim/success HTML:** `src/templates/claim-template.ts`, `src/templates/claim-success-template.ts`
+- **Main logic:** `src/index.ts`
+- **KV/Secrets:** `wrangler.jsonc` and Cloudflare dashboard
