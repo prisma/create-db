@@ -1,4 +1,5 @@
 import { checkRateLimit } from './rate-limiter';
+import { getClaimHtml } from './claim-template';
 
 interface Env {
 	CLAIM_DB_RATE_LIMIT_KV: KVNamespace;
@@ -20,35 +21,17 @@ export default {
 			});
 		}
 
-		let connectionString: string | null = null;
-		if (request.method === 'POST') {
-			try {
-				const body = await request.json();
-				if (typeof body === 'object' && body !== null && 'connectionString' in body) {
-					connectionString = (body as { connectionString?: string }).connectionString || null;
-				} else {
-					connectionString = null;
-				}
-			} catch (e) {
-				return new Response(JSON.stringify({ error: 'Invalid JSON body.' }), {
-					status: 400,
-					headers: { 'Content-Type': 'application/json' },
-				});
-			}
-		} else {
-			const url = new URL(request.url);
-			connectionString = url.searchParams.get('connectionString');
-		}
+		const url = new URL(request.url);
+		const projectID = url.searchParams.get('projectID');
 
-		if (!connectionString) {
-			return new Response(JSON.stringify({ error: 'No connection string provided.' }), {
-				status: 400,
-				headers: { 'Content-Type': 'application/json' },
+		if (projectID) {
+			const html = getClaimHtml(projectID);
+			return new Response(html, {
+				headers: { 'Content-Type': 'text/html' },
 			});
 		}
-		return new Response(JSON.stringify({ success: true, connectionString }), {
-			status: 200,
-			headers: { 'Content-Type': 'application/json' },
-		});
+
+		// Default response if no projectID is present
+		return new Response('No project ID provided', { status: 400 });
 	},
-} satisfies ExportedHandler<Env>;
+};
