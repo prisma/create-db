@@ -29,7 +29,7 @@ export default {
 			return new Response('Worker is running!', { status: 200 });
 		}
 
-		if (request.method === 'GET') {
+		if (url.pathname === '/regions' && request.method === 'GET') {
 			const regionsResponse = await fetch('https://api.prisma.io/regions', {
 				headers: { Authorization: `Bearer ${env.INTEGRATION_TOKEN}` },
 			});
@@ -40,7 +40,7 @@ export default {
 			});
 		}
 
-		if (request.method === 'POST') {
+		if (request.method === 'POST' && url.pathname === '/create') {
 			let body: { region?: string; name?: string } = {};
 			try {
 				body = await request.json();
@@ -54,7 +54,6 @@ export default {
 			}
 
 			const payload = JSON.stringify({ region, name });
-
 			const prismaResponse = await fetch('https://api.prisma.io/projects', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.INTEGRATION_TOKEN}` },
