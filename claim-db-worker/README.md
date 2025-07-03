@@ -42,7 +42,7 @@ npm i
 ```
 
 ```bash
-# Deploy to staging (change the endpoints in `create-db` to use the staging URL)
+# Deploy to staging if you want (change the endpoints in `create-db` to use the staging URL)
 npx wrangler deploy --staging
 
 # Deploy to production

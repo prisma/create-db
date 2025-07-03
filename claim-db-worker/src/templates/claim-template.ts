@@ -1,5 +1,5 @@
 // claim-db-worker/src/claim-template.ts
-export function getClaimHtml(projectID: string) {
+export function getClaimHtml(projectID: string, authUrl: string) {
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -53,13 +53,12 @@ export function getClaimHtml(projectID: string) {
 </head>
 <body>
   <div class="container">
-    <h1>Claim your project</h1>
-    <p>Project ID: <code>${projectID}</code></p>
+    <h1>Claim your database</h1>
     <button id="claim-btn">Claim</button>
   </div>
   <script>
     document.getElementById('claim-btn').addEventListener('click', function() {
-      alert('Claim button clicked! (No action yet)');
+      window.open('${authUrl}', '_blank');
     });
   </script>
 </body>
