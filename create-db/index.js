@@ -3,6 +3,7 @@
 const { Input, Select } = require("enquirer");
 const ora = require("commonjs-ora");
 const chalk = require("chalk");
+require("dotenv").config();
 
 // Parse command line arguments into flags and positional arguments
 
@@ -10,42 +11,67 @@ function parseArgs() {
   const args = process.argv.slice(2);
   const flags = {};
   const positional = [];
+  const allowedFlags = ["region", "i"];
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
 
     if (arg.startsWith("--")) {
       const flagName = arg.slice(2);
-
-      if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
+      if (!allowedFlags.includes(flagName)) {
+        console.error(
+          `Invalid flag: --${flagName}. Allowed flags are: --region, --i`
+        );
+        process.exit(1);
+      }
+      if (i + 1 < args.length && !args[i + 1].startsWith("-")) {
         flags[flagName] = args[i + 1];
         i++;
       } else {
         flags[flagName] = true;
       }
+    } else if (arg.startsWith("-")) {
+      // Disallow all single-dash flags and print allowed flags
+      console.error(
+        [
+          "",
+          chalk.red.bold("Invalid flag: ") + chalk.yellow(arg),
+          "",
+          chalk.bold("Allowed flags:"),
+          "",
+          `  ${chalk.green("--region <region>")}    Set the region ${chalk.dim(
+            "(us-east-1, eu-west-1, etc)"
+          )}`,
+          `  ${chalk.green("--i")}                  Interactive mode`,
+          "",
+        ].join("\n")
+      );
+      process.exit(1);
     } else {
-      positional.push(arg);
+      // Disallow subcommands or positional arguments
+      console.error(
+        `Invalid subcommand or argument: ${arg}. Allowed flags are: --region, --i`
+      );
+      process.exit(1);
     }
   }
 
   return { flags, positional };
 }
 
-// Get database name from user input
-
-async function promptForName(defaultName) {
-  const namePrompt = new Input({
-    message: "What should your database be called?",
-    default: defaultName,
-  });
-  return await namePrompt.run();
-}
-
 // Get region from user input
 
 async function promptForRegion(defaultRegion) {
-  const res = await fetch("https://create-db-worker.raycast-0ef.workers.dev");
-  const data = await res.json();
+  const url = `${process.env.CREATE_DB_WORKER_URL}/regions`;
+  const res = await fetch(url);
+  let data;
+  try {
+    data = await res.json();
+  } catch (e) {
+    console.error("Failed to parse JSON from /regions endpoint.");
+    throw e;
+  }
+
   const regions = Array.isArray(data) ? data : data.data;
 
   const regionPrompt = new Select({
@@ -64,7 +90,7 @@ async function promptForRegion(defaultRegion) {
 async function createDatabase(name, region) {
   const spinner = ora("Creating a database...").start();
 
-  const resp = await fetch("https://create-db-worker.raycast-0ef.workers.dev", {
+  const resp = await fetch(`${process.env.CREATE_DB_WORKER_URL}/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ region, name }),
@@ -82,63 +108,28 @@ async function createDatabase(name, region) {
   }
 
   const result = await resp.json();
+
+  if (result.error) {
+    spinner.fail(
+      chalk.red.bold("Error creating database: ") +
+        chalk.yellow(result.error.message || "Unknown error")
+    );
+    process.exit(1);
+  }
+
   spinner.succeed("Database created successfully!");
 
   // Display connection string
   console.log(chalk.bold("\nConnection string:"));
-  console.log(chalk.green(result.databases[0].connectionString));
+  console.log(chalk.yellow(result.databases[0].connectionString));
 
   console.log(
     chalk.red.bold("\nThis database will be deleted in 24 hours."),
-    chalk.bold("To claim it, run: ")
+    chalk.bold("To claim it, visit: ")
   );
   console.log(
-    chalk.blue(
-      `npx create-db claim "${result.databases[0].connectionString}"\n`
-    )
+    chalk.yellow(`${process.env.CLAIM_DB_WORKER_URL}?projectID=${result.id}`)
   );
-}
-
-// Claim function. This does nothing other return the connection string. No funcitonalities.
-async function claimDatabase(connectionStringArg) {
-  let connectionString = connectionStringArg;
-  if (!connectionString) {
-    const { Input } = require("enquirer");
-    connectionString = await new Input({
-      message: "Enter the connection string:",
-    }).run();
-  }
-
-  const ora = require("commonjs-ora");
-  const chalk = require("chalk");
-  const spinner = ora("Claiming database...").start();
-
-  try {
-    const res = await fetch("https://claim-db-worker.raycast-0ef.workers.dev", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ connectionString }),
-    });
-    const data = await res.json();
-    if (data && data.success) {
-      spinner.succeed("Database claimed successfully!");
-      console.log(chalk.green("\n✅ Database has been transferred!"));
-      if (data.message) {
-        console.log(chalk.blue(data.message));
-      }
-    } else if (data && data.error) {
-      spinner.fail(`Failed to claim database: ${data.error}`);
-      process.exit(1);
-    } else {
-      spinner.fail("Unexpected response from worker.");
-      console.error("Response:", data);
-      process.exit(1);
-    }
-  } catch (err) {
-    spinner.fail("Failed to contact worker.");
-    console.error(err);
-    process.exit(1);
-  }
 }
 
 // Main function
@@ -146,35 +137,23 @@ async function claimDatabase(connectionStringArg) {
 async function main() {
   try {
     // Parse command line arguments
-    const { flags, positional } = parseArgs();
-    const [subcommand, connectionStringArg] = positional;
-
-    // Handle 'claim' subcommand (minimal, no auth)
-    if (subcommand === "claim") {
-      await claimDatabase(connectionStringArg);
-      return;
-    }
+    const { flags } = parseArgs();
 
     // Set default values
-    let name = "my-prisma-postgres-database";
+    let name = new Date().toISOString();
     let region = "us-east-1";
     let usePrompts = false;
 
     // Apply command line flags
-    if (flags.name) {
-      name = flags.name;
-    }
     if (flags.region) {
       region = flags.region;
     }
-    if (flags.prompt || flags.prompts) {
+    if (flags.i) {
       usePrompts = true;
     }
 
     // Show interactive prompts if requested or if no flags provided
     if (usePrompts) {
-      name = await promptForName(name);
-      console.log();
       region = await promptForRegion(region);
       console.log();
     }
