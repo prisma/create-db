@@ -1,72 +1,108 @@
-# Create DB
+# Create DB CLI Command
 
-## What it does
+## Overview
 
-This CLI tool creates and claims Prisma Postgres databases. By default, a set name and region are used. The user can use flags to have an interactive interface or change the defaults.
+This CLI tool provisions a temporary Prisma Postgres database project via the `create-db-worker` Cloudflare Worker. It supports custom regions, interactive prompts, and outputs a connection string. Databases created with this tool are **temporary** and will be deleted automatically after 24 hours unless claimed.
 
-## Commands
+---
 
-### Create Database
+## How it Works: Flow & Steps
 
-```bash
-npx create-db
-```
+1. **User runs the CLI:**
+   - `npx create-db`
+2. **Argument Parsing:**
+   - Supports `--region <region>` to specify a region (default: `us-east-1`).
+   - Supports `--i` for interactive region selection.
+3. **Region Fetch:**
+   - The CLI fetches available regions from the `create-db-worker`'s `/regions` endpoint.
+4. **Database Creation:**
+   - Sends a POST request to the worker’s `/create` endpoint with the selected region and a timestamp as the name.
+   - Handles rate limiting and error responses.
+5. **Output:**
+   - Prints the connection string for the new database.
+   - Warns the user that the database will be deleted in 24 hours.
+   - Prints a claim URL (served by the `claim-db-worker`) to transfer ownership and make the DB permanent.
 
-Creates a new database project with interactive prompts for:
+---
 
-- Database name (default: `My Prisma Postgres Database`)
-- Region (default: `us-east-1`)
+## Supported Flags
 
-##### `create-db` Flags
+| Flag       | Description                  | Default     |
+| ---------- | ---------------------------- | ----------- |
+| `--region` | Region for the database      | `us-east-1` |
+| `--i`      | Interactive region selection | (off)       |
 
-| Flag       | Description                      | Default             | Implemented |
-| ---------- | -------------------------------- | ------------------- | ----------- |
-| `--name`   | Name of the database project     | `My Prisma Project` | ✅          |
-| `--region` | Region for the database          | `us-east-1`         | ✅          |
-| `--prompt` | Whether to prompt for user input | `false`             | ✅          |
+---
 
-### Claim Database
+## Where to Edit Code
 
-```bash
-npx create-db claim <connection_string>
-```
+- **Main CLI Logic:** [`index.js`](index.js)
+  - Handles argument parsing, prompts, API requests, and output.
+- **Dependencies:** [`package.json`](package.json)
+  - CLI entry point, dependencies, and bin configuration.
+- **Environment Variables:**
+  - Reads `CREATE_DB_WORKER_URL` and `CLAIM_DB_WORKER_URL` from `.env` (see below).
 
-Prompts the user to log in, then claims an existing database to their account using the transfer API endpoint.
+---
 
-## Development
+## Development & Local Testing
 
-Clone all 3 projects into one parent folder (these 3 don't need to be together, but I find the DX better to just swap between all 3 in the same IDE during development)
+1. **Clone all related projects for best DX:**
 
-```bash
-mkdir create-db-parent-folder
-cd create-db-parent-folder
-```
+   ```bash
+   mkdir create-db-parent-folder
+   cd create-db-parent-folder
+   git clone https://github.com/prisma/create-db-worker.git
+   git clone https://github.com/prisma/claim-db-worker.git
+   git clone https://github.com/prisma/create-db.git
+   ```
 
-```bash
-git clone https://github.com/prisma/create-db-worker.git
-git clone https://github.com/prisma/claim-db-worker.git
-git clone https://github.com/prisma/create-db.git
-```
+2. **Install dependencies:**
 
-As this is specifically `create-db`, cd into it.
+   ```bash
+   cd create-db
+   npm i
+   ```
 
-```bash
-cd create-db
-npm i
-```
+3. **Configure Environment:**
 
-```
-npx create-db
-npx create-db claim
+   - Copy or create a `.env` file in the root:
 
-# OR
+     ```env
+     # LOCAL
+     CREATE_DB_WORKER_URL="http://127.0.0.1:8787"
+     CLAIM_DB_WORKER_URL="http://127.0.0.1:8787"
 
-npx .
-npx . claim
-```
+     # PROD
+     # CREATE_DB_WORKER_URL="https://create-db-worker.raycast-0ef.workers.dev"
+     # CLAIM_DB_WORKER_URL="https://claim-db-worker.raycast-0ef.workers.dev"
+     ```
 
-## Dependencies
+   - If running both workers locally, use a different port for one and update the URL:
+     ```env
+     CREATE_DB_WORKER_URL="http://127.0.0.1:9999"
+     ```
 
-- `chalk` - Terminal styling
-- `commonjs-ora` - Loading spinners
-- `enquirer` - Interactive prompts
+4. **Run the CLI:**
+
+   ```bash
+   npx create-db
+   npx create-db --region eu-west-1
+   npx create-db --i
+   ```
+
+---
+
+## Credentials & Secrets
+
+- No secrets are required for the CLI itself.
+- The workers require integration tokens, managed as secrets in Cloudflare (see their READMEs).
+
+---
+
+## Quick Reference
+
+- **Edit CLI logic:** `index.js`
+- **Edit dependencies/bin:** `package.json`
+- **Configure endpoints:** `.env`
+- **Related workers:** `create-db-worker`, `claim-db-worker`
