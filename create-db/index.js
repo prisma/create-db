@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 
-const { Input, Select } = require("enquirer");
-const ora = require("commonjs-ora");
-const chalk = require("chalk");
-require("dotenv").config();
+import pkg from "enquirer";
+const { Input, Select } = pkg;
+import ora from "ora";
+import chalk from "chalk";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // Parse command line arguments into flags and positional arguments
 
