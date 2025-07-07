@@ -64,7 +64,6 @@ This Cloudflare Worker enables users to claim ownership of a Prisma database pro
 3.  **Testing Locally**
 
     **Switch URLs in `create-db`**
-
     - In your `create-db/.env` file, **comment out the production API URL** and **uncomment the local URL** (or set the base URL to your local worker/dev endpoint).
     - Example:
 
@@ -83,7 +82,6 @@ This Cloudflare Worker enables users to claim ownership of a Prisma database pro
     ```
 
     **If running both workers locally:**
-
     - Use a different port for one of them, e.g. `npx wrangler dev --port 9999`.
     - Update the `URL` in your `.env` to match the port:
       ```env

@@ -58,7 +58,6 @@ This Cloudflare Worker creates a Prisma database project via the Prisma API. It 
 3. **Testing Locally**
 
    **Switch URLs in `create-db`**
-
    - In your `create-db/.env` file, **comment out the production URLs** and **uncomment the local URLs** (or set the base URLs to your local worker/dev endpoints).
    - Example:
 
@@ -79,7 +78,6 @@ This Cloudflare Worker creates a Prisma database project via the Prisma API. It 
    ```
 
    **If running both workers locally:**
-
    - Use a different port for one of them, e.g. `npx wrangler dev --port 9999`.
    - Update the corresponding URL in your `.env` to match the port:
      ```env

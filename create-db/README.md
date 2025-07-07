@@ -65,7 +65,6 @@ This CLI tool provisions a temporary Prisma Postgres database project via the `c
    ```
 
 3. **Configure Environment:**
-
    - Copy or create a `.env` file in the root:
 
      ```env
