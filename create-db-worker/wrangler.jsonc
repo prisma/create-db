@@ -1,0 +1,18 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "create-db-worker",
+	"main": "src/index.ts",
+	"account_id": "0ef7f922ce028e16c1a44d98c86511b0",
+	"compatibility_date": "2025-06-27",
+	"observability": {
+		"enabled": true
+	},
+	"workflows": [
+		{
+			"name": "delete-db-workflow",
+			"binding": "DELETE_DB_WORKFLOW",
+			"class_name": "DeleteDbWorkflow"
+		}
+	],
+	"kv_namespaces": [{ "binding": "CREATE_DB_RATE_LIMIT_KV", "id": "4f26b6d422e348f29adf32d3c481fc72" }]
+}
