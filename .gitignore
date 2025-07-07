@@ -11,7 +11,6 @@ yarn-error.log*
 *.tsbuildinfo
 
 # IDEs and editors
-.vscode/
 .idea/
 *.swp
 
