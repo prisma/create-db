@@ -1,0 +1,9 @@
+{
+  "name": "create-db-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  }
+}
