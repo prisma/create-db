@@ -1,0 +1,20 @@
+{
+  "name": "create-db",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bin": {
+    "create-db": "./index.js"
+  },
+  "dependencies": {
+    "boxen": "^5.1.2",
+    "chalk": "^4.1.2",
+    "commonjs-ora": "^1.0.2",
+    "dotenv": "^16.6.1",
+    "enquirer": "^2.4.1"
+  }
+}
