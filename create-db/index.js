@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
-import pkg from "enquirer";
-const { Input, Select } = pkg;
-import ora from "ora";
+import { select, spinner, intro, outro, log, cancel } from "@clack/prompts";
 import chalk from "chalk";
 import dotenv from "dotenv";
 
@@ -38,14 +36,12 @@ function parseArgs() {
       console.error(
         [
           "",
-          chalk.red.bold("Invalid flag: ") + chalk.yellow(arg),
+          "Invalid flag: " + arg,
           "",
-          chalk.bold("Allowed flags:"),
+          "Allowed flags:",
           "",
-          `  ${chalk.green("--region <region>")}    Set the region ${chalk.dim(
-            "(us-east-1, eu-west-1, etc)"
-          )}`,
-          `  ${chalk.green("--i")}                  Interactive mode`,
+          "  --region <region>    Set the region (us-east-1, eu-west-1, etc)",
+          "  --i                  Interactive mode",
           "",
         ].join("\n")
       );
@@ -77,21 +73,25 @@ async function promptForRegion(defaultRegion) {
 
   const regions = Array.isArray(data) ? data : data.data;
 
-  const regionPrompt = new Select({
+  const region = await select({
     message: "Choose a region:",
-    choices: regions.map((r) => r.id),
-    initial:
-      regions.findIndex((r) => r.id === defaultRegion) >= 0
-        ? regions.findIndex((r) => r.id === defaultRegion)
-        : 0,
+    options: regions.map((r) => ({ value: r.id, label: r.id })),
+    initialValue: regions.find((r) => r.id === defaultRegion)?.id || regions[0]?.id,
   });
-  return await regionPrompt.run();
+
+  if (region === null) {
+    cancel("Operation cancelled.");
+    process.exit(0);
+  }
+
+  return region;
 }
 
 // Create a database
 
 async function createDatabase(name, region) {
-  const spinner = ora("Creating a database...").start();
+  const s = spinner();
+  s.start("Creating a database...");
 
   const resp = await fetch(`${process.env.CREATE_DB_WORKER_URL}/create`, {
     method: "POST",
@@ -100,39 +100,26 @@ async function createDatabase(name, region) {
   });
 
   // Rate limit exceeded
-
   if (resp.status === 429) {
-    spinner.fail(
-      chalk.bold(
-        " We're experiencing a high volume of requests. Please try again later."
-      )
-    );
+    s.stop("We're experiencing a high volume of requests. Please try again later.");
     process.exit(1);
   }
 
   const result = await resp.json();
 
   if (result.error) {
-    spinner.fail(
-      chalk.red.bold("Error creating database: ") +
-        chalk.yellow(result.error.message || "Unknown error")
-    );
+    s.stop(`Error creating database: ${result.error.message || "Unknown error"}`);
     process.exit(1);
   }
 
-  spinner.succeed("Database created successfully!");
+  s.stop("Database created successfully!");
 
   // Display connection string
-  console.log(chalk.bold("\nConnection string:"));
-  console.log(chalk.yellow(result.databases[0].connectionString));
+  log.info("Connection string:");
+  log.message(result.databases[0].connectionString);
 
-  console.log(
-    chalk.red.bold("\nThis database will be deleted in 24 hours."),
-    chalk.bold("To claim it, visit: ")
-  );
-  console.log(
-    chalk.yellow(`${process.env.CLAIM_DB_WORKER_URL}?projectID=${result.id}`)
-  );
+  log.info(chalk.red("This database will be deleted in 24 hours.") + " To claim it, visit:");
+  log.message(`${process.env.CLAIM_DB_WORKER_URL}?projectID=${result.id}`);
 }
 
 // Main function
@@ -155,14 +142,17 @@ async function main() {
       usePrompts = true;
     }
 
-    // Show interactive prompts if requested or if no flags provided
+    // Only show intro and prompts if interactive mode is enabled
     if (usePrompts) {
+      intro("Create Database");
       region = await promptForRegion(region);
-      console.log();
     }
 
     // Create the database
     await createDatabase(name, region);
+
+    outro("");
+
   } catch (error) {
     console.error("Error:", error.message);
     process.exit(1);

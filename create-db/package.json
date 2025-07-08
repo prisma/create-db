@@ -11,10 +11,8 @@
     "create-db": "./index.js"
   },
   "dependencies": {
-    "boxen": "^5.1.2",
+    "@clack/prompts": "^0.11.0",
     "chalk": "^4.1.2",
-    "dotenv": "^16.6.1",
-    "enquirer": "^2.4.1",
-    "ora": "^8.2.0"
+    "dotenv": "^16.6.1"
   }
 }
