@@ -13,6 +13,17 @@ interface Env {
 const RESPONSE_TYPE = 'code';
 const SCOPE = 'workspace:admin';
 
+function generateState(): string {
+	return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
+function errorResponse(title: string, message: string, details?: string, status = 400): Response {
+	return new Response(getErrorHtml(title, message, details), { 
+		status,
+		headers: { 'Content-Type': 'text/html' }
+	});
+}
+
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		// --- Rate limiting ---
@@ -31,20 +42,11 @@ export default {
 		// --- OAuth Callback Handler ---
 		if (url.pathname === '/auth/callback') {
 			const code = url.searchParams.get('code');
+			const state = url.searchParams.get('state');
 			const projectID = url.searchParams.get('projectID');
 
-			// Validate project ID
-			if (!projectID) {
-				const html = getErrorHtml(
-					'OAuth Error',
-					'Missing project ID parameter.',
-					'Please ensure you are accessing this page with a valid project ID.'
-				);
-				return new Response(html, { 
-					status: 400,
-					headers: { 'Content-Type': 'text/html' }
-				});
-			}
+			if (!state) return errorResponse('OAuth Error', 'Missing state parameter.', 'Please try again.');
+			if (!projectID) return errorResponse('OAuth Error', 'Missing project ID parameter.', 'Please ensure you are accessing this page with a valid project ID.');
 
 			// Exchange code for access token
 			const tokenResponse = await fetch('https://auth.prisma.io/token', {
@@ -61,16 +63,7 @@ export default {
 
 			if (!tokenResponse.ok) {
 				const text = await tokenResponse.text();
-				console.log(`Token exchange failed: ${tokenResponse.status} ${text}`);
-				const html = getErrorHtml(
-					'OAuth Error',
-					'Failed to authenticate with Prisma. Please try again.',
-					`Status: ${tokenResponse.status}\nResponse: ${text}`
-				);
-				return new Response(html, { 
-					status: 500,
-					headers: { 'Content-Type': 'text/html' }
-				});
+				return errorResponse('OAuth Error', 'Failed to authenticate with Prisma. Please try again.', `Status: ${tokenResponse.status}\nResponse: ${text}`, 500);
 			}
 
 			const tokenData = (await tokenResponse.json()) as { access_token: string };
@@ -86,29 +79,19 @@ export default {
 			});
 
 			if (transferResponse.ok) {
-				const html = getClaimSuccessHtml(projectID);
-				return new Response(html, { headers: { 'Content-Type': 'text/html' } });
+				return new Response(getClaimSuccessHtml(projectID), { 
+					headers: { 'Content-Type': 'text/html' } 
+				});
 			} else {
 				const responseText = await transferResponse.text();
-				console.log(`Transfer failed: ${transferResponse.status} ${transferResponse.statusText}`);
-				console.log(`Response body: ${responseText}`);
-				
-				const html = getErrorHtml(
-					'Project Transfer Failed',
-					'Failed to transfer the project. Please try again.',
-					`Status: ${transferResponse.status}\nResponse: ${responseText}`
-				);
-				return new Response(html, { 
-					status: 500,
-					headers: { 'Content-Type': 'text/html' }
-				});
+				return errorResponse('Project Transfer Failed', 'Failed to transfer the project. Please try again.', `Status: ${transferResponse.status}\nResponse: ${responseText}`, 500);
 			}
 		}
 
 		// --- Main Claim Page Handler ---
 		const projectID = url.searchParams.get('projectID');
 		if (projectID) {
-			// Add project ID to redirect URI as query parameter
+
 			const redirectUri = new URL("/auth/callback", request.url);
 			redirectUri.searchParams.set('projectID', projectID);
 			
@@ -117,23 +100,15 @@ export default {
 				redirect_uri: redirectUri.toString(),
 				response_type: RESPONSE_TYPE,
 				scope: SCOPE,
+				state: generateState(),
 			});
 			const authUrl = `https://auth.prisma.io/authorize?${authParams.toString()}`;
-			const html = getClaimHtml(projectID, authUrl);
-			return new Response(html, {
+			return new Response(getClaimHtml(projectID, authUrl), {
 				headers: { 'Content-Type': 'text/html' },
 			});
 		}
 
 		// --- Fallback: No project ID provided ---
-		const html = getErrorHtml(
-			'Missing Project ID',
-			'No project ID was provided in the request.',
-			'Please ensure you are accessing this page with a valid project ID parameter.'
-		);
-		return new Response(html, { 
-			status: 400,
-			headers: { 'Content-Type': 'text/html' }
-		});
+		return errorResponse('Missing Project ID', 'No project ID was provided in the request.', 'Please ensure you are accessing this page with a valid project ID parameter.');
 	},
 };
