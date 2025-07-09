@@ -104,6 +104,7 @@ cd create-db-monorepo
 ### 2. Install Dependencies
 
 ```bash
+pnpm i
 # Install dependencies for each project
 cd create-db-worker && npm install
 cd ../claim-db-worker && npm install

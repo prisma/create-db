@@ -26,7 +26,7 @@ export default {
 
 		// --- Get available regions ---
 		if (url.pathname === '/regions' && request.method === 'GET') {
-			const regionsResponse = await fetch('https://api.prisma.io/regions', {
+			const regionsResponse = await fetch('https://api.prisma.io/v1/regions', {
 				headers: { Authorization: `Bearer ${env.INTEGRATION_TOKEN}` },
 			});
 			const regionsText = await regionsResponse.text();
@@ -51,7 +51,7 @@ export default {
 			}
 
 			const payload = JSON.stringify({ region, name });
-			const prismaResponse = await fetch('https://api.prisma.io/projects', {
+			const prismaResponse = await fetch('https://api.prisma.io/v1/projects', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

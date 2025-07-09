@@ -54,7 +54,7 @@ export default {
 			const tokenData = (await tokenResponse.json()) as { access_token: string };
 
 			// Transfer project
-			const transferResponse = await fetch(`https://api.prisma.io/projects/${projectID}/transfer`, {
+			const transferResponse = await fetch(`https://api.prisma.io/v1/projects/${projectID}/transfer`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
