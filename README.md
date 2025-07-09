@@ -1,5 +1,7 @@
 # Create DB Monorepo
 
+*Note: This README is not specifically set up for when it goes open source. There are references to 1Password for example, and no instructions on how to get your own credentials*
+
 This monorepo contains three related projects that work together to provide a complete database provisioning and claiming solution:
 
 1. **`create-db-worker`** - Cloudflare Worker that creates Prisma database projects
@@ -14,6 +16,32 @@ This system enables users to quickly provision temporary Prisma Postgres databas
 2. **Use Database** → User gets 24 hours to work with the database
 3. **Claim Database** → User can claim ownership to make it permanent (optional)
 
+
+## Quick Start for Testing
+
+Here's the minimal setup to just test the CLI against production workers:
+
+### 1. Setup Environment
+```bash
+git clone git@github.com:prisma/create-db-monorepo.git
+cd create-db-monorepo
+cd create-db && npm install
+```
+
+### 2. Create Environment File
+```bash
+echo 'CREATE_DB_WORKER_URL="https://create-db-worker.raycast-0ef.workers.dev"' > .env
+echo 'CLAIM_DB_WORKER_URL="https://claim-db-worker.raycast-0ef.workers.dev"' >> .env
+```
+
+### 3. Test
+```bash
+npx create-db
+```
+
+You should see a connection string and claim URL
+
+*Note: This tests against the production workers, so you don't need to run any local workers.*
 
 ## Architecture
 
