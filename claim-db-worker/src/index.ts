@@ -27,11 +27,24 @@ export default {
 		}
 
 		const url = new URL(request.url);
-		const redirectUri = new URL("/auth/callback", request.url).toString();
+		
 		// --- OAuth Callback Handler ---
 		if (url.pathname === '/auth/callback') {
 			const code = url.searchParams.get('code');
-			const projectID = url.searchParams.get('state');
+			const projectID = url.searchParams.get('projectID');
+
+			// Validate project ID
+			if (!projectID) {
+				const html = getErrorHtml(
+					'OAuth Error',
+					'Missing project ID parameter.',
+					'Please ensure you are accessing this page with a valid project ID.'
+				);
+				return new Response(html, { 
+					status: 400,
+					headers: { 'Content-Type': 'text/html' }
+				});
+			}
 
 			// Exchange code for access token
 			const tokenResponse = await fetch('https://auth.prisma.io/token', {
@@ -40,7 +53,7 @@ export default {
 				body: new URLSearchParams({
 					grant_type: 'authorization_code',
 					code: code!,
-					redirect_uri: redirectUri,
+					redirect_uri: new URL("/auth/callback", request.url).toString(),
 					client_id: env.CLIENT_ID,
 					client_secret: env.CLIENT_SECRET,
 				}).toString(),
@@ -73,7 +86,7 @@ export default {
 			});
 
 			if (transferResponse.ok) {
-				const html = getClaimSuccessHtml(projectID!);
+				const html = getClaimSuccessHtml(projectID);
 				return new Response(html, { headers: { 'Content-Type': 'text/html' } });
 			} else {
 				const responseText = await transferResponse.text();
@@ -95,12 +108,15 @@ export default {
 		// --- Main Claim Page Handler ---
 		const projectID = url.searchParams.get('projectID');
 		if (projectID) {
+			// Add project ID to redirect URI as query parameter
+			const redirectUri = new URL("/auth/callback", request.url);
+			redirectUri.searchParams.set('projectID', projectID);
+			
 			const authParams = new URLSearchParams({
 				client_id: env.CLIENT_ID,
-				redirect_uri: redirectUri,
+				redirect_uri: redirectUri.toString(),
 				response_type: RESPONSE_TYPE,
 				scope: SCOPE,
-				state: projectID,
 			});
 			const authUrl = `https://auth.prisma.io/authorize?${authParams.toString()}`;
 			const html = getClaimHtml(projectID, authUrl);
