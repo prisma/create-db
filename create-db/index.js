@@ -164,7 +164,7 @@ async function main() {
       region = await promptForRegion(region);
     } else {
       // Show minimal header for non-interactive mode
-      log.info(chalk.blue.bold("🚀 Prisma Postgres Create DB"));
+      log.info(chalk.cyan.bold("🚀 Prisma Postgres Create DB"));
       log.message(chalk.gray(`Creating a temporary Prisma Postgres database in ${region}...`));
       log.message("");
     }
