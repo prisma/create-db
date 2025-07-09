@@ -1,15 +1,15 @@
 import { checkRateLimit } from './rate-limiter';
 import { getClaimSuccessHtml } from './templates/claim-success-template';
 import { getClaimHtml } from './templates/claim-template';
+import { getErrorHtml } from './templates/error-template';
 
 interface Env {
 	CLAIM_DB_RATE_LIMIT_KV: KVNamespace;
 	INTEGRATION_TOKEN: string;
 	CLIENT_SECRET: string;
+	CLIENT_ID: string;
 }
 
-const CLIENT_ID = 'cmck0cre900ffxz0vy5deit8y';
-const REDIRECT_URI = 'https://claim-db-worker.raycast-0ef.workers.dev/auth/callback';
 const RESPONSE_TYPE = 'code';
 const SCOPE = 'workspace:admin';
 
@@ -27,7 +27,7 @@ export default {
 		}
 
 		const url = new URL(request.url);
-
+		const redirectUri = new URL("/auth/callback", request.url).toString();
 		// --- OAuth Callback Handler ---
 		if (url.pathname === '/auth/callback') {
 			const code = url.searchParams.get('code');
@@ -40,15 +40,24 @@ export default {
 				body: new URLSearchParams({
 					grant_type: 'authorization_code',
 					code: code!,
-					redirect_uri: REDIRECT_URI,
-					client_id: CLIENT_ID,
+					redirect_uri: redirectUri,
+					client_id: env.CLIENT_ID,
 					client_secret: env.CLIENT_SECRET,
 				}).toString(),
 			});
 
 			if (!tokenResponse.ok) {
 				const text = await tokenResponse.text();
-				return new Response(`Token exchange failed: ${tokenResponse.status} ${text}`, { status: 500 });
+				console.log(`Token exchange failed: ${tokenResponse.status} ${text}`);
+				const html = getErrorHtml(
+					'OAuth Error',
+					'Failed to authenticate with Prisma. Please try again.',
+					`Status: ${tokenResponse.status}\nResponse: ${text}`
+				);
+				return new Response(html, { 
+					status: 500,
+					headers: { 'Content-Type': 'text/html' }
+				});
 			}
 
 			const tokenData = (await tokenResponse.json()) as { access_token: string };
@@ -67,7 +76,19 @@ export default {
 				const html = getClaimSuccessHtml(projectID!);
 				return new Response(html, { headers: { 'Content-Type': 'text/html' } });
 			} else {
-				return new Response('Project claim failed. Please try again.', { status: 500 });
+				const responseText = await transferResponse.text();
+				console.log(`Transfer failed: ${transferResponse.status} ${transferResponse.statusText}`);
+				console.log(`Response body: ${responseText}`);
+				
+				const html = getErrorHtml(
+					'Project Transfer Failed',
+					'Failed to transfer the project. Please try again.',
+					`Status: ${transferResponse.status}\nResponse: ${responseText}`
+				);
+				return new Response(html, { 
+					status: 500,
+					headers: { 'Content-Type': 'text/html' }
+				});
 			}
 		}
 
@@ -75,8 +96,8 @@ export default {
 		const projectID = url.searchParams.get('projectID');
 		if (projectID) {
 			const authParams = new URLSearchParams({
-				client_id: CLIENT_ID,
-				redirect_uri: REDIRECT_URI,
+				client_id: env.CLIENT_ID,
+				redirect_uri: redirectUri,
 				response_type: RESPONSE_TYPE,
 				scope: SCOPE,
 				state: projectID,
@@ -89,6 +110,14 @@ export default {
 		}
 
 		// --- Fallback: No project ID provided ---
-		return new Response('No project ID provided', { status: 400 });
+		const html = getErrorHtml(
+			'Missing Project ID',
+			'No project ID was provided in the request.',
+			'Please ensure you are accessing this page with a valid project ID parameter.'
+		);
+		return new Response(html, { 
+			status: 400,
+			headers: { 'Content-Type': 'text/html' }
+		});
 	},
 };
