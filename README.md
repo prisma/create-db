@@ -188,6 +188,8 @@ cd claim-db-worker
 npx wrangler dev --port 9999
 ```
 
+*Note: At the moment, claiming on the local URL is not possible due to the redirect being set to the production url*
+
 **Update environment for different ports if needed:**
 
 ```env
