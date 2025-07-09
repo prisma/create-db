@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-import { select, spinner, intro, outro, log, cancel } from "@clack/prompts";
+import { select, spinner, intro, outro, log, cancel, confirm } from "@clack/prompts";
 import chalk from "chalk";
 import dotenv from "dotenv";
+// import clipboard from "clipboardy";
 
 dotenv.config();
 
@@ -91,7 +92,7 @@ async function promptForRegion(defaultRegion) {
 
 async function createDatabase(name, region) {
   const s = spinner();
-  s.start("Creating a database...");
+  s.start("Setting up your database...");
 
   const resp = await fetch(`${process.env.CREATE_DB_WORKER_URL}/create`, {
     method: "POST",
@@ -114,12 +115,27 @@ async function createDatabase(name, region) {
 
   s.stop("Database created successfully!");
 
-  // Display connection string
-  log.info("Connection string:");
-  log.message(result.databases[0].connectionString);
+  const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const expiryFormatted = expiryDate.toLocaleString();
 
-  log.info(chalk.red("This database will be deleted in 24 hours.") + " To claim it, visit:");
-  log.message(`${process.env.CLAIM_DB_WORKER_URL}?projectID=${result.id}`);
+  log.message("");
+
+  log.info("Connection string:");
+  log.message("  " + chalk.yellow(result.databases[0].connectionString));
+
+  log.message("");
+  log.success("Claim your database:");
+  log.message("  " + chalk.green(`${process.env.CLAIM_DB_WORKER_URL}?projectID=${result.id}`));
+  log.message("  " + chalk.red(`Expires: ${expiryFormatted}`) + chalk.gray("  (Claim to make permanent on your Prisma account)"));
+
+  // const shouldCopy = await confirm({
+  //   message: "Would you like to copy the connection string to your clipboard?",
+  //   initialValue: true,
+  // });
+  // if (shouldCopy) {
+  //   clipboard.writeSync(result.databases[0].connectionString);
+  //   log.success("Connection string copied to clipboard!");
+  // }
 }
 
 // Main function
@@ -142,10 +158,15 @@ async function main() {
       usePrompts = true;
     }
 
-    // Only show intro and prompts if interactive mode is enabled
+    // Show intro and prompts if interactive mode is enabled
     if (usePrompts) {
       intro("Create Database");
       region = await promptForRegion(region);
+    } else {
+      // Show minimal header for non-interactive mode
+      log.info(chalk.blue.bold("🚀 Prisma Postgres Create DB"));
+      log.message(chalk.gray(`Creating a temporary Prisma Postgres database in ${region}...`));
+      log.message("");
     }
 
     // Create the database
