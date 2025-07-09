@@ -61,7 +61,6 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 				<h1>❌ ${title}</h1>
 				<p class="message">${message}</p>
 				${details ? `<div class="details">${details}</div>` : ''}
-				<a href="javascript:history.back()" class="back-link">← Go Back</a>
 			</div>
 		</body>
 		</html>
