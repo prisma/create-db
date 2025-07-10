@@ -4,7 +4,7 @@ import { select, spinner, intro, outro, log, cancel, confirm } from "@clack/prom
 import chalk from "chalk";
 import dotenv from "dotenv";
 import terminalLink from 'terminal-link';
-// import clipboard from "clipboardy";
+import clipboard from "clipboardy";
 
 dotenv.config();
 
@@ -14,7 +14,7 @@ function parseArgs() {
   const args = process.argv.slice(2);
   const flags = {};
   const positional = [];
-  const allowedFlags = ["region", "i"];
+  const allowedFlags = ["region", "i", "copy"];
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -44,6 +44,7 @@ function parseArgs() {
           "",
           "  --region <region>    Set the region (us-east-1, eu-west-1, etc)",
           "  --i                  Interactive mode",
+          "  --copy               Enable clipboard prompt",
           "",
         ].join("\n")
       );
@@ -51,7 +52,7 @@ function parseArgs() {
     } else {
       // Disallow subcommands or positional arguments
       console.error(
-        `Invalid subcommand or argument: ${arg}. Allowed flags are: --region, --i`
+        `Invalid subcommand or argument: ${arg}. Allowed flags are: --region, --i, --copy`
       );
       process.exit(1);
     }
@@ -91,7 +92,7 @@ async function promptForRegion(defaultRegion) {
 
 // Create a database
 
-async function createDatabase(name, region) {
+async function createDatabase(name, region, enableCopyPrompt = false) {
   const s = spinner();
   s.start("Setting up your database...");
 
@@ -132,14 +133,16 @@ async function createDatabase(name, region) {
   log.message("  " + chalk.green(clickableUrl));
   log.message("  " + chalk.red(`Expires: ${expiryFormatted}`) + chalk.gray("  (Claim to make permanent on your Prisma account)"));
 
-  // const shouldCopy = await confirm({
-  //   message: "Would you like to copy the connection string to your clipboard?",
-  //   initialValue: true,
-  // });
-  // if (shouldCopy) {
-  //   clipboard.writeSync(result.databases[0].connectionString);
-  //   log.success("Connection string copied to clipboard!");
-  // }
+  if (enableCopyPrompt) {
+    const shouldCopy = await confirm({
+      message: "Would you like to copy the connection string to your clipboard?",
+      initialValue: true,
+    });
+    if (shouldCopy) {
+      clipboard.writeSync(result.databases[0].connectionString);
+      log.success("Connection string copied to clipboard!");
+    }
+  }
 }
 
 // Main function
@@ -153,6 +156,7 @@ async function main() {
     let name = new Date().toISOString();
     let region = "us-east-1";
     let usePrompts = false;
+    let enableCopyPrompt = false;
 
     // Apply command line flags
     if (flags.region) {
@@ -160,6 +164,9 @@ async function main() {
     }
     if (flags.i) {
       usePrompts = true;
+    }
+    if (flags.copy) {
+      enableCopyPrompt = true;
     }
 
     // Show intro and prompts if interactive mode is enabled
@@ -174,7 +181,7 @@ async function main() {
     }
 
     // Create the database
-    await createDatabase(name, region);
+    await createDatabase(name, region, enableCopyPrompt);
 
     outro("");
 
