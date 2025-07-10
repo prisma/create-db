@@ -1,10 +1,9 @@
 import DeleteDbWorkflow from './delete-workflow';
-import { checkRateLimit } from './rate-limiter';
 
 interface Env {
 	INTEGRATION_TOKEN: string;
 	DELETE_DB_WORKFLOW: Workflow;
-	CREATE_DB_RATE_LIMIT_KV: KVNamespace;
+	CREATE_DB_RATE_LIMITER: RateLimit;
 	CREATE_DB_DATASET: AnalyticsEngineDataset;
 }
 
@@ -13,15 +12,12 @@ export { DeleteDbWorkflow };
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		// --- Rate limiting ---
-		const { allowed } = await checkRateLimit({
-			kv: env.CREATE_DB_RATE_LIMIT_KV,
-			key: 'global-rate-limit',
-			limit: 100,
-			period: 60,
-		});
-		if (!allowed) {
-			return new Response('Rate limit exceeded', { status: 429 });
+		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: request.url })	
+
+		if (!success) {
+			return new Response(`429 Failure - rate limit exceeded for ${request.url}`, { status: 429 });
 		}
+
 
 		const url = new URL(request.url);
 

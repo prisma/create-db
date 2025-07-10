@@ -13,5 +13,18 @@
 			"binding": "CREATE_DB_DATASET",
 			"dataset": "create_db_dataset"
 		}
-	]
+	],
+	"unsafe": {
+    "bindings": [
+      {
+        "name": "CLAIM_DB_RATE_LIMITER",
+        "type": "ratelimit",
+        "namespace_id": "1006",
+        "simple": {
+          "limit": 1,
+          "period": 60
+        }
+      }
+    ]
+  }
 }

@@ -1,10 +1,9 @@
-import { checkRateLimit } from './rate-limiter';
 import { getClaimSuccessHtml } from './templates/claim-success-template';
 import { getClaimHtml } from './templates/claim-template';
 import { getErrorHtml } from './templates/error-template';
 
 interface Env {
-	CLAIM_DB_RATE_LIMIT_KV: KVNamespace;
+	CLAIM_DB_RATE_LIMITER: RateLimit;
 	INTEGRATION_TOKEN: string;
 	CLIENT_SECRET: string;
 	CLIENT_ID: string;
@@ -28,14 +27,10 @@ function errorResponse(title: string, message: string, details?: string, status 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		// --- Rate limiting ---
-		const { allowed } = await checkRateLimit({
-			kv: env.CLAIM_DB_RATE_LIMIT_KV,
-			key: 'global-rate-limit',
-			limit: 100,
-			period: 60,
-		});
-		if (!allowed) {
-			return new Response('Rate limit exceeded', { status: 429 });
+		const { success } = await env.CLAIM_DB_RATE_LIMITER.limit({ key: request.url })	
+
+		if (!success) {
+			return errorResponse('Rate Limit Exceeded', 'We\'re experiencing high demand. Please try again later.', '', 429);
 		}
 
 		const url = new URL(request.url);
