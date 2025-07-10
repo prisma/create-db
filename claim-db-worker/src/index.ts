@@ -8,6 +8,7 @@ interface Env {
 	INTEGRATION_TOKEN: string;
 	CLIENT_SECRET: string;
 	CLIENT_ID: string;
+	CREATE_DB_DATASET: AnalyticsEngineDataset;
 }
 
 const RESPONSE_TYPE = 'code';
@@ -79,6 +80,11 @@ export default {
 			});
 
 			if (transferResponse.ok) {
+				env.CREATE_DB_DATASET.writeDataPoint({
+					blobs: ["database_claimed"],
+					indexes: ["claim_db"]
+				});
+				
 				return new Response(getClaimSuccessHtml(projectID), { 
 					headers: { 'Content-Type': 'text/html' } 
 				});

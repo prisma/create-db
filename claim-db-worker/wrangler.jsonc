@@ -8,4 +8,10 @@
 		"enabled": true,
 	},
 	"kv_namespaces": [{ "binding": "CLAIM_DB_RATE_LIMIT_KV", "id": "4f26b6d422e348f29adf32d3c481fc72" }],
+	"analytics_engine_datasets": [
+    {
+			"binding": "CREATE_DB_DATASET",
+			"dataset": "create_db_dataset"
+		}
+	]
 }

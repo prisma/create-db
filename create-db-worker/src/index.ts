@@ -5,6 +5,7 @@ interface Env {
 	INTEGRATION_TOKEN: string;
 	DELETE_DB_WORKFLOW: Workflow;
 	CREATE_DB_RATE_LIMIT_KV: KVNamespace;
+	CREATE_DB_DATASET: AnalyticsEngineDataset;
 }
 
 export { DeleteDbWorkflow };
@@ -66,6 +67,10 @@ export default {
 			try {
 				const projectID = JSON.parse(prismaText).id;
 				await env.DELETE_DB_WORKFLOW.create({ params: { projectID } });
+				env.CREATE_DB_DATASET.writeDataPoint({
+					blobs: ["database_created"],
+					indexes: ["create_db"]
+				});
 			} catch (e) {
 				console.error('Error parsing prismaText or triggering workflow:', e);
 			}
