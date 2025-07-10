@@ -3,6 +3,7 @@
 import { select, spinner, intro, outro, log, cancel, confirm } from "@clack/prompts";
 import chalk from "chalk";
 import dotenv from "dotenv";
+import terminalLink from 'terminal-link';
 // import clipboard from "clipboardy";
 
 dotenv.config();
@@ -125,7 +126,10 @@ async function createDatabase(name, region) {
 
   log.message("");
   log.success("Claim your database:");
-  log.message("  " + chalk.green(`${process.env.CLAIM_DB_WORKER_URL}?projectID=${result.id}`));
+
+  const claimUrl = `${process.env.CLAIM_DB_WORKER_URL}?projectID=${result.id}`;
+  const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false});
+  log.message("  " + chalk.green(clickableUrl));
   log.message("  " + chalk.red(`Expires: ${expiryFormatted}`) + chalk.gray("  (Claim to make permanent on your Prisma account)"));
 
   // const shouldCopy = await confirm({
