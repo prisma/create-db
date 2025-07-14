@@ -2,7 +2,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "create-db-worker",
 	"main": "src/index.ts",
-	"account_id": "0ef7f922ce028e16c1a44d98c86511b0",
+	"account_id": "16b32bbb36161aca01a6357a37bc453e",
 	"compatibility_date": "2025-06-27",
 	"observability": {
 		"enabled": true,
@@ -17,26 +17,26 @@
 	"kv_namespaces": [
 		{
 			"binding": "CREATE_DB_RATE_LIMIT_KV",
-			"id": "4f26b6d422e348f29adf32d3c481fc72"
-		}
+			"id": "8dc440dbc2034a2fb43c728155cf09bb",
+		},
 	],
-  "analytics_engine_datasets": [
-    {
+	"analytics_engine_datasets": [
+		{
 			"binding": "CREATE_DB_DATASET",
-			"dataset": "create_db_dataset"
-		}
+			"dataset": "create_db_dataset",
+		},
 	],
 	"unsafe": {
-    "bindings": [
-      {
-        "name": "CREATE_DB_RATE_LIMITER",
-        "type": "ratelimit",
-        "namespace_id": "1005",
-        "simple": {
-          "limit": 100,
-          "period": 60
-        }
-      }
-    ]
-  }
+		"bindings": [
+			{
+				"name": "CREATE_DB_RATE_LIMITER",
+				"type": "ratelimit",
+				"namespace_id": "1005",
+				"simple": {
+					"limit": 100,
+					"period": 60,
+				},
+			},
+		],
+	},
 }
