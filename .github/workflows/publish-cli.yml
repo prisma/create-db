@@ -9,7 +9,7 @@ on:
 
 jobs:
   preview:
-    name: 🚧 Preview release (PR ${{ github.event.number }})
+    name: 🚧 Preview release (PR #${{ github.event.number }} – ${{ github.event.pull_request.head.ref }})
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -30,17 +30,21 @@ jobs:
         run: pnpm install
 
       - name: Bump preview version in create-db
-        # uses npm to create a prerelease bump like 0.0.1-pr42
+        working-directory: ./create-db
         run: |
-          cd packages/create-db
-          npm version prerelease --preid pr${{ github.event.number }} --no-git-tag-version
-        shell: bash
+          # e.g. 0.0.1 → 0.0.1-pr3-my-branch
+          npm version prerelease \
+            --preid pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }} \
+            --no-git-tag-version
 
       - name: Publish preview to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
         run: |
-          pnpm --filter create-db publish --access public --tag pr${{ github.event.number }} --no-git-checks
+          pnpm --filter create-db publish \
+            --access public \
+            --tag pr${{ github.event.number }}
+        # no git checks so we can publish a prerelease off a PR
 
   publish:
     name: 🚀 Bump & publish real release
