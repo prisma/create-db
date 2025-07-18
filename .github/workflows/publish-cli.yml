@@ -1,59 +1,112 @@
-name: Preview & Publish create-db
+name: Preview & Publish all CLIs
 
 on:
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize]
+  push:
+    branches: [main]
+
+env:
+  # relative paths to each CLI
+  WORKSPACES: |
+    packages/create-db
+    packages/create-pg
+    packages/create-postgres
 
 jobs:
   preview:
-    name: 🚧 Preview release (PR #${{ github.event.number }} – ${{ github.event.pull_request.head.ref }})
     if: github.event_name == 'pull_request'
+    name: 🚧 Preview release (PR #${{ github.event.number }})
     runs-on: ubuntu-latest
-
     steps:
-      # 1️⃣ Checkout full history so `npm version` can bump
-      - name: Checkout code
+      - name: 🛎️ Checkout full history
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # 2️⃣ Disable Husky in CI
-      - name: Disable Husky in CI
+      - name: 🤐 Disable Husky
         run: echo "HUSKY=0" >> $GITHUB_ENV
 
-      # 3️⃣ Install pnpm
-      - name: Setup pnpm
+      - name: 📦 Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
 
-      # 4️⃣ Install dependencies
-      - name: Install dependencies
+      - name: 🔧 Install dependencies
         run: pnpm install
 
-      # 5️⃣ Bump a unique preview version
-      - name: Bump preview version in create-db
-        working-directory: ./create-db
-        run: |
-          PREID="pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}"
-          npm version prerelease \
-            --preid "$PREID" \
-            --no-git-tag-version
-
-      # 6️⃣ Disable pnpm’s git‐clean safeguard
-      - name: Disable pnpm git-checks
+      - name: ❌ Disable pnpm git‐checks
         run: pnpm config set git-checks false
 
-      # 7️⃣ Configure npm auth for publish
-      - name: Configure npm auth
+      - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
-      # 8️⃣ Publish the create-db package under `pr<N>` tag
-      - name: Publish preview to npm
-        working-directory: ./create-db
-        run: pnpm publish --access public --tag pr${{ github.event.number }}
+      - name: 🚀 Publish PR-tagged previews
+        run: |
+          PRE_TAG="pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}"
+          for pkg in $WORKSPACES; do
+            echo "› publishing $pkg"
+            cd $pkg
 
-      # 9️⃣ Clean up auth file
-      - name: Cleanup npm auth
-        run: rm ~/.npmrc
+            # bump a unique prerelease
+            npm version prerelease \
+              --preid "$PRE_TAG" \
+              --no-git-tag-version
+
+            # publish under tag pr<N>
+            pnpm publish --access public --tag pr${{ github.event.number }}
+
+            cd - >/dev/null
+          done
+
+      - name: 🧹 Cleanup npm auth
+        run: rm -f ~/.npmrc
+
+  publish:
+    if: github.event_name == 'push'
+    needs: preview
+    name: 🚀 Bump & publish real releases
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout full & tags
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: 🤐 Disable Husky
+        run: echo "HUSKY=0" >> $GITHUB_ENV
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: 🔧 Install dependencies
+        run: pnpm install
+
+      - name: 🔄 Bump versions & changelogs
+        run: pnpm changeset version
+
+      - name: 💾 Commit & push version bump
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git commit -am "chore: version packages [skip ci]" || echo "no version changes"
+          git push origin main --follow-tags
+
+      - name: 🔑 Configure npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+
+      - name: 🚀 Publish all real releases
+        run: |
+          for pkg in $WORKSPACES; do
+            echo "› publishing $pkg"
+            cd $pkg
+            pnpm publish --access public
+            cd - >/dev/null
+          done
+
+      - name: 🧹 Cleanup npm auth
+        run: rm -f ~/.npmrc
