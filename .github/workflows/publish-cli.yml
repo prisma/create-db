@@ -10,9 +10,9 @@ on:
 env:
   # relative paths to each CLI
   WORKSPACES: |
-    packages/create-db
-    packages/create-pg
-    packages/create-postgres
+    create-db
+    create-pg
+    create-postgres
 
 jobs:
   preview:
