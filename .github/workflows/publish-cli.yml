@@ -8,6 +8,7 @@ on:
       - opened
       - reopened
       - synchronize
+      - closed
   push:
     branches:
       - main
@@ -64,8 +65,10 @@ jobs:
         run: rm -f ~/.npmrc
 
   publish:
-    if: github.event_name == 'push'
-    needs: preview
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true
     name: 🚀 Bump & publish real releases
     runs-on: ubuntu-latest
     steps:
@@ -97,7 +100,8 @@ jobs:
           git push origin main --follow-tags
 
       - name: 🔑 Configure npm auth
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Publish all real releases
         run: |
