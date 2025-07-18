@@ -44,6 +44,7 @@ jobs:
           pnpm --filter create-db publish \
             --access public \
             --tag pr${{ github.event.number }}
+            --no-git-checks
         # no git checks so we can publish a prerelease off a PR
 
   publish:
