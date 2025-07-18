@@ -2,13 +2,18 @@ name: Preview & Publish all CLIs
 
 on:
   pull_request:
-    branches: [main]
-    types: [opened, reopened, synchronize]
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
   push:
-    branches: [main]
+    branches:
+      - main
 
 env:
-  # relative paths to each CLI
+  # each folder under the repo root that contains one of your CLIs
   WORKSPACES: |
     create-db
     create-pg
@@ -36,27 +41,25 @@ jobs:
       - name: 🔧 Install dependencies
         run: pnpm install
 
-      - name: ❌ Disable pnpm git‐checks
+      - name: ❌ Disable pnpm git-checks
         run: pnpm config set git-checks false
 
       - name: 🔑 Configure npm auth
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Publish PR-tagged previews
         run: |
-          PRE_TAG="pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}"
+          PRE_TAG="pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}"
           for pkg in $WORKSPACES; do
-            echo "› publishing $pkg"
+            echo "› publishing $pkg@$PRE_TAG"
             cd $pkg
-
-            # bump a unique prerelease
+            # bump to a unique prerelease
             npm version prerelease \
               --preid "$PRE_TAG" \
               --no-git-tag-version
-
-            # publish under tag pr<N>
+            # publish under dist-tag pr<N>
             pnpm publish --access public --tag pr${{ github.event.number }}
-
             cd - >/dev/null
           done
 
@@ -86,7 +89,7 @@ jobs:
       - name: 🔧 Install dependencies
         run: pnpm install
 
-      - name: 🔄 Bump versions & changelogs
+      - name: 🔄 Bump versions & generate changelogs
         run: pnpm changeset version
 
       - name: 💾 Commit & push version bump
@@ -97,7 +100,8 @@ jobs:
           git push origin main --follow-tags
 
       - name: 🔑 Configure npm auth
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Publish all real releases
         run: |
