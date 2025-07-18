@@ -3,6 +3,8 @@ name: Version & Publish create-db
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   release:
