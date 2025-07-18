@@ -1,9 +1,17 @@
 #!/usr/bin/env node
 
-import { select, spinner, intro, outro, log, cancel, confirm } from "@clack/prompts";
+import {
+  select,
+  spinner,
+  intro,
+  outro,
+  log,
+  cancel,
+  confirm,
+} from "@clack/prompts";
 import chalk from "chalk";
 import dotenv from "dotenv";
-import terminalLink from 'terminal-link';
+import terminalLink from "terminal-link";
 import clipboard from "clipboardy";
 
 dotenv.config();
@@ -64,7 +72,7 @@ function parseArgs() {
 // Get region from user input
 
 async function promptForRegion(defaultRegion) {
-  const url = `${process.env.CREATE_DB_WORKER_URL}/regions`;
+  const url = `${process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io"}/regions`;
   const res = await fetch(url);
   let data;
   try {
@@ -79,7 +87,8 @@ async function promptForRegion(defaultRegion) {
   const region = await select({
     message: "Choose a region:",
     options: regions.map((r) => ({ value: r.id, label: r.id })),
-    initialValue: regions.find((r) => r.id === defaultRegion)?.id || regions[0]?.id,
+    initialValue:
+      regions.find((r) => r.id === defaultRegion)?.id || regions[0]?.id,
   });
 
   if (region === null) {
@@ -96,22 +105,29 @@ async function createDatabase(name, region, enableCopyPrompt = false) {
   const s = spinner();
   s.start("Setting up your database...");
 
-  const resp = await fetch(`${process.env.CREATE_DB_WORKER_URL}/create`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ region, name }),
-  });
+  const resp = await fetch(
+    `${process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io"}/create`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ region, name }),
+    }
+  );
 
   // Rate limit exceeded
   if (resp.status === 429) {
-    s.stop("We're experiencing a high volume of requests. Please try again later.");
+    s.stop(
+      "We're experiencing a high volume of requests. Please try again later."
+    );
     process.exit(1);
   }
 
   const result = await resp.json();
 
   if (result.error) {
-    s.stop(`Error creating database: ${result.error.message || "Unknown error"}`);
+    s.stop(
+      `Error creating database: ${result.error.message || "Unknown error"}`
+    );
     process.exit(1);
   }
 
@@ -128,14 +144,19 @@ async function createDatabase(name, region, enableCopyPrompt = false) {
   log.message("");
   log.success("Claim your database:");
 
-  const claimUrl = `${process.env.CLAIM_DB_WORKER_URL}?projectID=${result.id}`;
-  const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false});
+  const claimUrl = `${process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io"}?projectID=${result.id}`;
+  const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false });
   log.message("  " + chalk.green(clickableUrl));
-  log.message("  " + chalk.red(`Expires: ${expiryFormatted}`) + chalk.gray("  (Claim to make permanent on your Prisma account)"));
+  log.message(
+    "  " +
+      chalk.red(`Expires: ${expiryFormatted}`) +
+      chalk.gray("  (Claim to make permanent on your Prisma account)")
+  );
 
   if (enableCopyPrompt) {
     const shouldCopy = await confirm({
-      message: "Would you like to copy the connection string to your clipboard?",
+      message:
+        "Would you like to copy the connection string to your clipboard?",
       initialValue: true,
     });
     if (shouldCopy) {
@@ -176,7 +197,11 @@ async function main() {
     } else {
       // Show minimal header for non-interactive mode
       log.info(chalk.cyan.bold("🚀 Prisma Postgres Create DB"));
-      log.message(chalk.gray(`Creating a temporary Prisma Postgres database in ${region}...`));
+      log.message(
+        chalk.gray(
+          `Creating a temporary Prisma Postgres database in ${region}...`
+        )
+      );
       log.message("");
     }
 
@@ -184,7 +209,6 @@ async function main() {
     await createDatabase(name, region, enableCopyPrompt);
 
     outro("");
-
   } catch (error) {
     console.error("Error:", error.message);
     process.exit(1);
