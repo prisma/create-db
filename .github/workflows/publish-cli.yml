@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ check out all history so that `npm version` can run
+      # 1️⃣ check out full history so `npm version` can run
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # 2️⃣ turn off Husky so our CI scripts don’t block
+      # 2️⃣ turn off Husky in CI
       - name: Disable Husky in CI
         run: echo "HUSKY=0" >> $GITHUB_ENV
 
@@ -28,11 +28,11 @@ jobs:
         with:
           version: 8
 
-      # 4️⃣ install deps
+      # 4️⃣ install dependencies
       - name: Install dependencies
         run: pnpm install
 
-      # 5️⃣ bump just the preview version in the create-db package
+      # 5️⃣ bump just the preview version in create-db
       - name: Bump preview version in create-db
         working-directory: ./create-db
         run: |
@@ -40,15 +40,15 @@ jobs:
             --preid pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }} \
             --no-git-tag-version
 
-      # 6️⃣ disable pnpm's git-clean safeguard permanently for this runner
+      # 6️⃣ disable pnpm's git-clean safeguard
       - name: Disable pnpm git-checks
         run: pnpm config set git-checks false
 
-      # 7️⃣ publish under the `pr<PR_NUMBER>` dist-tag
+      # 7️⃣ configure npm auth so publish can log in
+      - name: Configure npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+
+      # 8️⃣ publish only the create-db package under tag pr<N>
       - name: Publish preview to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
-        run: |
-          pnpm --filter create-db publish \
-            --access public \
-            --tag pr${{ github.event.number }}
+        working-directory: ./create-db
+        run: pnpm publish --access public --tag pr${{ github.event.number }}
