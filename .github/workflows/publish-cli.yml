@@ -41,12 +41,11 @@ jobs:
       - name: 🔧 Install dependencies
         run: pnpm install
 
-      - name: ❌ Disable pnpm git-checks
+      - name: 🔄 Disable pnpm git-checks
         run: pnpm config set git-checks false
 
       - name: 🔑 Configure npm auth
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Publish PR-tagged previews
         run: |
@@ -54,11 +53,9 @@ jobs:
           for pkg in $WORKSPACES; do
             echo "› publishing $pkg@$PRE_TAG"
             cd $pkg
-            # bump to a unique prerelease
             npm version prerelease \
               --preid "$PRE_TAG" \
               --no-git-tag-version
-            # publish under dist-tag pr<N>
             pnpm publish --access public --tag pr${{ github.event.number }}
             cd - >/dev/null
           done
@@ -100,8 +97,7 @@ jobs:
           git push origin main --follow-tags
 
       - name: 🔑 Configure npm auth
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Publish all real releases
         run: |
