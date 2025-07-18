@@ -4,39 +4,47 @@ on:
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize]
-  push:
-    branches: [main]
 
 jobs:
   preview:
     name: 🚧 Preview release (PR #${{ github.event.number }} – ${{ github.event.pull_request.head.ref }})
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ check out all history so that `npm version` can run
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
+      # 2️⃣ turn off Husky so our CI scripts don’t block
       - name: Disable Husky in CI
         run: echo "HUSKY=0" >> $GITHUB_ENV
 
+      # 3️⃣ install pnpm
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
 
+      # 4️⃣ install deps
       - name: Install dependencies
         run: pnpm install
 
+      # 5️⃣ bump just the preview version in the create-db package
       - name: Bump preview version in create-db
         working-directory: ./create-db
         run: |
-          # e.g. 0.0.1 → 0.0.1-pr3-my-branch
           npm version prerelease \
             --preid pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }} \
             --no-git-tag-version
 
+      # 6️⃣ disable pnpm's git-clean safeguard permanently for this runner
+      - name: Disable pnpm git-checks
+        run: pnpm config set git-checks false
+
+      # 7️⃣ publish under the `pr<PR_NUMBER>` dist-tag
       - name: Publish preview to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
@@ -44,44 +52,3 @@ jobs:
           pnpm --filter create-db publish \
             --access public \
             --tag pr${{ github.event.number }}
-            --no-git-checks
-        # no git checks so we can publish a prerelease off a PR
-
-  publish:
-    name: 🚀 Bump & publish real release
-    if: github.event_name == 'push'
-    needs: preview
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code (full history & tags)
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          persist-credentials: true
-
-      - name: Disable Husky in CI
-        run: echo "HUSKY=0" >> $GITHUB_ENV
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Bump versions & generate changelogs
-        run: pnpm version
-
-      - name: Push version bump commit & tags
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: git push origin main --follow-tags
-
-      - name: Dry-run npm publish
-        run: pnpm --filter create-db publish --dry-run
-
-      - name: Publish create-db to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
-        run: pnpm --filter create-db publish --access public
