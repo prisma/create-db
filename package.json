@@ -2,7 +2,17 @@
   "name": "create-db-monorepo",
   "version": "1.0.0",
   "private": true,
+  "scripts": {
+    "changeset": "changeset",
+    "version": "changeset version",
+    "publish:cli": "changeset publish --filter create-db",
+    "prepare": "node .husky/install.mjs"
+  },
   "devDependencies": {
+    "@changesets/cli": "^2.29.5",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "husky": "^9.1.7",
     "prettier": "^3.0.0",
     "typescript": "^5.0.0"
   }
