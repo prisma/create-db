@@ -1,25 +1,63 @@
-name: Version & Publish create-db
+name: Preview & Publish create-db
 
 on:
-  push:
-    branches: [main]
   pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+  push:
     branches: [main]
 
 jobs:
-  release:
-    name: Bump Version & Publish CLI
+  preview:
+    name: 🚧 Preview release (PR ${{ github.event.number }})
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout with token
+      - name: Checkout code
         uses: actions/checkout@v3
         with:
-          persist-credentials: true # so we can push commits & tags
+          fetch-depth: 0
 
       - name: Disable Husky in CI
         run: echo "HUSKY=0" >> $GITHUB_ENV
 
-      - name: Setup Node & pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Bump preview version in create-db
+        # uses npm to create a prerelease bump like 0.0.1-pr42
+        run: |
+          cd packages/create-db
+          npm version prerelease --preid pr${{ github.event.number }} --no-git-tag-version
+        shell: bash
+
+      - name: Publish preview to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
+        run: |
+          pnpm --filter create-db publish --access public --tag pr${{ github.event.number }} --no-git-checks
+
+  publish:
+    name: 🚀 Bump & publish real release
+    if: github.event_name == 'push'
+    needs: preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code (full history & tags)
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Disable Husky in CI
+        run: echo "HUSKY=0" >> $GITHUB_ENV
+
+      - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
@@ -30,11 +68,10 @@ jobs:
       - name: Bump versions & generate changelogs
         run: pnpm version
 
-      - name: Push version bump & tags
+      - name: Push version bump commit & tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git push origin main --follow-tags
+        run: git push origin main --follow-tags
 
       - name: Dry-run npm publish
         run: pnpm --filter create-db publish --dry-run
