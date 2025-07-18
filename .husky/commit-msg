@@ -1,3 +1,1 @@
-# commit-msg → enforce Conventional Commits
-echo "pnpm exec commitlint --edit \"$1\"" > .husky/commit-msg
-chmod +x .husky/commit-msg
+pnpm exec commitlint --edit ".git/COMMIT_EDITMSG"

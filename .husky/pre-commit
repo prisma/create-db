@@ -1,3 +1,0 @@
-# (optional) pre-commit → lint staged files
-echo "pnpm exec lint-staged" > .husky/pre-commit
-chmod +x .husky/pre-commit
