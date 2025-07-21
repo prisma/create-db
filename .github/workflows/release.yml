@@ -1,5 +1,10 @@
 name: Release all CLIs & Deploy CF Workers
 
+# Add permissions for writing contents (releases, tags, commits) and PRs
+permissions:
+  contents: write
+  pull-requests: write
+
 on:
   pull_request:
     branches: [main]
@@ -17,7 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🛎️ Checkout full & tags
-        uses: actions/checkout@v3
+        # Updated to v4 for the latest features and security
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
@@ -26,22 +32,23 @@ jobs:
         run: echo "HUSKY=0" >> $GITHUB_ENV
 
       - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v2
+        # Updated to v4 for the latest features and security
+        uses: pnpm/action-setup@v4
         with:
           version: 8
 
       - name: 🔧 Install dependencies
-        run: pnpm install
+        # Using --frozen-lockfile is a best practice in CI to ensure reproducibility
+        run: pnpm install --frozen-lockfile
 
       - name: 🔄 Version & changelogs via Changesets
         uses: changesets/action@v1
         with:
-          # run the version script
-          version: "pnpm changeset version --yes"
-          # commit and push back into the PR branch
-          commit: "chore(release): bump [skip ci]"
-          commitMode: "git-cli"
-          # don’t create a GitHub release on a PR run
+          # This command creates the version bump commit
+          version: "pnpm changeset version"
+          # Custom commit message for the version bump
+          commit: "chore(release): bump versions"
+          # Don’t create a GitHub release on a PR run
           createGithubReleases: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,49 +59,58 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🛎️ Checkout full & tags
-        uses: actions/checkout@v3
+        # Updated to v4
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: true
+          # Credentials are not needed for this job as it doesn't push commits
+          persist-credentials: false
 
       - name: 🤐 Disable Husky
         run: echo "HUSKY=0" >> $GITHUB_ENV
 
       - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v2
+        # Updated to v4
+        uses: pnpm/action-setup@v4
         with:
           version: 8
 
       - name: 🔧 Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: 🔧 Install jq
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
+        # Combine update and install into a single layer
+        run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: 📄 Copy README to child CLIs
+        # FIX: Added a condition to prevent copying a file to its own location
         run: |
           for pkg in $WORKSPACES; do
-            cp create-db/README.md "$pkg/README.md"
+            if [ "$pkg" != "create-db" ]; then
+              cp create-db/README.md "$pkg/README.md"
+            fi
           done
 
       - name: 📑 Aggregate changelogs
         id: aggregate
         run: |
-          # pull the new version out of package.json
+          # Pull the new version out of package.json from the primary workspace
           NEW_VERSION=$(jq -r '.version' create-db/package.json)
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-          # header for the release
+          # Header for the release body
           echo "# Release v$NEW_VERSION" > AGGREGATED_CHANGELOG.md
+          echo "" >> AGGREGATED_CHANGELOG.md
 
           for pkg in $WORKSPACES; do
-            echo "## $pkg" >> AGGREGATED_CHANGELOG.md
-            # grab only the lines under ## $NEW_VERSION in each CHANGELOG.md
-            sed -n "/^## $NEW_VERSION/,/^## /p" $pkg/CHANGELOG.md \
-              | sed '1d;$d' \
-              >> AGGREGATED_CHANGELOG.md
+            echo "## \`$pkg\`" >> AGGREGATED_CHANGELOG.md
+            # IMPROVEMENT: Use a more robust awk command to extract changelog entries.
+            # This correctly handles cases where the version is the last one in the file.
+            awk -v ver="## $NEW_VERSION" '
+              $0 ~ ver { found=1; next }
+              /^## / { found=0 }
+              found { print }
+            ' "$pkg/CHANGELOG.md" >> AGGREGATED_CHANGELOG.md
             echo "" >> AGGREGATED_CHANGELOG.md
           done
 
