@@ -86,6 +86,10 @@ jobs:
 
       - name: 💬 Post preview-testing instructions
         uses: actions/github-script@v6
+        env:
+          PRE_TAG: ${{ env.PRE_TAG }}
+          CREATE_DB_WORKER_URL: ${{ steps.deploy-db.outputs.deployment-url }}
+          CLAIM_DB_WORKER_URL: ${{ steps.deploy-claim.outputs.deployment-url }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -110,10 +114,9 @@ jobs:
 
             **Worker URLs**  
             • Create-DB Worker: ${dbUrl}  
-            • Claim-DB Worker:  ${clUrl}
+            • Claim-DB Worker:  ${clUrl}  
 
             > These will live as long as this PR exists under tag \`${tag}\`.`
                         });
-
       - name: 🧹 Cleanup npm auth
         run: rm -f ~/.npmrc
