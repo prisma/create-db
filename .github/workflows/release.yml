@@ -1,30 +1,51 @@
-name: Release all CLIs & Deploy CF Workers
+name: Release and deploy
 
 on:
-  workflow_dispatch:
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize]
+  # 1. Trigger for the 'version' job: runs on push to main to create a release PR.
   push:
-    branches: [main]
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+
+  # 3. Manual Trigger: allows you to run either job on any branch for testing.
+  workflow_dispatch:
+    inputs:
+      job_to_run:
+        description: "Job to run manually"
+        required: true
+        type: choice
+        options:
+          - version
+          - publish
+        default: "publish"
+      branch:
+        description: "Branch to run on (defaults to main)"
+        required: true
+        default: "main"
 
 env:
   WORKSPACES: create-db create-pg create-postgres
+  HUSKY: 0 # Disable Husky for all CI runs
 
 jobs:
-  # 💾 On PRs: bump package.json versions & CHANGELOGs via Changesets
+  #================================================================
+  # JOB 1: Create a "Version Packages" PR after merging to main
+  #================================================================
   version:
-    if: ${{ github.event_name == 'pull_request' }}
+    # Runs on push to main OR a manual 'version' dispatch
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.job_to_run == 'version')
     runs-on: ubuntu-latest
     steps:
-      - name: 🛎️ Checkout full & tags
+      - name: 🛎️ Checkout code
         uses: actions/checkout@v3
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref }}
           fetch-depth: 0
+          # We need to persist credentials for the changesets-action to push a new branch
           persist-credentials: true
-
-      - name: 🤐 Disable Husky
-        run: echo "HUSKY=0" >> $GITHUB_ENV
 
       - name: 📦 Setup pnpm
         uses: pnpm/action-setup@v2
@@ -32,31 +53,33 @@ jobs:
           version: 8
 
       - name: 🔧 Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: 🔄 Version & changelogs via Changesets
+      - name: 🤖 Create Version PR
         uses: changesets/action@v1
         with:
-          version: "pnpm changeset version --yes"
-          commit: "chore(release): bump [skip ci]"
-          commitMode: "git-cli"
-          createGithubReleases: false
+          # This command will create a PR with version bumps and changelogs
+          version: pnpm changeset version
+          commit: "chore(release): version packages for release"
+          title: "chore(release): Version Packages"
+          create-github-releases: false # We will do this in the 'publish' job
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # 🚀 On merges to main: aggregate CHANGELOGs, publish CLIs & deploy Workers
+  #================================================================
+  # JOB 2: Publish to NPM and create GitHub Release from a tag
+  #================================================================
   publish:
-    if: ${{ github.event_name == 'push' }}
+    # Runs on a v* tag push OR a manual 'publish' dispatch
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.job_to_run == 'publish')
     runs-on: ubuntu-latest
     steps:
-      - name: 🛎️ Checkout full & tags
+      - name: 🛎️ Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-          persist-credentials: true
-
-      - name: 🤐 Disable Husky
-        run: echo "HUSKY=0" >> $GITHUB_ENV
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref }}
 
       - name: 📦 Setup pnpm
         uses: pnpm/action-setup@v2
@@ -64,12 +87,7 @@ jobs:
           version: 8
 
       - name: 🔧 Install dependencies
-        run: pnpm install
-
-      - name: 🔧 Install jq
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
+        run: pnpm install --frozen-lockfile
 
       - name: 📄 Copy README to child CLIs
         run: |
@@ -79,29 +97,6 @@ jobs:
             fi
           done
 
-      - name: 📑 Aggregate changelogs
-        id: aggregate
-        run: |
-          NEW_VERSION=$(jq -r '.version' create-db/package.json)
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-          echo "# Release v$NEW_VERSION" > AGGREGATED_CHANGELOG.md
-          for pkg in $WORKSPACES; do
-            echo "## $pkg" >> AGGREGATED_CHANGELOG.md
-            sed -n "/^## $NEW_VERSION/,/^## /p" $pkg/CHANGELOG.md \
-              | sed '1d;$d' \
-              >> AGGREGATED_CHANGELOG.md
-            echo "" >> AGGREGATED_CHANGELOG.md
-          done
-
-      - name: 🚩 Create GitHub Release
-        uses: actions/create-release@v1
-        with:
-          tag_name: v${{ env.NEW_VERSION }}
-          release_name: Release v${{ env.NEW_VERSION }}
-          body_path: AGGREGATED_CHANGELOG.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
@@ -109,14 +104,26 @@ jobs:
         run: |
           for pkg in $WORKSPACES; do
             echo "Publishing $pkg…"
-            pnpm --filter "$pkg" publish --access public
+            pnpm --filter "$pkg" publish --access public --no-git-checks
           done
 
-      # examples for CF Worker deploys, if/when you uncomment:
-      # - name: ☁️ Deploy create-db-worker (production)
-      #   uses: cloudflare/wrangler-action@v3
-      #   with: …
+      - name: 🚩 Create GitHub Release
+        if: github.event_name == 'push' # Only create a release on a real tag push
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          # This automatically generates release notes from PRs since the last tag.
+          # This is cleaner than your manual aggregation script.
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🧹 Cleanup npm auth
         if: ${{ always() }}
         run: rm -f ~/.npmrc
+
+      # Add your Cloudflare Worker deploy steps here
+      # - name: ☁️ Deploy create-db-worker (production)
+      #   uses: cloudflare/wrangler-action@v3
+      #   with: …
