@@ -1,4 +1,3 @@
-# .github/workflows/release.yml
 name: Release all CLIs & Deploy CF Workers
 
 on:
@@ -49,7 +48,6 @@ jobs:
   publish:
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
-    needs: version
     steps:
       - name: 🛎️ Checkout full & tags
         uses: actions/checkout@v3
@@ -110,25 +108,14 @@ jobs:
       - name: 🚀 Publish each CLI individually
         run: |
           for pkg in $WORKSPACES; do
-            echo "Publishing $pkg..."
+            echo "Publishing $pkg…"
             pnpm --filter "$pkg" publish --access public
           done
 
+      # examples for CF Worker deploys, if/when you uncomment:
       # - name: ☁️ Deploy create-db-worker (production)
       #   uses: cloudflare/wrangler-action@v3
-      #   with:
-      #     apiToken: ${{ secrets.CF_API_TOKEN }}
-      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
-      #     environment: production
-      #     workingDirectory: create-db-worker
-
-      # - name: ☁️ Deploy claim-db-worker (production)
-      #   uses: cloudflare/wrangler-action@v3
-      #   with:
-      #     apiToken: ${{ secrets.CF_API_TOKEN }}
-      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
-      #     environment: production
-      #     workingDirectory: claim-db-worker
+      #   with: …
 
       - name: 🧹 Cleanup npm auth
         if: ${{ always() }}
