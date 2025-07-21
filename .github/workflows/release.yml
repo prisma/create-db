@@ -2,18 +2,18 @@ name: Release all CLIs & Deploy CF Workers
 
 on:
   pull_request:
-    branches: [ main ]
-    types: [ opened, synchronize ]
+    branches: [main]
+    types: [opened, synchronize]
   push:
-    branches: [ main ]
+    branches: [main]
 
 env:
   WORKSPACES: create-db create-pg create-postgres
 
 jobs:
-  # This job runs only on pull_request → bumps versions & changelogs via Changesets
+  # 💾 On PRs: bump package.json versions & CHANGELOGs via Changesets
   version:
-    if: github.event_name == 'pull_request'
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
       - name: 🛎️ Checkout full & tags
@@ -36,15 +36,19 @@ jobs:
       - name: 🔄 Version & changelogs via Changesets
         uses: changesets/action@v1
         with:
-          version: pnpm changeset version --yes
-          commitMessage: chore(release): bump [skip ci]
-          commitMode: git-cli
+          # run the version script
+          version: "pnpm changeset version --yes"
+          # commit and push back into the PR branch
+          commit: "chore(release): bump [skip ci]"
+          commitMode: "git-cli"
+          # don’t create a GitHub release on a PR run
+          createGithubReleases: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # This job runs only on push → aggregates logs, creates a release & publishes
+  # 🚀 On merges to main: aggregate CHANGELOGs, tag & publish
   publish:
-    if: github.event_name == 'push'
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - name: 🛎️ Checkout full & tags
@@ -65,7 +69,9 @@ jobs:
         run: pnpm install
 
       - name: 🔧 Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
 
       - name: 📄 Copy README to child CLIs
         run: |
@@ -76,16 +82,17 @@ jobs:
       - name: 📑 Aggregate changelogs
         id: aggregate
         run: |
-          # grab the new version from one of your packages
+          # pull the new version out of package.json
           NEW_VERSION=$(jq -r '.version' create-db/package.json)
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-          # build the aggregated changelog
+          # header for the release
           echo "# Release v$NEW_VERSION" > AGGREGATED_CHANGELOG.md
+
           for pkg in $WORKSPACES; do
             echo "## $pkg" >> AGGREGATED_CHANGELOG.md
-            # extract the section for this version
-            sed -n "/^## v$NEW_VERSION/,/^## /p" $pkg/CHANGELOG.md \
+            # grab only the lines under ## $NEW_VERSION in each CHANGELOG.md
+            sed -n "/^## $NEW_VERSION/,/^## /p" $pkg/CHANGELOG.md \
               | sed '1d;$d' \
               >> AGGREGATED_CHANGELOG.md
             echo "" >> AGGREGATED_CHANGELOG.md
@@ -106,10 +113,11 @@ jobs:
       - name: 🚀 Publish CLIs
         run: pnpm -r --filter "{create-db,create-pg,create-postgres}" publish --access public
 
-      # — CF production deploys commented out
+      # — CF production deploys commented out —
       # - name: ☁️ Deploy create-db-worker (production)
       #   uses: cloudflare/wrangler-action@v3
       #   ...
 
       - name: 🧹 Cleanup npm auth
+        if: ${{ always() }}
         run: rm -f ~/.npmrc
