@@ -6,9 +6,19 @@ on:
     branches: [main]
     types: [opened, synchronize]
   push:
-    tags:
-      - "v*.*.*"
+    # only run the real publish & GitHub Release on semver tags
+    tags: ["v*.*.*"]
   workflow_dispatch:
+    # allow manual kick-off of versioning or release
+    inputs:
+      job:
+        description: "Which job to run"
+        required: true
+        type: choice
+        options:
+          - version
+          - release
+        default: version
 
 env:
   WORKSPACES: create-db create-pg create-postgres
@@ -16,16 +26,19 @@ env:
 
 jobs:
   #========================================================================
-  # 1️⃣ Dry-run each CLI on PRs
+  # 1️⃣ Version Packages (open a PR to bump versions & changelogs)
   #========================================================================
-  dry-run:
-    if: github.event_name == 'pull_request'
+  version:
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'version')
     runs-on: ubuntu-latest
     steps:
-      - name: 🛎️ Checkout code
+      - name: 🛎️ Checkout full history
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          persist-credentials: true
 
       - name: 📦 Setup pnpm v8
         uses: pnpm/action-setup@v2
@@ -35,67 +48,90 @@ jobs:
       - name: 🔧 Install dependencies
         run: pnpm install --workspace-root
 
-      - name: 📄 Copy root README into each CLI
+      - name: ⚠️ Ensure there's at least one changeset
         run: |
-          for pkg in $WORKSPACES; do
-            cp README.md "$pkg/README.md"
-          done
+          pnpm changeset status --output status.json
+          if [ "$(jq '.changesets | length' status.json)" -eq 0 ]; then
+            echo "❌ No changesets found. Please run 'pnpm changeset add' and describe your changes." >&2
+            exit 1
+          fi
 
-      - name: 🚨 Dry-run publish each CLI
+      - name: ⚙️ Bump versions & CHANGELOGs (dry-run)
+        run: |
+          # we use --snapshot here so we don't actually write to disk,
+          # but it fails if something is wrong
+          pnpm changeset version --snapshot
+
+      - name: 🔄 Create Version PR via Changesets
+        uses: changesets/action@v1
+        with:
+          # actually run the version command
+          version: pnpm changeset version --yes
+          # commit defaults
+          commit: "chore(release): version packages [skip ci]"
+          title: "chore(release): Version Packages & Changelogs"
+          create-github-releases: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 Dry-pack each CLI to verify
         run: |
           set -e
           for pkg in $WORKSPACES; do
-            echo "⏳ Dry-running $pkg..."
-            cd "$pkg"
-            npm publish --dry-run
+            echo "⏳ Dry-packing $pkg..."
+            cd $pkg
+            npm pack --dry-run
             cd -
           done
 
   #========================================================================
-  # 2️⃣ Real publish on tag pushes
+  # 2️⃣ Real publish on semver tag pushes (and manual dispatch)
   #========================================================================
   release:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'release')
     runs-on: ubuntu-latest
-    needs: dry-run
+    needs: version
     steps:
-      - name: 🛎️ Checkout code
+      - name: 🛎️ Checkout full history
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          persist-credentials: true
 
       - name: 📦 Setup pnpm v8
         uses: pnpm/action-setup@v2
         with:
           version: 8
 
-      - name: 🔧 Install dependencies (strict lockfile)
+      - name: 🔧 Install dependencies (strict)
         run: pnpm install --workspace-root --frozen-lockfile
 
-      - name: 🔧 Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: 📄 Copy root README into each CLI
+      - name: 📄 Copy root README to each CLI
         run: |
           for pkg in $WORKSPACES; do
             cp README.md "$pkg/README.md"
           done
 
       - name: 🔑 Configure npm auth
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" \
+            > ~/.npmrc
 
       - name: 🚀 Publish each CLI sequentially
         run: |
           set -e
-          TAG="${GITHUB_REF#refs/tags/}"
+          TAG=${GITHUB_REF#refs/tags/}
           for pkg in $WORKSPACES; do
-            echo "⏳ Publishing $pkg@$TAG…"
-            cd "$pkg"
+            echo "Publishing $pkg@$TAG..."
+            cd $pkg
             npm publish --access public
             cd -
           done
 
       - name: 🚩 Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/create-release@v1
         with:
           tag_name: ${{ github.ref_name }}
