@@ -9,5 +9,5 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": ["create-db-worker", "claim-db-worker"],
-  "linked": [["create-db", "create-db-worker", "claim-db-worker"]]
+  "linked": [["create-db", "create-pg", "create-postgres"]]
 }

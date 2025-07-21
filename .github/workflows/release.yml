@@ -32,6 +32,11 @@ jobs:
       - name: 🔧 Install dependencies
         run: pnpm install
 
+      - name: 🔧 Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
       - name: ✔️ Check for pending changesets
         run: |
           pnpm changeset status --output status.json
@@ -39,9 +44,6 @@ jobs:
             echo "❌ No changesets found. Please run 'pnpm changeset' and add a summary." >&2
             exit 1
           fi
-        # install jq if missing
-      - name: 🔧 Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: 🔄 Bump versions & generate changelogs
         id: bump
@@ -54,15 +56,12 @@ jobs:
           done
 
       - name: 💾 Commit & push version bump
-        id: commit
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # collect all bumped package@version
-          VERSIONS=$(jq -r '.packages | to_entries[]
-            | select(.value.changes != null)
-            | .value.name + "@" + .value.packageJSON.version'
-            status.json | paste -sd ', ' -)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          VERSIONS=$(jq -r '.releases[] | .name + "@" + .newVersion' status.json | paste -sd ", " -)
           git commit -am "chore(release): bump $VERSIONS [skip ci]" || echo "no version changes"
           git push origin main --follow-tags
 
@@ -71,7 +70,6 @@ jobs:
           echo "# Release ${{ steps.bump.outputs.newVersion }}" > AGGREGATED_CHANGELOG.md
           for pkg in $WORKSPACES; do
             echo "## $pkg" >> AGGREGATED_CHANGELOG.md
-            # pull just the section for the new version from each CHANGELOG
             sed -n "/^## ${{ steps.bump.outputs.newVersion }}/,/^## /p" $pkg/CHANGELOG.md \
               | sed '1d;$d' \
               >> AGGREGATED_CHANGELOG.md
@@ -90,13 +88,9 @@ jobs:
       - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
-      - name: 🚀 Publish all real releases
+      - name: 🚀 Publish CLIs
         run: |
-          for pkg in $WORKSPACES; do
-            cd "$pkg"
-            pnpm publish --access public
-            cd - >/dev/null
-          done
+          pnpm -r --filter "{create-db,create-pg,create-postgres}" publish --access public
 
       # — CF production deploys commented out; we rely on existing worker URLs
       # - name: ☁️ Deploy create-db-worker (production)
