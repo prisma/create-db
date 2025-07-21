@@ -11,10 +11,8 @@ on:
       - synchronize
 
 env:
+  # each folder under the repo root that contains one of your CLIs
   WORKSPACES: create-db create-pg create-postgres
-  # these must be defined in your GitHub “Environments” for this workflow
-  CREATE_DB_WORKER_URL: ${{ env.CREATE_DB_WORKER_URL }}
-  CLAIM_DB_WORKER_URL: ${{ env.CLAIM_DB_WORKER_URL }}
 
 jobs:
   preview:
@@ -52,21 +50,30 @@ jobs:
         run: |
           echo "PRE_TAG=pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}" >> $GITHUB_ENV
 
-      # -- CF preview deploy is disabled; we’ll use env.CREATE_DB_WORKER_URL / CLAIM_DB_WORKER_URL instead
+      # — CF Worker preview deploys commented out; we will use pre-built URLs
       # - name: ☁️ Deploy create-db-worker (preview)
       #   uses: cloudflare/wrangler-action@v3
-      #   with: ...
+      #   with:
+      #     apiToken: ${{ secrets.CF_API_TOKEN }}
+      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
+      #     environment: ${{ env.PRE_TAG }}
+      #     workingDirectory: create-db-worker
+      #
       # - name: ☁️ Deploy claim-db-worker (preview)
       #   uses: cloudflare/wrangler-action@v3
-      #   with: ...
+      #   with:
+      #     apiToken: ${{ secrets.CF_API_TOKEN }}
+      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
+      #     environment: ${{ env.PRE_TAG }}
+      #     workingDirectory: claim-db-worker
 
       - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Bump & publish CLI previews
         env:
-          CREATE_DB_WORKER_URL: ${{ env.CREATE_DB_WORKER_URL }}
-          CLAIM_DB_WORKER_URL: ${{ env.CLAIM_DB_WORKER_URL }}
+          CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+          CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
         run: |
           for pkg in $WORKSPACES; do
             cd "$pkg"
@@ -102,8 +109,10 @@ jobs:
 
             **Worker URLs**  
             • Create-DB: ${dbUrl}  
-            • Claim-DB:  ${clUrl}`
-                        });
+            • Claim-DB:  ${clUrl}
+
+            > These will live as long as this PR exists, under tag \`${tag}\`.`
+            });
 
       - name: 🧹 Cleanup npm auth
         run: rm -f ~/.npmrc

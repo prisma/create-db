@@ -7,10 +7,8 @@ on:
       - main
 
 env:
+  # each folder under the repo root that contains one of your CLIs
   WORKSPACES: create-db create-pg create-postgres
-  # provide these via your GitHub Secrets or Environment
-  CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
-  CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
 
 jobs:
   release:
@@ -56,8 +54,8 @@ jobs:
 
       - name: 🚀 Publish all real releases
         env:
-          CREATE_DB_WORKER_URL: ${{ env.CREATE_DB_WORKER_URL }}
-          CLAIM_DB_WORKER_URL: ${{ env.CLAIM_DB_WORKER_URL }}
+          CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+          CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
         run: |
           for pkg in $WORKSPACES; do
             cd "$pkg"
@@ -65,10 +63,11 @@ jobs:
             cd - >/dev/null
           done
 
-      # -- CF production deploy is disabled; URLs come from secrets instead
+      # — CF production deploys commented out; we rely on existing worker URLs
       # - name: ☁️ Deploy create-db-worker (production)
       #   uses: cloudflare/wrangler-action@v3
       #   with: ...
+      #
       # - name: ☁️ Deploy claim-db-worker (production)
       #   uses: cloudflare/wrangler-action@v3
       #   with: ...
