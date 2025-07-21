@@ -1,0 +1,121 @@
+name: Preview deploy all Workers and CLIs
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+env:
+  WORKSPACES: create-db create-pg create-postgres
+  CF_WORKERS: create-db-worker claim-db-worker
+
+jobs:
+  preview:
+    name: 🚧 Preview release (PR #${{ github.event.number }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎️ Checkout full history
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: 🤐 Disable Husky
+        run: echo "HUSKY=0" >> $GITHUB_ENV
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: 🔧 Install dependencies
+        run: pnpm install
+
+      - name: 🔧 Disable pnpm git‐checks
+        run: pnpm config set git-checks false
+
+      - name: 📄 Copy README to child CLIs
+        run: |
+          for pkg in create-pg create-postgres; do
+            cp create-db/README.md "$pkg/README.md"
+          done
+
+      - name: ☁️ Deploy CF Workers (preview)
+        id: deploy-workers-preview
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          PRE_TAG="pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}"
+          echo "PRE_TAG=$PRE_TAG" >> $GITHUB_ENV
+
+          for worker in $CF_WORKERS; do
+            resp=$(wrangler publish \
+              --env "$PRE_TAG" \
+              --account-id "$CF_ACCOUNT_ID" \
+              --api-token "$CF_API_TOKEN" \
+              --json)
+            url=$(echo "$resp" | grep -Po '"url":"\K[^"]+')
+            if [ "$worker" = "create-db-worker" ]; then
+              echo "create_db_worker_url=$url" >> $GITHUB_OUTPUT
+            else
+              echo "claim_db_worker_url=$url" >> $GITHUB_OUTPUT
+            fi
+          done
+
+      - name: 🔑 Configure npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+
+      - name: 🚀 Bump & publish CLI previews
+        env:
+          CREATE_DB_WORKER_URL: ${{ steps.deploy-workers-preview.outputs.create_db_worker_url }}
+          CLAIM_DB_WORKER_URL: ${{ steps.deploy-workers-preview.outputs.claim_db_worker_url }}
+        run: |
+          for pkg in $WORKSPACES; do
+            cd "$pkg"
+            npm version prerelease \
+              --preid "$PRE_TAG" \
+              --no-git-tag-version
+            pnpm publish --access public --tag pr${{ github.event.number }}
+            cd - >/dev/null
+          done
+
+      - name: 💬 Post preview-testing instructions
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag    = process.env.PRE_TAG;
+            const dbUrl  = '${{ steps.deploy-workers-preview.outputs.create_db_worker_url }}';
+            const clUrl  = '${{ steps.deploy-workers-preview.outputs.claim_db_worker_url }}';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `
+            ✅ **Preview CLIs & Workers are live!**
+
+            Test the CLIs locally:
+
+            \`\`\`bash
+            npx create-db@${tag}
+            npx create-pg@${tag}
+            npx create-postgres@${tag}
+            \`\`\`
+
+            **Preview Worker URLs**  
+            • Create-DB Worker: ${dbUrl}  
+            • Claim-DB Worker:  ${clUrl}  
+
+            > These will live as long as this PR branch exists, under tag \`${tag}\`.
+                          `
+            });
+
+      - name: 🧹 Cleanup npm auth
+        run: rm -f ~/.npmrc

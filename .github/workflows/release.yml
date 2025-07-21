@@ -1,0 +1,79 @@
+name: Release all CLIs & Deploy CF Workers
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  WORKSPACES: create-db create-pg create-postgres
+  CF_WORKERS: create-db-worker claim-db-worker
+
+jobs:
+  release:
+    name: 🚀 Release all CLIs & workers
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout full & tags
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: 🤐 Disable Husky
+        run: echo "HUSKY=0" >> $GITHUB_ENV
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: 🔧 Install dependencies
+        run: pnpm install
+
+      - name: 🔄 Bump versions & generate changelogs
+        run: pnpm changeset version
+
+      - name: 📄 Copy README to child CLIs
+        run: |
+          for pkg in create-pg create-postgres; do
+            cp create-db/README.md "$pkg/README.md"
+          done
+
+      - name: 💾 Commit & push version bump
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git commit -am "chore: version packages [skip ci]" || echo "no version changes"
+          git push origin main --follow-tags
+
+      - name: 🔑 Configure npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+
+      - name: 🚀 Publish all real releases
+        env:
+          CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+          CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
+        run: |
+          for pkg in $WORKSPACES; do
+            echo "› publishing $pkg"
+            cd "$pkg"
+            pnpm publish --access public
+            cd - >/dev/null
+          done
+
+      - name: ☁️ Deploy CF Workers (production)
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          for worker in $CF_WORKERS; do
+            cd "$worker"
+            wrangler publish \
+              --account-id "$CF_ACCOUNT_ID" \
+              --api-token "$CF_API_TOKEN"
+            cd - >/dev/null
+          done
+
+      - name: 🧹 Cleanup npm auth
+        run: rm -f ~/.npmrc
