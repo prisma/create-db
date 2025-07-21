@@ -1,111 +1,101 @@
 # .github/workflows/release.yml
-name: Release and deploy
+name: Release CLIs & Deploy CF Workers
 
 on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
   push:
-    branches:
-      - main
     tags:
       - "v*.*.*"
-
   workflow_dispatch:
-    inputs:
-      job_to_run:
-        description: "Job to run manually"
-        required: true
-        type: choice
-        options:
-          - version
-          - publish
-        default: "publish"
-      branch:
-        description: "Branch to run on (defaults to main)"
-        required: true
-        default: "main"
 
 env:
   WORKSPACES: create-db create-pg create-postgres
   HUSKY: 0
 
 jobs:
-  #==============================================================
-  # 1. Create a "Version Packages" PR (runs after main merge)
-  #==============================================================
-  version:
-    if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.job_to_run == 'version')
+  #========================================================================
+  # 1️⃣ Dry-run each CLI on PRs
+  #========================================================================
+  dry-run:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 🛎️ Checkout code
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.inputs.branch || github.ref }}
           fetch-depth: 0
-          persist-credentials: true
 
-      - name: Setup pnpm
+      - name: 📦 Setup pnpm v8
         uses: pnpm/action-setup@v2
         with:
           version: 8
 
-      - name: Install dependencies
-        run: pnpm install
+      - name: 🔧 Install dependencies
+        run: pnpm install --workspace-root
 
-      - name: Create Version PR
-        uses: changesets/action@v1
-        with:
-          version: pnpm changeset version
-          commit: "chore(release): version packages for release"
-          title: "chore(release): Version Packages"
-          create-github-releases: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  #==============================================================
-  # 2. Publish Packages to NPM
-  #==============================================================
-  publish:
-    if: |
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.job_to_run == 'publish')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.inputs.branch || github.ref }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Copy README to child CLIs
+      - name: 📄 Copy root README into each CLI
         run: |
           for pkg in $WORKSPACES; do
-            if [ "$pkg" != "create-db" ]; then
-              cp create-db/README.md "$pkg/README.md"
-            fi
+            cp README.md "$pkg/README.md"
           done
 
-      - name: Configure npm auth
+      - name: 🚨 Dry-run publish each CLI
+        run: |
+          set -e
+          for pkg in $WORKSPACES; do
+            echo "⏳ Dry-running $pkg..."
+            cd "$pkg"
+            npm publish --dry-run
+            cd -
+          done
+
+  #========================================================================
+  # 2️⃣ Real publish on tag pushes
+  #========================================================================
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    needs: dry-run
+    steps:
+      - name: 🛎️ Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 📦 Setup pnpm v8
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: 🔧 Install dependencies (strict lockfile)
+        run: pnpm install --workspace-root --frozen-lockfile
+
+      - name: 🔧 Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: 📄 Copy root README into each CLI
+        run: |
+          for pkg in $WORKSPACES; do
+            cp README.md "$pkg/README.md"
+          done
+
+      - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
-      - name: Publish each CLI (sequential)
+      - name: 🚀 Publish each CLI sequentially
         run: |
+          set -e
+          TAG="${GITHUB_REF#refs/tags/}"
           for pkg in $WORKSPACES; do
-            echo "🚀 Publishing $pkg..."
+            echo "⏳ Publishing $pkg@$TAG…"
             cd "$pkg"
-            npm publish --access public --no-git-checks || exit 1
-            cd - >/dev/null
+            npm publish --access public
+            cd -
           done
 
-      - name: Create GitHub Release
-        if: github.event_name == 'push'
+      - name: 🚩 Create GitHub Release
         uses: actions/create-release@v1
         with:
           tag_name: ${{ github.ref_name }}
@@ -114,14 +104,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cleanup npm auth
+      - name: 🧹 Cleanup npm auth
         if: ${{ always() }}
         run: rm -f ~/.npmrc
-
-      # Optional Cloudflare Worker Deploys
-      # - name: Deploy create-db-worker
-      #   uses: cloudflare/wrangler-action@v3
-      #   with:
-      #     apiToken: ${{ secrets.CF_API_TOKEN }}
-      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
-      #     workingDirectory: create-db-worker
