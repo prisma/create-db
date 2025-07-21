@@ -1,3 +1,4 @@
+# .github/workflows/release.yml
 name: Release all CLIs & Deploy CF Workers
 
 on:
@@ -36,20 +37,18 @@ jobs:
       - name: 🔄 Version & changelogs via Changesets
         uses: changesets/action@v1
         with:
-          # run the version script
           version: "pnpm changeset version --yes"
-          # commit and push back into the PR branch
           commit: "chore(release): bump [skip ci]"
           commitMode: "git-cli"
-          # don’t create a GitHub release on a PR run
           createGithubReleases: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # 🚀 On merges to main: aggregate CHANGELOGs, tag & publish
+  # 🚀 On merges to main: aggregate CHANGELOGs, publish CLIs & deploy Workers
   publish:
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
+    needs: version
     steps:
       - name: 🛎️ Checkout full & tags
         uses: actions/checkout@v3
@@ -76,7 +75,6 @@ jobs:
       - name: 📄 Copy README to child CLIs
         run: |
           for pkg in $WORKSPACES; do
-            # skip create-db itself so cp never errors on same-file
             if [ "$pkg" != "create-db" ]; then
               cp create-db/README.md "$pkg/README.md"
             fi
@@ -85,16 +83,11 @@ jobs:
       - name: 📑 Aggregate changelogs
         id: aggregate
         run: |
-          # pull the new version out of package.json
           NEW_VERSION=$(jq -r '.version' create-db/package.json)
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-
-          # header for the release
           echo "# Release v$NEW_VERSION" > AGGREGATED_CHANGELOG.md
-
           for pkg in $WORKSPACES; do
             echo "## $pkg" >> AGGREGATED_CHANGELOG.md
-            # grab only the lines under ## <version> in each CHANGELOG.md
             sed -n "/^## $NEW_VERSION/,/^## /p" $pkg/CHANGELOG.md \
               | sed '1d;$d' \
               >> AGGREGATED_CHANGELOG.md
@@ -113,13 +106,28 @@ jobs:
       - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
-      - name: 🚀 Publish CLIs
-        run: pnpm -r --filter "{create-db,create-pg,create-postgres}" publish --access public
+      - name: 🚀 Publish each CLI individually
+        run: |
+          for pkg in $WORKSPACES; do
+            echo "Publishing $pkg..."
+            pnpm --filter "$pkg" publish --access public
+          done
 
-      # — CF production deploys commented out —
       # - name: ☁️ Deploy create-db-worker (production)
       #   uses: cloudflare/wrangler-action@v3
-      #   ...
+      #   with:
+      #     apiToken: ${{ secrets.CF_API_TOKEN }}
+      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
+      #     environment: production
+      #     workingDirectory: create-db-worker
+
+      # - name: ☁️ Deploy claim-db-worker (production)
+      #   uses: cloudflare/wrangler-action@v3
+      #   with:
+      #     apiToken: ${{ secrets.CF_API_TOKEN }}
+      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
+      #     environment: production
+      #     workingDirectory: claim-db-worker
 
       - name: 🧹 Cleanup npm auth
         if: ${{ always() }}
