@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@2.3.0/schema.json",
+  "changelog": [
+    "@changesets/cli/changelog",
+    { "repo": "https://github.com/prisma/create-db" }
+  ],
+  "commit": false,
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["create-db-worker", "claim-db-worker"],
+  "linked": [["create-db", "create-db-worker", "claim-db-worker"]]
+}

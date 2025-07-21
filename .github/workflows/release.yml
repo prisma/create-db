@@ -1,0 +1,117 @@
+name: Release all CLIs & Deploy CF Workers
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  # each folder under the repo root that contains one of your CLIs
+  WORKSPACES: create-db create-pg create-postgres
+
+jobs:
+  release:
+    name: 🚀 Release all CLIs & workers
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎️ Checkout full & tags
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: 🤐 Disable Husky
+        run: echo "HUSKY=0" >> $GITHUB_ENV
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: 🔧 Install dependencies
+        run: pnpm install
+
+      - name: ✔️ Check for pending changesets
+        run: |
+          pnpm changeset status --output status.json
+          if [ "$(jq '.changesets | length' status.json)" -eq 0 ]; then
+            echo "❌ No changesets found. Please run 'pnpm changeset' and add a summary." >&2
+            exit 1
+          fi
+        # install jq if missing
+      - name: 🔧 Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: 🔄 Bump versions & generate changelogs
+        id: bump
+        run: pnpm changeset version
+
+      - name: 📄 Copy README to child CLIs
+        run: |
+          for pkg in create-pg create-postgres; do
+            cp create-db/README.md "$pkg/README.md"
+          done
+
+      - name: 💾 Commit & push version bump
+        id: commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # collect all bumped package@version
+          VERSIONS=$(jq -r '.packages | to_entries[]
+            | select(.value.changes != null)
+            | .value.name + "@" + .value.packageJSON.version'
+            status.json | paste -sd ', ' -)
+          git commit -am "chore(release): bump $VERSIONS [skip ci]" || echo "no version changes"
+          git push origin main --follow-tags
+
+      - name: 📑 Aggregate changelogs
+        run: |
+          echo "# Release ${{ steps.bump.outputs.newVersion }}" > AGGREGATED_CHANGELOG.md
+          for pkg in $WORKSPACES; do
+            echo "## $pkg" >> AGGREGATED_CHANGELOG.md
+            # pull just the section for the new version from each CHANGELOG
+            sed -n "/^## ${{ steps.bump.outputs.newVersion }}/,/^## /p" $pkg/CHANGELOG.md \
+              | sed '1d;$d' \
+              >> AGGREGATED_CHANGELOG.md
+            echo "" >> AGGREGATED_CHANGELOG.md
+          done
+
+      - name: 🚩 Create GitHub Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ steps.bump.outputs.newVersion }}
+          release_name: Release ${{ steps.bump.outputs.newVersion }}
+          body_path: AGGREGATED_CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔑 Configure npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+
+      - name: 🚀 Publish all real releases
+        run: |
+          for pkg in $WORKSPACES; do
+            cd "$pkg"
+            pnpm publish --access public
+            cd - >/dev/null
+          done
+
+      # — CF production deploys commented out; we rely on existing worker URLs
+      # - name: ☁️ Deploy create-db-worker (production)
+      #   uses: cloudflare/wrangler-action@v3
+      #   with:
+      #     apiToken: ${{ secrets.CF_API_TOKEN }}
+      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
+      #     workingDirectory: create-db-worker
+      #
+      # - name: ☁️ Deploy claim-db-worker (production)
+      #   uses: cloudflare/wrangler-action@v3
+      #   with:
+      #     apiToken: ${{ secrets.CF_API_TOKEN }}
+      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
+      #     workingDirectory: claim-db-worker
+
+      - name: 🧹 Cleanup npm auth
+        run: rm -f ~/.npmrc
