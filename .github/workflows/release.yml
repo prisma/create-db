@@ -4,16 +4,16 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 env:
-  # each folder under the repo root that contains one of your CLIs
   WORKSPACES: create-db create-pg create-postgres
 
 jobs:
   release:
-    name: 🚀 Release all CLIs & workers
     runs-on: ubuntu-latest
-
     steps:
       - name: 🛎️ Checkout full & tags
         uses: actions/checkout@v3
@@ -33,11 +33,10 @@ jobs:
         run: pnpm install
 
       - name: 🔧 Install jq
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: ✔️ Check for pending changesets
+        if: github.event_name == 'pull_request'
         run: |
           pnpm changeset status --output status.json
           if [ "$(jq '.changesets | length' status.json)" -eq 0 ]; then
@@ -46,16 +45,19 @@ jobs:
           fi
 
       - name: 🔄 Bump versions & generate changelogs
+        if: github.event_name == 'push'
         id: bump
         run: pnpm changeset version
 
       - name: 📄 Copy README to child CLIs
+        if: github.event_name == 'push'
         run: |
           for pkg in create-pg create-postgres; do
             cp create-db/README.md "$pkg/README.md"
           done
 
       - name: 💾 Commit & push version bump
+        if: github.event_name == 'push'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -66,6 +68,7 @@ jobs:
           git push origin main --follow-tags
 
       - name: 📑 Aggregate changelogs
+        if: github.event_name == 'push'
         run: |
           echo "# Release ${{ steps.bump.outputs.newVersion }}" > AGGREGATED_CHANGELOG.md
           for pkg in $WORKSPACES; do
@@ -77,6 +80,7 @@ jobs:
           done
 
       - name: 🚩 Create GitHub Release
+        if: github.event_name == 'push'
         uses: actions/create-release@v1
         with:
           tag_name: v${{ steps.bump.outputs.newVersion }}
@@ -86,26 +90,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🔑 Configure npm auth
+        if: github.event_name == 'push'
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Publish CLIs
+        if: github.event_name == 'push'
         run: |
           pnpm -r --filter "{create-db,create-pg,create-postgres}" publish --access public
 
-      # — CF production deploys commented out; we rely on existing worker URLs
+      # — CF production deploys commented out
       # - name: ☁️ Deploy create-db-worker (production)
-      #   uses: cloudflare/wrangler-action@v3
-      #   with:
-      #     apiToken: ${{ secrets.CF_API_TOKEN }}
-      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
-      #     workingDirectory: create-db-worker
-      #
-      # - name: ☁️ Deploy claim-db-worker (production)
-      #   uses: cloudflare/wrangler-action@v3
-      #   with:
-      #     apiToken: ${{ secrets.CF_API_TOKEN }}
-      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
-      #     workingDirectory: claim-db-worker
+      #   ...
 
       - name: 🧹 Cleanup npm auth
+        if: github.event_name == 'push'
         run: rm -f ~/.npmrc
