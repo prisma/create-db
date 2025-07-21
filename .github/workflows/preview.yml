@@ -11,7 +11,6 @@ on:
 
 env:
   WORKSPACES: create-db create-pg create-postgres
-  CF_WORKERS: create-db-worker claim-db-worker
 
 jobs:
   preview:
@@ -36,7 +35,7 @@ jobs:
       - name: 🔧 Install dependencies
         run: pnpm install
 
-      - name: 🔧 Disable pnpm git‐checks
+      - name: ❌ Disable pnpm git-checks
         run: pnpm config set git-checks false
 
       - name: 📄 Copy README to child CLIs
@@ -45,39 +44,35 @@ jobs:
             cp create-db/README.md "$pkg/README.md"
           done
 
-      - name: 🛠️ Install Cloudflare Wrangler
-        run: npm install -g @cloudflare/wrangler
-
-      - name: ☁️ Deploy CF Workers (preview)
-        id: deploy-workers-preview
-        env:
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      - name: 🔖 Create unique preview tag
         run: |
-          PRE_TAG="pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}"
-          echo "PRE_TAG=$PRE_TAG" >> $GITHUB_ENV
+          echo "PRE_TAG=pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}" >> $GITHUB_ENV
 
-          for worker in $CF_WORKERS; do
-            resp=$(wrangler publish \
-              --env "$PRE_TAG" \
-              --account-id "$CF_ACCOUNT_ID" \
-              --api-token "$CF_API_TOKEN" \
-              --json)
-            url=$(echo "$resp" | grep -Po '"url":"\K[^"]+')
-            if [ "$worker" = "create-db-worker" ]; then
-              echo "create_db_worker_url=$url" >> $GITHUB_OUTPUT
-            else
-              echo "claim_db_worker_url=$url" >> $GITHUB_OUTPUT
-            fi
-          done
+      - name: ☁️ Deploy create-db-worker (preview)
+        id: deploy-db
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          environment: ${{ env.PRE_TAG }}
+          workingDirectory: create-db-worker
+
+      - name: ☁️ Deploy claim-db-worker (preview)
+        id: deploy-claim
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          environment: ${{ env.PRE_TAG }}
+          workingDirectory: claim-db-worker
 
       - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Bump & publish CLI previews
         env:
-          CREATE_DB_WORKER_URL: ${{ steps.deploy-workers-preview.outputs.create_db_worker_url }}
-          CLAIM_DB_WORKER_URL: ${{ steps.deploy-workers-preview.outputs.claim_db_worker_url }}
+          CREATE_DB_WORKER_URL: ${{ steps.deploy-db.outputs.deployment-url }}
+          CLAIM_DB_WORKER_URL: ${{ steps.deploy-claim.outputs.deployment-url }}
         run: |
           for pkg in $WORKSPACES; do
             cd "$pkg"
@@ -93,9 +88,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const tag    = process.env.PRE_TAG;
-            const dbUrl  = '${{ steps.deploy-workers-preview.outputs.create_db_worker_url }}';
-            const clUrl  = '${{ steps.deploy-workers-preview.outputs.claim_db_worker_url }}';
+            const tag = process.env.PRE_TAG;
+            const dbUrl = `${{ steps.deploy-db.outputs.deployment-url }}`;
+            const clUrl = `${{ steps.deploy-claim.outputs.deployment-url }}`;
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -117,8 +112,3 @@ jobs:
             • Claim-DB Worker:  ${clUrl}  
 
             > These will live as long as this PR branch exists, under tag \`${tag}\`.
-                          `
-            });
-
-      - name: 🧹 Cleanup npm auth
-        run: rm -f ~/.npmrc

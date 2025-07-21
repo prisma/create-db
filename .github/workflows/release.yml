@@ -13,6 +13,7 @@ jobs:
   release:
     name: 🚀 Release all CLIs & workers
     runs-on: ubuntu-latest
+
     steps:
       - name: 🛎️ Checkout full & tags
         uses: actions/checkout@v3
@@ -51,9 +52,6 @@ jobs:
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Publish all real releases
-        env:
-          CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
-          CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
         run: |
           for pkg in $WORKSPACES; do
             echo "› publishing $pkg"
@@ -62,21 +60,19 @@ jobs:
             cd - >/dev/null
           done
 
-      - name: 🛠️ Install Cloudflare Wrangler
-        run: npm install -g @cloudflare/wrangler
+      - name: ☁️ Deploy create-db-worker (production)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: create-db-worker
 
-      - name: ☁️ Deploy CF Workers (production)
-        env:
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        run: |
-          for worker in $CF_WORKERS; do
-            cd "$worker"
-            wrangler publish \
-              --account-id "$CF_ACCOUNT_ID" \
-              --api-token "$CF_API_TOKEN"
-            cd - >/dev/null
-          done
+      - name: ☁️ Deploy claim-db-worker (production)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: claim-db-worker
 
       - name: 🧹 Cleanup npm auth
         run: rm -f ~/.npmrc

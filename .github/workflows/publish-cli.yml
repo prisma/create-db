@@ -44,51 +44,45 @@ jobs:
       - name: ❌ Disable pnpm git-checks
         run: pnpm config set git-checks false
 
+      - name: 🏷️ Set PRE_TAG
+        run: echo "PRE_TAG=pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}" >> $GITHUB_ENV
+
       - name: 📄 Copy README to child CLIs
         run: |
           for pkg in create-pg create-postgres; do
-            cp create-db/README.md $pkg/README.md
+            cp create-db/README.md "$pkg/README.md"
           done
 
-      - name: 🛠️ Install Cloudflare Wrangler
-        run: npm install -g @cloudflare/wrangler
+      - name: ☁️ Deploy create-db-worker (preview)
+        id: deploy-create-db
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          environment: ${{ env.PRE_TAG }}
+          workingDirectory: create-db-worker
 
-      - name: ☁️ Deploy CF Workers (preview)
-        id: deploy-workers-preview
-        env:
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        run: |
-          PRE_TAG="pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}"
-          echo "PRE_TAG=$PRE_TAG" >> $GITHUB_ENV
-
-          for worker in $CF_WORKERS; do
-            echo "› deploying $worker → env $PRE_TAG"
-            resp=$(wrangler publish \
-              --env "$PRE_TAG" \
-              --account-id "$CF_ACCOUNT_ID" \
-              --api-token "$CF_API_TOKEN" \
-              --json)
-            url=$(echo "$resp" | grep -Po '"url":"\K[^"]+')
-            if [ "$worker" = "create-db-worker" ]; then
-              echo "create_db_worker_url=$url" >> $GITHUB_OUTPUT
-            else
-              echo "claim_db_worker_url=$url" >> $GITHUB_OUTPUT
-            fi
-          done
+      - name: ☁️ Deploy claim-db-worker (preview)
+        id: deploy-claim-db
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          environment: ${{ env.PRE_TAG }}
+          workingDirectory: claim-db-worker
 
       - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Bump & publish previews
         env:
-          NPM_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
-          CREATE_DB_WORKER_URL: ${{ steps.deploy-workers-preview.outputs.create_db_worker_url }}
-          CLAIM_DB_WORKER_URL: ${{ steps.deploy-workers-preview.outputs.claim_db_worker_url }}
+          PRE_TAG: ${{ env.PRE_TAG }}
+          CREATE_DB_WORKER_URL: ${{ steps.deploy-create-db.outputs.deployment-url }}
+          CLAIM_DB_WORKER_URL: ${{ steps.deploy-claim-db.outputs.deployment-url }}
         run: |
           for pkg in $WORKSPACES; do
             echo "› $pkg → bumping & publishing preview @$PRE_TAG"
-            cd $pkg
+            cd "$pkg"
             npm version prerelease \
               --preid "$PRE_TAG" \
               --no-git-tag-version
@@ -128,7 +122,7 @@ jobs:
       - name: 📄 Copy README to child CLIs
         run: |
           for pkg in create-pg create-postgres; do
-            cp create-db/README.md $pkg/README.md
+            cp create-db/README.md "$pkg/README.md"
           done
 
       - name: 💾 Commit & push version bump
@@ -149,24 +143,24 @@ jobs:
         run: |
           for pkg in $WORKSPACES; do
             echo "› publishing $pkg"
-            cd $pkg
+            cd "$pkg"
             pnpm publish --access public
             cd - >/dev/null
           done
 
-      - name: ☁️ Deploy CF Workers (production)
-        env:
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        run: |
-          for worker in $CF_WORKERS; do
-            echo "› deploying $worker to production"
-            cd $worker
-            wrangler publish \
-              --account-id $CF_ACCOUNT_ID \
-              --api-token $CF_API_TOKEN
-            cd - >/dev/null
-          done
+      - name: ☁️ Deploy create-db-worker (production)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: create-db-worker
+
+      - name: ☁️ Deploy claim-db-worker (production)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: claim-db-worker
 
       - name: 🧹 Cleanup npm auth
         run: rm -f ~/.npmrc
