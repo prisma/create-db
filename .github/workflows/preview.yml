@@ -107,9 +107,9 @@ jobs:
             Test the CLIs locally under tag \`${tag}\`:
 
             \`\`\`bash
-            npx create-db@${tag}
-            npx create-pg@${tag}
-            npx create-postgres@${tag}
+            npx create-db@pr${{ github.event.number }}
+            npx create-pg@pr${{ github.event.number }}
+            npx create-postgres@$pr${{ github.event.number }}
             \`\`\`
 
             **Worker URLs**  

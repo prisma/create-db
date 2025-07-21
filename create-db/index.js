@@ -213,7 +213,6 @@ async function promptForRegion(defaultRegion) {
 }
 
 // Create a database
-// Create a database
 async function createDatabase(
   name,
   region,
@@ -264,19 +263,9 @@ async function createDatabase(
   if (enableDirectConn && direct) {
     connectionString = `postgresql://${direct.user}:${direct.pass}@${direct.host}/postgres`;
     log.info(chalk.bold("Direct PostgreSQL connection string:"));
-    log.message(
-      chalk.gray(
-        "  (Use this if you're connecting with tools or ORMs other than Prisma ORM.)"
-      )
-    );
   } else {
     connectionString = defaultConn;
     log.info(chalk.bold("Prisma Postgres Database connection string:"));
-    log.message(
-      chalk.gray(
-        "  (This connection string is only for use with Prisma ORM. Use the --direct or -d flag if you need a standard PostgreSQL string.)"
-      )
-    );
 
     if (enableDirectConn && !direct) {
       log.warning(
@@ -287,18 +276,50 @@ async function createDatabase(
     }
   }
 
+  // Show the connection string
   log.message("  " + chalk.yellow(connectionString));
   log.message("");
-  log.success("Claim your database:");
+  log.success("Your database is ready! 🎉");
 
+  // Common guidance
+  log.message(chalk.bold("\nWhat’s next?\n"));
+
+  // If Direct Connection String
+  if (enableDirectConn && direct) {
+    log.info(chalk.cyan("👉 You're using a Direct PostgreSQL connection."));
+    log.message(`
+  ${chalk.gray("This is a standard PostgreSQL connection string, ideal for any tool or ORM.")}
+
+  ${chalk.cyan("To get started:")}
+    1. Copy the connection string (it's already in your clipboard if you used --copy).
+    2. Use it directly with tools like psql, pgAdmin, or external ORMs.
+    3. Check out this guide for details and tips:
+       ${chalk.blueBright("https://pris.ly/direct-connection")}
+  `);
+  } else {
+    // If Prisma ORM connection
+    log.info(
+      chalk.cyan("👉 You're using a Prisma Postgres connection string.")
+    );
+    log.message(`
+  ${chalk.gray("This connection string is optimized for Prisma ORM.")}
+
+  ${chalk.cyan("To get started:")}
+    1. Add it to your ${chalk.yellow(".env")} file:
+       ${chalk.green("DATABASE_URL=" + connectionString)}
+    2. Follow the Prisma Postgres quickstart guide:
+       ${chalk.blueBright("https://pris.ly/prisma-orm-connection")}
+  `);
+  }
+
+  // Claim Database
   const claimUrl = `${process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io"}?projectID=${result.id}`;
   const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false });
-  log.message("  " + chalk.green(clickableUrl));
-  log.message(
-    "  " +
-      chalk.red(`Expires: ${expiryFormatted}`) +
-      chalk.gray("  (Claim to make permanent on your Prisma account)")
-  );
+  log.message(`
+${chalk.cyan("Claim Your Database:")}
+  ${chalk.green(clickableUrl)}
+  ${chalk.gray(" (Claim it before " + expiryFormatted + " to make it permanent!)")}
+`);
 
   // Copy to clipboard if requested
   if (enableCopyPrompt) {
@@ -311,6 +332,12 @@ async function createDatabase(
       log.warning("Clipboard copy failed.");
     }
   }
+
+  log.message(
+    chalk.gray(
+      "\nTip: Run with --copy or -c to automatically copy the connection string to your clipboard.\n"
+    )
+  );
 }
 
 // Main function
@@ -329,12 +356,12 @@ async function main() {
     let region = "us-east-1";
     let usePrompts = false;
     let enableCopyPrompt = false;
+    let enableDirectConn = false;
 
     // Apply command line flags
     if (flags.region) {
       region = flags.region;
     }
-    let enableDirectConn = false;
     if (flags.direct) {
       enableDirectConn = true;
     }
@@ -345,10 +372,46 @@ async function main() {
       enableCopyPrompt = true;
     }
 
-    // Show intro and prompts if interactive mode is enabled
+    // Interactive mode prompts
     if (usePrompts) {
-      intro("Create Database");
+      intro(chalk.cyan.bold("🚀 Prisma Postgres Create DB"));
+
+      log.message(
+        chalk.gray(
+          `We'll create a temporary Prisma Postgres database (valid for 24 hours).\n` +
+            `You can claim it to make it permanent or use it for prototyping.`
+        )
+      );
+      log.message("");
+
+      // Prompt for region
       region = await promptForRegion(region);
+
+      // Ask if user wants Direct PostgreSQL connection string
+      const directChoice = await confirm({
+        message:
+          "Would you like a standard PostgreSQL (Direct) connection string?",
+        initialValue: false,
+      });
+
+      if (directChoice === null) {
+        cancel(chalk.red("Operation cancelled."));
+        process.exit(0);
+      }
+      enableDirectConn = directChoice;
+
+      // Ask if user wants to copy the connection string
+      const copyChoice = await confirm({
+        message:
+          "Would you like the connection string copied to your clipboard?",
+        initialValue: true,
+      });
+
+      if (copyChoice === null) {
+        cancel(chalk.red("Operation cancelled."));
+        process.exit(0);
+      }
+      enableCopyPrompt = copyChoice;
     } else {
       // Show minimal header for non-interactive mode
       log.info(chalk.cyan.bold("🚀 Prisma Postgres Create DB"));
