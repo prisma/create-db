@@ -92,14 +92,15 @@ jobs:
             const tag = process.env.PRE_TAG;
             const dbUrl = process.env.CREATE_DB_WORKER_URL;
             const clUrl = process.env.CLAIM_DB_WORKER_URL;
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo:  context.repo.repo,
               issue_number: context.payload.pull_request.number,
               body: `
-            ✅ **Preview CLIs are live!**
+            ✅ **Preview CLIs & Workers are live!**
 
-            Test locally under tag \`${tag}\`:
+            Test the CLIs locally under tag \`${tag}\`:
 
             \`\`\`bash
             npx create-db@${tag}
@@ -108,11 +109,11 @@ jobs:
             \`\`\`
 
             **Worker URLs**  
-            • Create-DB: ${dbUrl}  
-            • Claim-DB:  ${clUrl}
+            • Create-DB Worker: ${dbUrl}  
+            • Claim-DB Worker:  ${clUrl}
 
-            > These will live as long as this PR exists, under tag \`${tag}\`.`
-            });
+            > These will live as long as this PR exists under tag \`${tag}\`.`
+                        });
 
       - name: 🧹 Cleanup npm auth
         run: rm -f ~/.npmrc
