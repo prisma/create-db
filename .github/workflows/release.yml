@@ -76,7 +76,10 @@ jobs:
       - name: 📄 Copy README to child CLIs
         run: |
           for pkg in $WORKSPACES; do
-            cp create-db/README.md "$pkg/README.md"
+            # skip create-db itself so cp never errors on same-file
+            if [ "$pkg" != "create-db" ]; then
+              cp create-db/README.md "$pkg/README.md"
+            fi
           done
 
       - name: 📑 Aggregate changelogs
@@ -91,7 +94,7 @@ jobs:
 
           for pkg in $WORKSPACES; do
             echo "## $pkg" >> AGGREGATED_CHANGELOG.md
-            # grab only the lines under ## $NEW_VERSION in each CHANGELOG.md
+            # grab only the lines under ## <version> in each CHANGELOG.md
             sed -n "/^## $NEW_VERSION/,/^## /p" $pkg/CHANGELOG.md \
               | sed '1d;$d' \
               >> AGGREGATED_CHANGELOG.md
