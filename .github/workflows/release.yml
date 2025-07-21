@@ -1,3 +1,4 @@
+# .github/workflows/release.yml
 name: Release all CLIs & Deploy CF Workers
 
 on:
@@ -7,7 +8,9 @@ on:
 
 env:
   WORKSPACES: create-db create-pg create-postgres
-  CF_WORKERS: create-db-worker claim-db-worker
+  # provide these via your GitHub Secrets or Environment
+  CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+  CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
 
 jobs:
   release:
@@ -52,27 +55,23 @@ jobs:
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Publish all real releases
+        env:
+          CREATE_DB_WORKER_URL: ${{ env.CREATE_DB_WORKER_URL }}
+          CLAIM_DB_WORKER_URL: ${{ env.CLAIM_DB_WORKER_URL }}
         run: |
           for pkg in $WORKSPACES; do
-            echo "› publishing $pkg"
             cd "$pkg"
             pnpm publish --access public
             cd - >/dev/null
           done
 
-      - name: ☁️ Deploy create-db-worker (production)
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          workingDirectory: create-db-worker
-
-      - name: ☁️ Deploy claim-db-worker (production)
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          workingDirectory: claim-db-worker
+      # -- CF production deploy is disabled; URLs come from secrets instead
+      # - name: ☁️ Deploy create-db-worker (production)
+      #   uses: cloudflare/wrangler-action@v3
+      #   with: ...
+      # - name: ☁️ Deploy claim-db-worker (production)
+      #   uses: cloudflare/wrangler-action@v3
+      #   with: ...
 
       - name: 🧹 Cleanup npm auth
         run: rm -f ~/.npmrc

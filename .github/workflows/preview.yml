@@ -1,3 +1,4 @@
+# .github/workflows/preview.yml
 name: Preview deploy all Workers and CLIs
 
 on:
@@ -11,6 +12,9 @@ on:
 
 env:
   WORKSPACES: create-db create-pg create-postgres
+  # these must be defined in your GitHub “Environments” for this workflow
+  CREATE_DB_WORKER_URL: ${{ env.CREATE_DB_WORKER_URL }}
+  CLAIM_DB_WORKER_URL: ${{ env.CLAIM_DB_WORKER_URL }}
 
 jobs:
   preview:
@@ -48,31 +52,21 @@ jobs:
         run: |
           echo "PRE_TAG=pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}" >> $GITHUB_ENV
 
-      - name: ☁️ Deploy create-db-worker (preview)
-        id: deploy-db
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          environment: ${{ env.PRE_TAG }}
-          workingDirectory: create-db-worker
-
-      - name: ☁️ Deploy claim-db-worker (preview)
-        id: deploy-claim
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          environment: ${{ env.PRE_TAG }}
-          workingDirectory: claim-db-worker
+      # -- CF preview deploy is disabled; we’ll use env.CREATE_DB_WORKER_URL / CLAIM_DB_WORKER_URL instead
+      # - name: ☁️ Deploy create-db-worker (preview)
+      #   uses: cloudflare/wrangler-action@v3
+      #   with: ...
+      # - name: ☁️ Deploy claim-db-worker (preview)
+      #   uses: cloudflare/wrangler-action@v3
+      #   with: ...
 
       - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Bump & publish CLI previews
         env:
-          CREATE_DB_WORKER_URL: ${{ steps.deploy-db.outputs.deployment-url }}
-          CLAIM_DB_WORKER_URL: ${{ steps.deploy-claim.outputs.deployment-url }}
+          CREATE_DB_WORKER_URL: ${{ env.CREATE_DB_WORKER_URL }}
+          CLAIM_DB_WORKER_URL: ${{ env.CLAIM_DB_WORKER_URL }}
         run: |
           for pkg in $WORKSPACES; do
             cd "$pkg"
@@ -89,17 +83,16 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const tag = process.env.PRE_TAG;
-            const dbUrl = `${{ steps.deploy-db.outputs.deployment-url }}`;
-            const clUrl = `${{ steps.deploy-claim.outputs.deployment-url }}`;
-
+            const dbUrl = process.env.CREATE_DB_WORKER_URL;
+            const clUrl = process.env.CLAIM_DB_WORKER_URL;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo:  context.repo.repo,
               issue_number: context.payload.pull_request.number,
               body: `
-            ✅ **Preview CLIs & Workers are live!**
+            ✅ **Preview CLIs are live!**
 
-            Test the CLIs locally:
+            Test locally under tag \`${tag}\`:
 
             \`\`\`bash
             npx create-db@${tag}
@@ -107,8 +100,10 @@ jobs:
             npx create-postgres@${tag}
             \`\`\`
 
-            **Preview Worker URLs**  
-            • Create-DB Worker: ${dbUrl}  
-            • Claim-DB Worker:  ${clUrl}  
+            **Worker URLs**  
+            • Create-DB: ${dbUrl}  
+            • Claim-DB:  ${clUrl}`
+                        });
 
-            > These will live as long as this PR branch exists, under tag \`${tag}\`.
+      - name: 🧹 Cleanup npm auth
+        run: rm -f ~/.npmrc
