@@ -12,14 +12,21 @@ export { DeleteDbWorkflow };
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		// --- Rate limiting ---
-		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: request.url })	
+		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: request.url });
 
 		if (!success) {
 			return new Response(`429 Failure - rate limit exceeded for ${request.url}`, { status: 429 });
 		}
 
-
 		const url = new URL(request.url);
+
+		// --- Health check route ---
+		if (url.pathname === '/health' && request.method === 'GET') {
+			return new Response(JSON.stringify({ status: 'ok', service: 'create-db', timestamp: Date.now() }), {
+				status: 200,
+				headers: { 'Content-Type': 'application/json' },
+			});
+		}
 
 		// --- Get available regions ---
 		if (url.pathname === '/regions' && request.method === 'GET') {
@@ -64,8 +71,8 @@ export default {
 				const projectID = JSON.parse(prismaText).id;
 				await env.DELETE_DB_WORKFLOW.create({ params: { projectID } });
 				env.CREATE_DB_DATASET.writeDataPoint({
-					blobs: ["database_created"],
-					indexes: ["create_db"]
+					blobs: ['database_created'],
+					indexes: ['create_db'],
 				});
 			} catch (e) {
 				console.error('Error parsing prismaText or triggering workflow:', e);

@@ -77,39 +77,15 @@ importers:
 
   create-pg:
     dependencies:
-      '@clack/prompts':
-        specifier: ^0.11.0
-        version: 0.11.0
-      chalk:
-        specifier: ^4.1.2
-        version: 4.1.2
-      clipboardy:
-        specifier: ^4.0.0
-        version: 4.0.0
-      dotenv:
-        specifier: ^16.6.1
-        version: 16.6.1
-      terminal-link:
-        specifier: ^4.0.0
-        version: 4.0.0
+      create-db:
+        specifier: workspace:*
+        version: link:../create-db
 
   create-postgres:
     dependencies:
-      '@clack/prompts':
-        specifier: ^0.11.0
-        version: 0.11.0
-      chalk:
-        specifier: ^4.1.2
-        version: 4.1.2
-      clipboardy:
-        specifier: ^4.0.0
-        version: 4.0.0
-      dotenv:
-        specifier: ^16.6.1
-        version: 16.6.1
-      terminal-link:
-        specifier: ^4.0.0
-        version: 4.0.0
+      create-db:
+        specifier: workspace:*
+        version: link:../create-db
 
 packages:
 
