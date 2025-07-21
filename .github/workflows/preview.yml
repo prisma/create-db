@@ -10,34 +10,33 @@ on:
     branches: [main]
 
 env:
-  # Folders under repo root containing each CLI
   WORKSPACES: create-db create-pg create-postgres
 
 jobs:
-  # 1) On PRs: bump versions & CHANGELOGs via Changesets
+  # 1) On PRs: bump via Changesets
   version:
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
-      - name: 🛎️ Checkout full history
+      - name: Checkout full history
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: 🤐 Disable Husky
+      - name: Disable Husky
         run: echo "HUSKY=0" >> $GITHUB_ENV
 
-      - name: 📦 Setup pnpm
+      - name: Setup pnpm v8
         uses: pnpm/action-setup@v2
         with:
           version: 8
           run_install: false
 
-      - name: 🔧 Install dependencies (allow lockfile changes)
+      - name: Install dependencies (allow lockfile update)
         run: pnpm install --workspace-root --no-frozen-lockfile
 
-      - name: 🔄 Version & changelogs via Changesets
+      - name: Version & changelogs via Changesets
         uses: changesets/action@v1
         with:
           version: "pnpm changeset version --yes"
@@ -47,46 +46,46 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # 2) On merge to main: aggregate CHANGELOGs, tag & publish each CLI
+  # 2) On merge to main: aggregate, tag, publish
   publish:
     if: ${{ github.event_name == 'push' }}
     needs: version
     runs-on: ubuntu-latest
     steps:
-      - name: 🛎️ Checkout full history
+      - name: Checkout full history
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: 🤐 Disable Husky
+      - name: Disable Husky
         run: echo "HUSKY=0" >> $GITHUB_ENV
 
-      - name: 📦 Setup pnpm
+      - name: Setup pnpm v8
         uses: pnpm/action-setup@v2
         with:
           version: 8
           run_install: false
 
-      - name: 🔧 Install dependencies (strict lockfile)
+      - name: Install dependencies (strict lockfile)
         run: pnpm install --workspace-root --frozen-lockfile
 
-      - name: 🔧 Install jq
+      - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: 📄 Copy root README to each CLI
+      - name: Copy root README to each CLI
         run: |
           for pkg in $WORKSPACES; do
             cp README.md "$pkg/README.md"
           done
 
-      - name: 📑 Aggregate changelogs
+      - name: Aggregate changelogs
         id: aggregate
         run: |
           NEW_VERSION=$(jq -r '.version' package.json)
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-
           echo "# Release v$NEW_VERSION" > AGGREGATED_CHANGELOG.md
+
           for pkg in $WORKSPACES; do
             echo "## $pkg" >> AGGREGATED_CHANGELOG.md
             sed -n "/^## $NEW_VERSION/,/^## /p" "$pkg/CHANGELOG.md" \
@@ -95,7 +94,7 @@ jobs:
             echo "" >> AGGREGATED_CHANGELOG.md
           done
 
-      - name: 🚩 Create GitHub Release
+      - name: Create GitHub Release
         uses: actions/create-release@v1
         with:
           tag_name: v${{ env.NEW_VERSION }}
@@ -104,33 +103,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🔑 Configure npm auth
+      - name: Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
-      - name: 🚀 Publish each CLI individually
+      - name: Publish each CLI individually
         run: |
           for pkg in $WORKSPACES; do
             echo "Publishing $pkg@$NEW_VERSION…"
             ( cd "$pkg" && npm publish --access public )
           done
 
-      # — CF Worker production deploys (uncomment when ready) —
-      # - name: ☁️ Deploy create-db-worker
+      # — CF Worker deploys (uncomment when ready) —
+      # - name: Deploy create-db-worker
       #   uses: cloudflare/wrangler-action@v3
       #   with:
       #     apiToken: ${{ secrets.CF_API_TOKEN }}
       #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
       #     environment: production
       #     workingDirectory: create-db-worker
-      #
-      # - name: ☁️ Deploy claim-db-worker
-      #   uses: cloudflare/wrangler-action@v3
-      #   with:
-      #     apiToken: ${{ secrets.CF_API_TOKEN }}
-      #     accountId: ${{ secrets.CF_ACCOUNT_ID }}
-      #     environment: production
-      #     workingDirectory: claim-db-worker
 
-      - name: 🧹 Cleanup npm auth
+      - name: Cleanup npm auth
         if: ${{ always() }}
         run: rm -f ~/.npmrc
