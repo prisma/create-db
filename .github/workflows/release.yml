@@ -2,6 +2,7 @@
 name: Release all CLIs & Deploy CF Workers
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     types: [opened, synchronize]
