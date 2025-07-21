@@ -12,9 +12,21 @@ import {
 import chalk from "chalk";
 import dotenv from "dotenv";
 import terminalLink from "terminal-link";
-import clipboard from "clipboardy";
 
 dotenv.config();
+
+async function listRegions() {
+  try {
+    const regions = await getRegions();
+    console.log(chalk.cyan.bold("\n🌐 Available Prisma Postgres regions:\n"));
+    regions.forEach((r) =>
+      console.log(`- ${chalk.green(r.id)}, ${r.name || r.id}`)
+    );
+    console.log("");
+  } catch (e) {
+    handleError("Failed to fetch regions.", e);
+  }
+}
 
 async function isOffline() {
   const healthUrl = `${process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io"}/health`;
@@ -22,15 +34,18 @@ async function isOffline() {
   try {
     const res = await fetch(healthUrl, { method: "GET" });
     if (!res.ok) {
-      throw new Error(`Prisma API returned status ${res.status}`);
+      throw new Error(`Prisma Postgres API returned a status of ${res.status}`);
     }
     return false; // Online
   } catch {
-    console.error(chalk.red.bold("\n✖ Error: Cannot reach API server.\n"));
     console.error(
-      chalk.gray("Check your internet connection or Prisma's status page:")
+      chalk.red.bold("\n✖ Error: Cannot reach Prisma Postgres API server.\n")
     );
-    console.error(chalk.green("https://www.prisma-status.com/\n"));
+    console.error(
+      chalk.gray(
+        `Check your internet connection or visit ${chalk.green("https://www.prisma-status.com/\n")}`
+      )
+    );
     process.exit(1);
   }
 }
@@ -44,7 +59,17 @@ function getCommandName() {
 
 const CLI_NAME = getCommandName();
 
-function showHelp() {
+async function showHelp() {
+  let regionExamples = "us-east-1, eu-west-1";
+  try {
+    const regions = await getRegions();
+    if (regions && regions.length > 0) {
+      regionExamples = regions.map((r) => r.id).join(", ");
+    }
+  } catch {
+    // Fallback to default examples if fetching fails
+  }
+
   console.log(`
 ${chalk.cyan.bold("Prisma Postgres Create DB")}
 
@@ -52,17 +77,17 @@ Usage:
   ${chalk.green(`npx ${CLI_NAME} [options]`)}
 
 Options:
-  ${chalk.yellow("--region <region>, -r <region>")}  Specify the region (e.g., us-east-1, eu-west-1)
-  ${chalk.yellow("--interactive, -i")}               Run in interactive mode
-  ${chalk.yellow("--direct, -d")}                    Use direct PostgreSQL connection string
-  ${chalk.yellow("--copy, -c")}                      Enable clipboard prompt for connection string
+  ${chalk.yellow(`--region <region>, -r <region>`)}  Specify the region (e.g., ${regionExamples})
+  ${chalk.yellow("--list-regions, -lr")}             Return the list of available regions for Prisma Postgres
+  ${chalk.yellow("--choose-region, -cs")}            Select database region interactively
   ${chalk.yellow("--help, -h")}                      Show this help message
 
 Examples:
   ${chalk.gray(`npx ${CLI_NAME} --region us-east-1`)}
-  ${chalk.gray(`npx ${CLI_NAME} -i`)}
-  ${chalk.gray(`npx ${CLI_NAME} -r eu-west-1 -c`)}
-  `);
+  ${chalk.gray(`npx ${CLI_NAME} --list-regions`)}
+  ${chalk.gray(`npx ${CLI_NAME} --choose-region`)}
+  ${chalk.gray(`npx ${CLI_NAME} -cs`)}
+`);
   process.exit(0);
 }
 
@@ -71,12 +96,12 @@ function parseArgs() {
   const args = process.argv.slice(2);
   const flags = {};
 
-  const allowedFlags = ["region", "interactive", "copy", "help", "direct"];
+  const allowedFlags = ["region", "help", "list-regions", "choose-region"];
   const shorthandMap = {
     r: "region",
-    i: "interactive",
-    c: "copy",
-    d: "direct",
+    l: "list-regions",
+    lr: "list-regions", // multi-letter shorthand
+    cs: "choose-region", // multi-letter shorthand
     h: "help",
   };
 
@@ -88,6 +113,8 @@ function parseArgs() {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
+
+    // Handle long flags (--region, --help, etc.)
     if (arg.startsWith("--")) {
       const flag = arg.slice(2);
       if (flag === "help") showHelp();
@@ -99,13 +126,34 @@ function parseArgs() {
           exitWithError("Missing value for --region flag.");
         flags.region = region;
         i++;
-      } else flags[flag] = true;
+      } else {
+        flags[flag] = true;
+      }
       continue;
     }
 
+    // Handle short and multi-letter shorthand flags
     if (arg.startsWith("-")) {
-      const letters = arg.slice(1).split("");
-      for (const letter of letters) {
+      const short = arg.slice(1);
+
+      // Check if it's a multi-letter shorthand like -cs or -lr
+      if (shorthandMap[short]) {
+        const mappedFlag = shorthandMap[short];
+        if (mappedFlag === "help") showHelp();
+        if (mappedFlag === "region") {
+          const region = args[i + 1];
+          if (!region || region.startsWith("-"))
+            exitWithError("Missing value for -r flag.");
+          flags.region = region;
+          i++;
+        } else {
+          flags[mappedFlag] = true;
+        }
+        continue;
+      }
+
+      // Fall back to single-letter flags like -r -l
+      for (const letter of short.split("")) {
         const mappedFlag = shorthandMap[letter];
         if (!mappedFlag) exitWithError(`Invalid flag: -${letter}`);
         if (mappedFlag === "help") showHelp();
@@ -115,7 +163,9 @@ function parseArgs() {
             exitWithError("Missing value for -r flag.");
           flags.region = region;
           i++;
-        } else flags[mappedFlag] = true;
+        } else {
+          flags[mappedFlag] = true;
+        }
       }
       continue;
     }
@@ -213,21 +263,16 @@ async function promptForRegion(defaultRegion) {
 }
 
 // Create a database
-async function createDatabase(
-  name,
-  region,
-  enableCopyPrompt = false,
-  enableDirectConn = false
-) {
+async function createDatabase(name, region) {
   const s = spinner();
-  s.start("Setting up your database...");
+  s.start("Creating your database...");
 
   const resp = await fetch(
     `${process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io"}/create`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ region, name }),
+      body: JSON.stringify({ region, name, utm_source: CLI_NAME }),
     }
   );
 
@@ -254,88 +299,57 @@ async function createDatabase(
   const expiryFormatted = expiryDate.toLocaleString();
 
   log.message("");
-
   // Determine which connection string to display
-  let connectionString;
-  const defaultConn = result.databases?.[0]?.connectionString;
-  const direct = result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
+  const prismaConn = result.databases?.[0]?.connectionString;
+  const directConnDetails =
+    result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
+  const directConn = directConnDetails
+    ? `postgresql://${directConnDetails.user}:${directConnDetails.pass}@${directConnDetails.host}/postgres`
+    : null;
 
-  if (enableDirectConn && direct) {
-    connectionString = `postgresql://${direct.user}:${direct.pass}@${direct.host}/postgres`;
-    log.info(chalk.bold("Direct PostgreSQL connection string:"));
-  } else {
-    connectionString = defaultConn;
-    log.info(chalk.bold("Prisma Postgres Database connection string:"));
+  log.info(chalk.bold("🔌 You have two ways to connect to your database:"));
 
-    if (enableDirectConn && !direct) {
-      log.warning(
-        chalk.yellow(
-          "Direct connection details were not available in the API response. Showing Prisma ORM connection string instead."
-        )
-      );
-    }
+  // Show Prisma Postgres connection string
+  if (prismaConn) {
+    log.message(
+      chalk.cyan(
+        "  Use this database connection string optimized for Prisma ORM:"
+      )
+    );
+    log.message("  " + chalk.yellow(prismaConn));
+    log.message("");
   }
 
-  // Show the connection string
-  log.message("  " + chalk.yellow(connectionString));
-  log.message("");
-  log.success("Your database is ready! 🎉");
-
-  // Common guidance
-  log.message(chalk.bold("\nWhat’s next?\n"));
-
-  // If Direct Connection String
-  if (enableDirectConn && direct) {
-    log.info(chalk.cyan("👉 You're using a Direct PostgreSQL connection."));
-    log.message(`
-  ${chalk.gray("This is a standard PostgreSQL connection string, ideal for any tool or ORM.")}
-
-  ${chalk.cyan("To get started:")}
-    1. Copy the connection string (it's already in your clipboard if you used --copy).
-    2. Use it directly with tools like psql, pgAdmin, or external ORMs.
-    3. Check out this guide for details and tips:
-       ${chalk.blueBright("https://pris.ly/direct-connection")}
-  `);
-  } else {
-    // If Prisma ORM connection
-    log.info(
-      chalk.cyan("👉 You're using a Prisma Postgres connection string.")
+  // Show Direct connection string (if available)
+  if (directConn) {
+    log.message(
+      chalk.cyan("  Use this connection string for everything else:")
     );
-    log.message(`
-  ${chalk.gray("This connection string is optimized for Prisma ORM.")}
-
-  ${chalk.cyan("To get started:")}
-    1. Add it to your ${chalk.yellow(".env")} file:
-       ${chalk.green("DATABASE_URL=" + connectionString)}
-    2. Follow the Prisma Postgres quickstart guide:
-       ${chalk.blueBright("https://pris.ly/prisma-orm-connection")}
-  `);
+    log.message("  " + chalk.yellow(directConn));
+    log.message("");
+  } else {
+    log.warning(
+      chalk.yellow(
+        "Direct connection details are not available in the API response."
+      )
+    );
   }
 
   // Claim Database
-  const claimUrl = `${process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io"}?projectID=${result.id}`;
+  const claimUrl = `${process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io"}?projectID=${result.id}&utm_source=${CLI_NAME}&utm_medium=cli`;
   const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false });
-  log.message(`
-${chalk.cyan("Claim Your Database:")}
-  ${chalk.green(clickableUrl)}
-  ${chalk.gray(" (Claim it before " + expiryFormatted + " to make it permanent!)")}
-`);
-
-  // Copy to clipboard if requested
-  if (enableCopyPrompt) {
-    try {
-      clipboard.writeSync(connectionString);
-      log.success(
-        `${enableDirectConn ? "Direct connection string" : "Connection string"} copied to clipboard!`
-      );
-    } catch (e) {
-      log.warning("Clipboard copy failed.");
-    }
-  }
+  log.info(`${chalk.white(chalk.bold("✅ Claim your database:"))}`);
 
   log.message(
-    chalk.gray(
-      "\nTip: Run with --copy or -c to automatically copy the connection string to your clipboard.\n"
+    chalk.cyan("  You can make your database permanent ") +
+      chalk.cyan(chalk.bold("for free")) +
+      chalk.cyan(" by clicking the link below:")
+  );
+
+  log.message("  " + chalk.yellow(clickableUrl));
+  log.message(
+    chalk.italic(
+      chalk.gray("  Your database expires at " + expiryFormatted + ".\n")
     )
   );
 }
@@ -345,7 +359,7 @@ ${chalk.cyan("Claim Your Database:")}
 async function main() {
   try {
     // Parse command line arguments
-    const { flags } = parseArgs();
+    const { flags } = await parseArgs();
 
     if (!flags.help) {
       await isOffline();
@@ -354,26 +368,23 @@ async function main() {
     // Set default values
     let name = new Date().toISOString();
     let region = "us-east-1";
-    let usePrompts = false;
-    let enableCopyPrompt = false;
-    let enableDirectConn = false;
+    let chooseRegionPrompt = false;
+
+    if (flags["list-regions"]) {
+      await listRegions();
+      process.exit(0);
+    }
 
     // Apply command line flags
     if (flags.region) {
       region = flags.region;
     }
-    if (flags.direct) {
-      enableDirectConn = true;
-    }
-    if (flags.interactive) {
-      usePrompts = true;
-    }
-    if (flags.copy) {
-      enableCopyPrompt = true;
+    if (flags["choose-region"]) {
+      chooseRegionPrompt = true;
     }
 
     // Interactive mode prompts
-    if (usePrompts) {
+    if (chooseRegionPrompt) {
       intro(chalk.cyan.bold("🚀 Prisma Postgres Create DB"));
 
       log.message(
@@ -386,32 +397,6 @@ async function main() {
 
       // Prompt for region
       region = await promptForRegion(region);
-
-      // Ask if user wants Direct PostgreSQL connection string
-      const directChoice = await confirm({
-        message:
-          "Would you like a standard PostgreSQL (Direct) connection string?",
-        initialValue: false,
-      });
-
-      if (directChoice === null) {
-        cancel(chalk.red("Operation cancelled."));
-        process.exit(0);
-      }
-      enableDirectConn = directChoice;
-
-      // Ask if user wants to copy the connection string
-      const copyChoice = await confirm({
-        message:
-          "Would you like the connection string copied to your clipboard?",
-        initialValue: true,
-      });
-
-      if (copyChoice === null) {
-        cancel(chalk.red("Operation cancelled."));
-        process.exit(0);
-      }
-      enableCopyPrompt = copyChoice;
     } else {
       // Show minimal header for non-interactive mode
       log.info(chalk.cyan.bold("🚀 Prisma Postgres Create DB"));
@@ -427,7 +412,7 @@ async function main() {
     region = await validateRegion(region);
 
     // Create the database
-    await createDatabase(name, region, enableCopyPrompt, enableDirectConn);
+    await createDatabase(name, region);
 
     outro("");
   } catch (error) {

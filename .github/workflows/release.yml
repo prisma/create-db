@@ -1,18 +1,54 @@
 name: Release all CLIs & Deploy CF Workers
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
+    branches: [main]
+    types: [opened, synchronize]
+  push:
+    branches: [main]
 
 env:
   WORKSPACES: create-db create-pg create-postgres
 
 jobs:
-  release:
+  # 💾 On PRs: bump package.json versions & CHANGELOGs via Changesets
+  version:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout full & tags
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: 🤐 Disable Husky
+        run: echo "HUSKY=0" >> $GITHUB_ENV
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: 🔧 Install dependencies
+        run: pnpm install
+
+      - name: 🔄 Version & changelogs via Changesets
+        uses: changesets/action@v1
+        with:
+          # run the version script
+          version: "pnpm changeset version --yes"
+          # commit and push back into the PR branch
+          commit: "chore(release): bump [skip ci]"
+          commitMode: "git-cli"
+          # don’t create a GitHub release on a PR run
+          createGithubReleases: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 🚀 On merges to main: aggregate CHANGELOGs, tag & publish
+  publish:
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - name: 🛎️ Checkout full & tags
@@ -33,75 +69,55 @@ jobs:
         run: pnpm install
 
       - name: 🔧 Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: ✔️ Check for pending changesets
-        if: github.event_name == 'pull_request'
         run: |
-          pnpm changeset status --output status.json
-          if [ "$(jq '.changesets | length' status.json)" -eq 0 ]; then
-            echo "❌ No changesets found. Please run 'pnpm changeset' and add a summary." >&2
-            exit 1
-          fi
-
-      - name: 🔄 Bump versions & generate changelogs
-        if: github.event_name == 'push'
-        id: bump
-        run: pnpm changeset version
+          sudo apt-get update
+          sudo apt-get install -y jq
 
       - name: 📄 Copy README to child CLIs
-        if: github.event_name == 'push'
         run: |
-          for pkg in create-pg create-postgres; do
+          for pkg in $WORKSPACES; do
             cp create-db/README.md "$pkg/README.md"
           done
 
-      - name: 💾 Commit & push version bump
-        if: github.event_name == 'push'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          VERSIONS=$(jq -r '.releases[] | .name + "@" + .newVersion' status.json | paste -sd ", " -)
-          git commit -am "chore(release): bump $VERSIONS [skip ci]" || echo "no version changes"
-          git push origin main --follow-tags
-
       - name: 📑 Aggregate changelogs
-        if: github.event_name == 'push'
+        id: aggregate
         run: |
-          echo "# Release ${{ steps.bump.outputs.newVersion }}" > AGGREGATED_CHANGELOG.md
+          # pull the new version out of package.json
+          NEW_VERSION=$(jq -r '.version' create-db/package.json)
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+          # header for the release
+          echo "# Release v$NEW_VERSION" > AGGREGATED_CHANGELOG.md
+
           for pkg in $WORKSPACES; do
             echo "## $pkg" >> AGGREGATED_CHANGELOG.md
-            sed -n "/^## ${{ steps.bump.outputs.newVersion }}/,/^## /p" $pkg/CHANGELOG.md \
+            # grab only the lines under ## $NEW_VERSION in each CHANGELOG.md
+            sed -n "/^## $NEW_VERSION/,/^## /p" $pkg/CHANGELOG.md \
               | sed '1d;$d' \
               >> AGGREGATED_CHANGELOG.md
             echo "" >> AGGREGATED_CHANGELOG.md
           done
 
       - name: 🚩 Create GitHub Release
-        if: github.event_name == 'push'
         uses: actions/create-release@v1
         with:
-          tag_name: v${{ steps.bump.outputs.newVersion }}
-          release_name: Release ${{ steps.bump.outputs.newVersion }}
+          tag_name: v${{ env.NEW_VERSION }}
+          release_name: Release v${{ env.NEW_VERSION }}
           body_path: AGGREGATED_CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🔑 Configure npm auth
-        if: github.event_name == 'push'
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Publish CLIs
-        if: github.event_name == 'push'
-        run: |
-          pnpm -r --filter "{create-db,create-pg,create-postgres}" publish --access public
+        run: pnpm -r --filter "{create-db,create-pg,create-postgres}" publish --access public
 
-      # — CF production deploys commented out
+      # — CF production deploys commented out —
       # - name: ☁️ Deploy create-db-worker (production)
+      #   uses: cloudflare/wrangler-action@v3
       #   ...
 
       - name: 🧹 Cleanup npm auth
-        if: github.event_name == 'push'
+        if: ${{ always() }}
         run: rm -f ~/.npmrc
