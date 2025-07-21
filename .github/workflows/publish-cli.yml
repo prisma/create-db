@@ -8,17 +8,15 @@ on:
       - opened
       - reopened
       - synchronize
-      - closed
   push:
     branches:
       - main
 
 env:
   # each folder under the repo root that contains one of your CLIs
-  WORKSPACES: |
-    create-db
-    create-pg
-    create-postgres
+  WORKSPACES: create-db create-pg create-postgres
+  # each folder under the repo root that contains one of your CF Workers
+  CF_WORKERS: create-db-worker claim-db-worker
 
 jobs:
   preview:
@@ -30,6 +28,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          persist-credentials: true
 
       - name: 🤐 Disable Husky
         run: echo "HUSKY=0" >> $GITHUB_ENV
@@ -42,17 +41,50 @@ jobs:
       - name: 🔧 Install dependencies
         run: pnpm install
 
-      - name: 🔄 Disable pnpm git-checks
+      - name: ❌ Disable pnpm git-checks
         run: pnpm config set git-checks false
+
+      - name: 📄 Copy README to child CLIs
+        run: |
+          for pkg in create-pg create-postgres; do
+            cp create-db/README.md $pkg/README.md
+          done
+
+      - name: ☁️ Deploy CF Workers (preview)
+        id: deploy-workers-preview
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          PRE_TAG="pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}"
+          echo "PRE_TAG=$PRE_TAG" >> $GITHUB_ENV
+
+          for worker in $CF_WORKERS; do
+            echo "› deploying $worker → env $PRE_TAG"
+            resp=$(wrangler publish \
+              --env "$PRE_TAG" \
+              --account-id "$CF_ACCOUNT_ID" \
+              --api-token "$CF_API_TOKEN" \
+              --json)
+            url=$(echo "$resp" | grep -Po '"url":"\K[^"]+')
+            if [ "$worker" = "create-db-worker" ]; then
+              echo "create_db_worker_url=$url" >> $GITHUB_OUTPUT
+            else
+              echo "claim_db_worker_url=$url" >> $GITHUB_OUTPUT
+            fi
+          done
 
       - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
-      - name: 🚀 Publish PR-tagged previews
+      - name: 🚀 Bump & publish previews
+        env:
+          NPM_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
+          CREATE_DB_WORKER_URL: ${{ steps.deploy-workers-preview.outputs.create_db_worker_url }}
+          CLAIM_DB_WORKER_URL: ${{ steps.deploy-workers-preview.outputs.claim_db_worker_url }}
         run: |
-          PRE_TAG="pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}"
           for pkg in $WORKSPACES; do
-            echo "› publishing $pkg@$PRE_TAG"
+            echo "› $pkg → bumping & publishing preview @$PRE_TAG"
             cd $pkg
             npm version prerelease \
               --preid "$PRE_TAG" \
@@ -65,10 +97,8 @@ jobs:
         run: rm -f ~/.npmrc
 
   publish:
-    if: >
-      github.event_name == 'pull_request' &&
-      github.event.action == 'closed' &&
-      github.event.pull_request.merged == true
+    if: github.event_name == 'push'
+    needs: preview
     name: 🚀 Bump & publish real releases
     runs-on: ubuntu-latest
     steps:
@@ -92,6 +122,12 @@ jobs:
       - name: 🔄 Bump versions & generate changelogs
         run: pnpm changeset version
 
+      - name: 📄 Copy README to child CLIs
+        run: |
+          for pkg in create-pg create-postgres; do
+            cp create-db/README.md $pkg/README.md
+          done
+
       - name: 💾 Commit & push version bump
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -100,15 +136,32 @@ jobs:
           git push origin main --follow-tags
 
       - name: 🔑 Configure npm auth
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Publish all real releases
+        env:
+          NPM_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
+          CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+          CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
         run: |
           for pkg in $WORKSPACES; do
             echo "› publishing $pkg"
             cd $pkg
             pnpm publish --access public
+            cd - >/dev/null
+          done
+
+      - name: ☁️ Deploy CF Workers (production)
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          for worker in $CF_WORKERS; do
+            echo "› deploying $worker to production"
+            cd $worker
+            wrangler publish \
+              --account-id $CF_ACCOUNT_ID \
+              --api-token $CF_API_TOKEN
             cd - >/dev/null
           done
 
