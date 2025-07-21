@@ -18,23 +18,23 @@ function generateState(): string {
 }
 
 function errorResponse(title: string, message: string, details?: string, status = 400): Response {
-	return new Response(getErrorHtml(title, message, details), { 
+	return new Response(getErrorHtml(title, message, details), {
 		status,
-		headers: { 'Content-Type': 'text/html' }
+		headers: { 'Content-Type': 'text/html' },
 	});
 }
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		// --- Rate limiting ---
-		const { success } = await env.CLAIM_DB_RATE_LIMITER.limit({ key: request.url })	
+		const { success } = await env.CLAIM_DB_RATE_LIMITER.limit({ key: request.url });
 
 		if (!success) {
-			return errorResponse('Rate Limit Exceeded', 'We\'re experiencing high demand. Please try again later.', '', 429);
+			return errorResponse('Rate Limit Exceeded', "We're experiencing high demand. Please try again later.", '', 429);
 		}
 
 		const url = new URL(request.url);
-		
+
 		// --- OAuth Callback Handler ---
 		if (url.pathname === '/auth/callback') {
 			const code = url.searchParams.get('code');
@@ -42,7 +42,12 @@ export default {
 			const projectID = url.searchParams.get('projectID');
 
 			if (!state) return errorResponse('OAuth Error', 'Missing state parameter.', 'Please try again.');
-			if (!projectID) return errorResponse('OAuth Error', 'Missing project ID parameter.', 'Please ensure you are accessing this page with a valid project ID.');
+			if (!projectID)
+				return errorResponse(
+					'OAuth Error',
+					'Missing project ID parameter.',
+					'Please ensure you are accessing this page with a valid project ID.',
+				);
 
 			// Exchange code for access token
 			const tokenResponse = await fetch('https://auth.prisma.io/token', {
@@ -51,7 +56,7 @@ export default {
 				body: new URLSearchParams({
 					grant_type: 'authorization_code',
 					code: code!,
-					redirect_uri: new URL("/auth/callback", request.url).toString(),
+					redirect_uri: new URL('/auth/callback', request.url).toString(),
 					client_id: env.CLIENT_ID,
 					client_secret: env.CLIENT_SECRET,
 				}).toString(),
@@ -59,7 +64,12 @@ export default {
 
 			if (!tokenResponse.ok) {
 				const text = await tokenResponse.text();
-				return errorResponse('OAuth Error', 'Failed to authenticate with Prisma. Please try again.', `Status: ${tokenResponse.status}\nResponse: ${text}`, 500);
+				return errorResponse(
+					'OAuth Error',
+					'Failed to authenticate with Prisma. Please try again.',
+					`Status: ${tokenResponse.status}\nResponse: ${text}`,
+					500,
+				);
 			}
 
 			const tokenData = (await tokenResponse.json()) as { access_token: string };
@@ -76,26 +86,30 @@ export default {
 
 			if (transferResponse.ok) {
 				env.CREATE_DB_DATASET.writeDataPoint({
-					blobs: ["database_claimed"],
-					indexes: ["claim_db"]
+					blobs: ['database_claimed'],
+					indexes: ['claim_db'],
 				});
-				
-				return new Response(getClaimSuccessHtml(projectID), { 
-					headers: { 'Content-Type': 'text/html' } 
+
+				return new Response(getClaimSuccessHtml(projectID), {
+					headers: { 'Content-Type': 'text/html' },
 				});
 			} else {
 				const responseText = await transferResponse.text();
-				return errorResponse('Project Transfer Failed', 'Failed to transfer the project. Please try again.', `Status: ${transferResponse.status}\nResponse: ${responseText}`, 500);
+				return errorResponse(
+					'Project Transfer Failed',
+					'Failed to transfer the project. Please try again.',
+					`Status: ${transferResponse.status}\nResponse: ${responseText}`,
+					500,
+				);
 			}
 		}
 
 		// --- Main Claim Page Handler ---
 		const projectID = url.searchParams.get('projectID');
 		if (projectID) {
-
-			const redirectUri = new URL("/auth/callback", request.url);
+			const redirectUri = new URL('/auth/callback', request.url);
 			redirectUri.searchParams.set('projectID', projectID);
-			
+
 			const authParams = new URLSearchParams({
 				client_id: env.CLIENT_ID,
 				redirect_uri: redirectUri.toString(),
@@ -110,6 +124,10 @@ export default {
 		}
 
 		// --- Fallback: No project ID provided ---
-		return errorResponse('Missing Project ID', 'No project ID was provided in the request.', 'Please ensure you are accessing this page with a valid project ID parameter.');
+		return errorResponse(
+			'Missing Project ID',
+			'No project ID was provided in the request.',
+			'Please ensure you are accessing this page with a valid project ID parameter.',
+		);
 	},
 };

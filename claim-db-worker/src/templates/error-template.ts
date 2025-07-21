@@ -1,68 +1,109 @@
 export function getErrorHtml(title: string, message: string, details?: string) {
 	return `
-		<!DOCTYPE html>
-		<html lang="en">
-		<head>
-			<meta charset="UTF-8" />
-			<title>${title}</title>
-			<style>
-				body { 
-					font-family: system-ui, sans-serif; 
-					background: #f6f8fa; 
-					display: flex; 
-					align-items: center; 
-					justify-content: center; 
-					height: 100vh; 
-					margin: 0;
-				}
-				.container { 
-					background: #fff; 
-					padding: 2rem 2.5rem; 
-					border-radius: 12px; 
-					box-shadow: 0 2px 16px rgba(0,0,0,0.07); 
-					text-align: center;
-					max-width: 500px;
-					width: 100%;
-				}
-				h1 { 
-					color: #dc2626; 
-					margin-bottom: 1rem;
-				}
-				.message {
-					color: #374151;
-					margin-bottom: 1.5rem;
-					line-height: 1.6;
-				}
-				.details {
-					background: #f3f4f6;
-					padding: 1rem;
-					border-radius: 8px;
-					font-family: monospace;
-					font-size: 0.875rem;
-					color: #6b7280;
-					text-align: left;
-					word-break: break-all;
-					margin-top: 1rem;
-				}
-				.back-link {
-					display: inline-block;
-					margin-top: 1.5rem;
-					color: #0070f3;
-					text-decoration: none;
-					font-weight: 500;
-				}
-				.back-link:hover {
-					text-decoration: underline;
-				}
-			</style>
-		</head>
-		<body>
-			<div class="container">
-				<h1>❌ ${title}</h1>
-				<p class="message">${message}</p>
-				${details ? `<div class="details">${details}</div>` : ''}
+	<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>${title}</title>
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+				min-height: 100vh;
+				background-image: url('/hero-background.svg');
+				background-size: cover;
+				background-position: center;
+				background-repeat: no-repeat;
+				color: #fff;
+				font-family: 'Inter', system-ui, sans-serif;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			.container {
+				text-align: center;
+			}
+
+			.error-header {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 0.75rem;
+				margin-bottom: 1.2rem;
+			}
+
+			.error-x {
+				font-size: 4rem;
+				font-weight: 900;
+				color: #fc8181;
+				line-height: 1;
+			}
+
+			.error-title {
+				color: #fc8181;
+				font-size: 4rem;
+				font-weight: 700;
+				letter-spacing: -1px;
+			}
+
+			.error-message {
+				font-size: 1.5rem;
+				margin-bottom: 2.2rem;
+				font-weight: 400;
+			}
+
+			.error-details-label {
+				margin-bottom: 0.5rem;
+				font-weight: 600;
+			}
+
+			pre.error-details {
+				background: #090a15;
+				color: #fff;
+				font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
+				font-size: 1rem;
+				border-radius: 8px;
+				text-align: left;
+				word-break: break-all;
+				padding: 24px 16px;
+				border: 1.5px solid #2d3748;
+				margin: 0 auto;
+				display: block;
+			}
+
+			code {
+				color: #a0aec0;
+				font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
+				font-size: 0.875rem;
+				background: none;
+				border: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="error-header">
+				<span class="error-x" aria-label="Error">
+					<svg width="64" height="64" viewBox="0 0 96 96" fill="none" aria-hidden="true" style="display: block">
+						<circle cx="48" cy="48" r="40" fill="#FC8181" />
+						<line x1="34" y1="34" x2="62" y2="62" stroke="#222B32" stroke-width="8" stroke-linecap="round" />
+						<line x1="62" y1="34" x2="34" y2="62" stroke="#222B32" stroke-width="8" stroke-linecap="round" />
+					</svg>
+				</span>
+				<span class="error-title">${title}</span>
 			</div>
-		</body>
-		</html>
-	`;
-} 
+			<div class="error-message">${message}</div>
+			${
+				details
+					? `
+			<pre class="error-details"><code>${details}</code></pre>
+			`
+					: ''
+			}
+		</div>
+	</body>
+</html>
+
+  `;
+}
