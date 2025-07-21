@@ -35,6 +35,13 @@ export default {
 
 		const url = new URL(request.url);
 
+		// Add a test route for local development to preview the success page
+		if (url.pathname === '/test-success') {
+			return new Response(getClaimSuccessHtml('cmddkid4303fly70vbmzqekl9'), {
+				headers: { 'Content-Type': 'text/html' },
+			});
+		}
+
 		// --- OAuth Callback Handler ---
 		if (url.pathname === '/auth/callback') {
 			const code = url.searchParams.get('code');

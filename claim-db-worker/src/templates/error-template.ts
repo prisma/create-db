@@ -10,10 +10,8 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 				margin: 0;
 				padding: 0;
 				min-height: 100vh;
-				background-image: url('/hero-background.svg');
-				background-size: cover;
-				background-position: center;
-				background-repeat: no-repeat;
+      	background: url('/hero-background.svg') no-repeat center center fixed;
+      	background-size: cover;
 				color: #fff;
 				font-family: 'Inter', system-ui, sans-serif;
 				display: flex;
@@ -36,30 +34,25 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 			.error-x {
 				font-size: 4rem;
 				font-weight: 900;
-				color: #fc8181;
+				color: #FC8181;
 				line-height: 1;
 			}
 
-			.error-title {
-				color: #fc8181;
+			.title {
+				color: #FC8181;
 				font-size: 4rem;
 				font-weight: 700;
 				letter-spacing: -1px;
 			}
 
-			.error-message {
+			.message {
 				font-size: 1.5rem;
 				margin-bottom: 2.2rem;
 				font-weight: 400;
 			}
 
-			.error-details-label {
-				margin-bottom: 0.5rem;
-				font-weight: 600;
-			}
-
 			pre.error-details {
-				background: #090a15;
+				background: #090A15;
 				color: #fff;
 				font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
 				font-size: 1rem;
@@ -67,13 +60,13 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 				text-align: left;
 				word-break: break-all;
 				padding: 24px 16px;
-				border: 1.5px solid #2d3748;
+				border: 1.5px solid #2D3748;
 				margin: 0 auto;
 				display: block;
 			}
 
 			code {
-				color: #a0aec0;
+				color: #A0AEC0;
 				font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
 				font-size: 0.875rem;
 				background: none;
@@ -91,9 +84,9 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 						<line x1="62" y1="34" x2="34" y2="62" stroke="#222B32" stroke-width="8" stroke-linecap="round" />
 					</svg>
 				</span>
-				<span class="error-title">${title}</span>
+				<span class="title">${title}</span>
 			</div>
-			<div class="error-message">${message}</div>
+			<div class="message">${message}</div>
 			${
 				details
 					? `
