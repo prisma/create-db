@@ -1,0 +1,51 @@
+{
+  "changesets": [
+    {
+      "releases": [
+        {
+          "name": "create-db",
+          "type": "patch"
+        },
+        {
+          "name": "create-pg",
+          "type": "patch"
+        },
+        {
+          "name": "create-postgres",
+          "type": "patch"
+        }
+      ],
+      "summary": "fix: clearing change log versions",
+      "id": "angry-humans-call"
+    }
+  ],
+  "releases": [
+    {
+      "name": "create-db",
+      "type": "patch",
+      "oldVersion": "0.0.2",
+      "changesets": [
+        "angry-humans-call"
+      ],
+      "newVersion": "0.0.3"
+    },
+    {
+      "name": "create-pg",
+      "type": "patch",
+      "oldVersion": "0.0.2",
+      "changesets": [
+        "angry-humans-call"
+      ],
+      "newVersion": "0.0.3"
+    },
+    {
+      "name": "create-postgres",
+      "type": "patch",
+      "oldVersion": "0.0.2",
+      "changesets": [
+        "angry-humans-call"
+      ],
+      "newVersion": "0.0.3"
+    }
+  ]
+}
