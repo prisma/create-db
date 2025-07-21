@@ -50,6 +50,9 @@ jobs:
             cp create-db/README.md $pkg/README.md
           done
 
+      - name: 🛠️ Install Cloudflare Wrangler
+        run: npm install -g @cloudflare/wrangler
+
       - name: ☁️ Deploy CF Workers (preview)
         id: deploy-workers-preview
         env:

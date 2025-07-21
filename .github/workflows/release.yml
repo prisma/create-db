@@ -62,6 +62,9 @@ jobs:
             cd - >/dev/null
           done
 
+      - name: 🛠️ Install Cloudflare Wrangler
+        run: npm install -g @cloudflare/wrangler
+
       - name: ☁️ Deploy CF Workers (production)
         env:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
