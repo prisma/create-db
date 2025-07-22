@@ -352,7 +352,7 @@ async function createDatabase(name, region) {
       chalk.gray(
         "  Your database will be deleted on " +
           expiryFormatted +
-          " if not claimed.\n"
+          " if not claimed."
       )
     )
   );
@@ -391,18 +391,15 @@ async function main() {
       chooseRegionPrompt = true;
     }
 
-    intro(chalk.cyan.bold("🚀 Prisma Postgres Create DB"));
+    intro(chalk.cyan.bold("🚀 Creating a Prisma Postgres database"));
     log.message(
       chalk.white(`Provisioning a temporary database in ${region}...`)
     );
-    log.message("");
     log.message(
       chalk.gray(
         `It will be automatically deleted in 24 hours, but you can claim it.`
       )
     );
-    log.message("");
-
     // Interactive mode prompts
     if (chooseRegionPrompt) {
       // Prompt for region
