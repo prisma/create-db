@@ -15,6 +15,11 @@ import terminalLink from "terminal-link";
 
 dotenv.config();
 
+const CREATE_DB_WORKER_URL =
+  process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
+const CLAIM_DB_WORKER_URL =
+  process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io";
+
 async function listRegions() {
   try {
     const regions = await getRegions();
@@ -29,7 +34,7 @@ async function listRegions() {
 }
 
 async function isOffline() {
-  const healthUrl = `${process.env.CREATE_DB_WORKER_URL}/health`;
+  const healthUrl = `${CREATE_DB_WORKER_URL}/health`;
 
   try {
     const res = await fetch(healthUrl, { method: "GET" });
@@ -180,7 +185,7 @@ async function parseArgs() {
  * Fetch available regions from the API.
  */
 export async function getRegions() {
-  const url = `${process.env.CREATE_DB_WORKER_URL}/regions`;
+  const url = `${CREATE_DB_WORKER_URL}/regions`;
   const res = await fetch(url);
 
   if (!res.ok) {
@@ -192,7 +197,7 @@ export async function getRegions() {
   try {
     const data = await res.json();
     const regions = Array.isArray(data) ? data : data.data;
-    return regions.filter(region => region.status === 'available');
+    return regions.filter((region) => region.status === "available");
   } catch (e) {
     handleError("Failed to parse JSON from /regions endpoint.", e);
   }
@@ -268,7 +273,7 @@ async function createDatabase(name, region) {
   const s = spinner();
   s.start("Creating your database...");
 
-  const resp = await fetch(`${process.env.CREATE_DB_WORKER_URL}/create`, {
+  const resp = await fetch(`${CREATE_DB_WORKER_URL}/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ region, name, utm_source: CLI_NAME }),
@@ -300,7 +305,7 @@ async function createDatabase(name, region) {
   // Determine which connection string to display
   const database = result.data ? result.data.database : result.databases?.[0];
   const prismaConn = database?.connectionString;
-  const directConnDetails = result.data 
+  const directConnDetails = result.data
     ? database?.apiKeys?.[0]?.directConnection
     : result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
   const directConn = directConnDetails
@@ -335,7 +340,7 @@ async function createDatabase(name, region) {
 
   // Claim Database
   const projectId = result.data ? result.data.id : result.id;
-  const claimUrl = `${process.env.CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
+  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
   const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false });
   log.success(`${chalk.bold("Claim your database →")}`);
   log.message(
