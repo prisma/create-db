@@ -340,7 +340,7 @@ async function createDatabase(name, region) {
 
   // Claim Database
   const projectId = result.data ? result.data.id : result.id;
-  const claimUrl = `${process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io"}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
+  const claimUrl = `${process.env.CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
   const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false });
   log.info(`${chalk.white(chalk.bold("✅ Claim your database:"))}`);
 
