@@ -1,6 +1,7 @@
 import { getClaimSuccessHtml } from './templates/claim-success-template';
 import { getClaimHtml } from './templates/claim-template';
 import { getErrorHtml } from './templates/error-template';
+import { getHomepageHtml } from './templates/homepage-template';
 
 interface Env {
 	CLAIM_DB_RATE_LIMITER: RateLimit;
@@ -36,8 +37,14 @@ export default {
 		const url = new URL(request.url);
 
 		// Add a test route for local development to preview the success page
-		if (url.pathname === '/test-success') {
-			return new Response(getClaimSuccessHtml('cmddkid4303fly70vbmzqekl9'), {
+		// if (url.pathname === '/test-success') {
+		// 	return new Response(getClaimSuccessHtml('cmddkid4303fly70vbmzqekl9'), {
+		// 		headers: { 'Content-Type': 'text/html' },
+		// 	});
+		// }
+
+		if (url.pathname === '/') {
+			return new Response(getHomepageHtml(), {
 				headers: { 'Content-Type': 'text/html' },
 			});
 		}

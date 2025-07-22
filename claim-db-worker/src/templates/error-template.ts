@@ -4,8 +4,10 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
+		<link rel="shortcut icon" type="image/png" href="/favicon.png"/>
 		<title>${title}</title>
 		<style>
+			@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&display=swap');
 			body {
 				margin: 0;
 				padding: 0;
@@ -13,7 +15,7 @@ export function getErrorHtml(title: string, message: string, details?: string) {
       	background: url('/hero-background.svg') no-repeat center center fixed;
       	background-size: cover;
 				color: #fff;
-				font-family: 'Inter', system-ui, sans-serif;
+				font-family: 'Barlow', system-ui, sans-serif;
 				display: flex;
 				align-items: center;
 				justify-content: center;
