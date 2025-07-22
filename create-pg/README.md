@@ -5,9 +5,9 @@ CLI tool for provisioning a temporary Prisma Postgres databases.
 ## Usage
 
 ```bash
-npx create-db                    # Default region (us-east-1)
-npx create-db --region eu-west-1 # Custom region
-npx create-db --i               # Interactive region selection
+npx create-pg                    # Default region (us-east-1)
+npx create-pg --region eu-west-1 # Custom region
+npx create-pg --i               # Interactive region selection
 ```
 
 ## Key Files
@@ -44,7 +44,7 @@ CLAIM_DB_WORKER_URL="http://127.0.0.1:8787"
 ## Test Locally
 
 ```bash
-npx create-db
-npx create-db --region eu-west-1
-npx create-db --i
+npx create-pg
+npx create-pg --region eu-west-1
+npx create-pg --i
 ```
