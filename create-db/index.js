@@ -301,9 +301,11 @@ async function createDatabase(name, region) {
 
   log.message("");
   // Determine which connection string to display
-  const prismaConn = result.databases?.[0]?.connectionString;
-  const directConnDetails =
-    result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
+  const database = result.data ? result.data.database : result.databases?.[0];
+  const prismaConn = database?.connectionString;
+  const directConnDetails = result.data 
+    ? database?.apiKeys?.[0]?.directConnection
+    : result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
   const directConn = directConnDetails
     ? `postgresql://${directConnDetails.user}:${directConnDetails.pass}@${directConnDetails.host}/postgres`
     : null;
@@ -337,7 +339,8 @@ async function createDatabase(name, region) {
   }
 
   // Claim Database
-  const claimUrl = `${process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io"}?projectID=${result.id}&utm_source=${CLI_NAME}&utm_medium=cli`;
+  const projectId = result.data ? result.data.id : result.id;
+  const claimUrl = `${process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io"}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
   const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false });
   log.info(`${chalk.white(chalk.bold("✅ Claim your database:"))}`);
 
