@@ -18,7 +18,7 @@ export class DeleteDbWorkflow extends WorkflowEntrypoint<Env, Params> {
 
 		await step.sleep('wait 24 hours', '24 hours');
 
-		const res = await fetch(`https://api.prisma.io/projects/${projectID}`, {
+		const res = await fetch(`https://api.prisma.io/v1/projects/${projectID}`, {
 			method: 'DELETE',
 			headers: {
 				'Content-Type': 'application/json',
