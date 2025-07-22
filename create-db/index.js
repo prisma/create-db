@@ -15,6 +15,11 @@ import terminalLink from "terminal-link";
 
 dotenv.config();
 
+const CREATE_DB_WORKER_URL =
+  process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
+const CLAIM_DB_WORKER_URL =
+  process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io";
+
 async function listRegions() {
   try {
     const regions = await getRegions();
@@ -29,7 +34,7 @@ async function listRegions() {
 }
 
 async function isOffline() {
-  const healthUrl = `${process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io"}/health`;
+  const healthUrl = `${CREATE_DB_WORKER_URL}/health`;
 
   try {
     const res = await fetch(healthUrl, { method: "GET" });
@@ -78,30 +83,27 @@ Usage:
 
 Options:
   ${chalk.yellow(`--region <region>, -r <region>`)}  Specify the region (e.g., ${regionExamples})
-  ${chalk.yellow("--list-regions, -lr")}             Return the list of available regions for Prisma Postgres
-  ${chalk.yellow("--choose-region, -cs")}            Select database region interactively
+  ${chalk.yellow("--interactive, -i")}               Run in interactive mode to select a region and create the database
   ${chalk.yellow("--help, -h")}                      Show this help message
 
 Examples:
   ${chalk.gray(`npx ${CLI_NAME} --region us-east-1`)}
-  ${chalk.gray(`npx ${CLI_NAME} --list-regions`)}
-  ${chalk.gray(`npx ${CLI_NAME} --choose-region`)}
-  ${chalk.gray(`npx ${CLI_NAME} -cs`)}
+  ${chalk.gray(`npx ${CLI_NAME} -r us-east-1`)}
+  ${chalk.gray(`npx ${CLI_NAME} --interactive`)}
+  ${chalk.gray(`npx ${CLI_NAME} -i`)}
 `);
   process.exit(0);
 }
 
 // Parse command line arguments into flags and positional arguments
-function parseArgs() {
+async function parseArgs() {
   const args = process.argv.slice(2);
   const flags = {};
 
-  const allowedFlags = ["region", "help", "list-regions", "choose-region"];
+  const allowedFlags = ["region", "help", "list-regions", "interactive"];
   const shorthandMap = {
     r: "region",
-    l: "list-regions",
-    lr: "list-regions", // multi-letter shorthand
-    cs: "choose-region", // multi-letter shorthand
+    i: "interactive",
     h: "help",
   };
 
@@ -117,7 +119,7 @@ function parseArgs() {
     // Handle long flags (--region, --help, etc.)
     if (arg.startsWith("--")) {
       const flag = arg.slice(2);
-      if (flag === "help") showHelp();
+      if (flag === "help") await showHelp();
       if (!allowedFlags.includes(flag))
         exitWithError(`Invalid flag: --${flag}`);
       if (flag === "region") {
@@ -156,7 +158,10 @@ function parseArgs() {
       for (const letter of short.split("")) {
         const mappedFlag = shorthandMap[letter];
         if (!mappedFlag) exitWithError(`Invalid flag: -${letter}`);
-        if (mappedFlag === "help") showHelp();
+        if (mappedFlag === "help") {
+          await showHelp();
+          return;
+        }
         if (mappedFlag === "region") {
           const region = args[i + 1];
           if (!region || region.startsWith("-"))
@@ -180,7 +185,7 @@ function parseArgs() {
  * Fetch available regions from the API.
  */
 export async function getRegions() {
-  const url = `${process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io"}/regions`;
+  const url = `${CREATE_DB_WORKER_URL}/regions`;
   const res = await fetch(url);
 
   if (!res.ok) {
@@ -192,7 +197,7 @@ export async function getRegions() {
   try {
     const data = await res.json();
     const regions = Array.isArray(data) ? data : data.data;
-    return regions.filter(region => region.status === 'available');
+    return regions.filter((region) => region.status === "available");
   } catch (e) {
     handleError("Failed to parse JSON from /regions endpoint.", e);
   }
@@ -268,14 +273,11 @@ async function createDatabase(name, region) {
   const s = spinner();
   s.start("Creating your database...");
 
-  const resp = await fetch(
-    `${process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io"}/create`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ region, name, utm_source: CLI_NAME }),
-    }
-  );
+  const resp = await fetch(`${CREATE_DB_WORKER_URL}/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ region, name, utm_source: CLI_NAME }),
+  });
 
   // Rate limit exceeded
   if (resp.status === 429) {
@@ -303,21 +305,19 @@ async function createDatabase(name, region) {
   // Determine which connection string to display
   const database = result.data ? result.data.database : result.databases?.[0];
   const prismaConn = database?.connectionString;
-  const directConnDetails = result.data 
+  const directConnDetails = result.data
     ? database?.apiKeys?.[0]?.directConnection
     : result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
   const directConn = directConnDetails
     ? `postgresql://${directConnDetails.user}:${directConnDetails.pass}@${directConnDetails.host}/postgres`
     : null;
 
-  log.info(chalk.bold("🔌 You have two ways to connect to your database:"));
+  log.info(chalk.bold("Connect to your database →"));
 
   // Show Prisma Postgres connection string
   if (prismaConn) {
     log.message(
-      chalk.cyan(
-        "  Use this database connection string optimized for Prisma ORM:"
-      )
+      chalk.magenta("  Use this connection string optimized for Prisma ORM:")
     );
     log.message("  " + chalk.yellow(prismaConn));
     log.message("");
@@ -340,20 +340,20 @@ async function createDatabase(name, region) {
 
   // Claim Database
   const projectId = result.data ? result.data.id : result.id;
-  const claimUrl = `${process.env.CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
+  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
   const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false });
-  log.info(`${chalk.white(chalk.bold("✅ Claim your database:"))}`);
-
+  log.success(`${chalk.bold("Claim your database →")}`);
   log.message(
-    chalk.cyan("  You can make your database permanent ") +
-      chalk.cyan(chalk.bold("for free")) +
-      chalk.cyan(" by clicking the link below:")
+    chalk.cyan("  Want to keep your database? Claim for free via this link:")
   );
-
   log.message("  " + chalk.yellow(clickableUrl));
   log.message(
     chalk.italic(
-      chalk.gray("  Your database expires at " + expiryFormatted + ".\n")
+      chalk.gray(
+        "  Your database will be deleted on " +
+          expiryFormatted +
+          " if not claimed.\n"
+      )
     )
   );
 }
@@ -374,6 +374,10 @@ async function main() {
     let region = "us-east-1";
     let chooseRegionPrompt = false;
 
+    if (flags.help) {
+      return;
+    }
+
     if (flags["list-regions"]) {
       await listRegions();
       process.exit(0);
@@ -383,33 +387,26 @@ async function main() {
     if (flags.region) {
       region = flags.region;
     }
-    if (flags["choose-region"]) {
+    if (flags.interactive) {
       chooseRegionPrompt = true;
     }
 
+    intro(chalk.cyan.bold("🚀 Prisma Postgres Create DB"));
+    log.message(
+      chalk.white(`Provisioning a temporary database in ${region}...`)
+    );
+    log.message("");
+    log.message(
+      chalk.gray(
+        `It will be automatically deleted in 24 hours, but you can claim it.`
+      )
+    );
+    log.message("");
+
     // Interactive mode prompts
     if (chooseRegionPrompt) {
-      intro(chalk.cyan.bold("🚀 Prisma Postgres Create DB"));
-
-      log.message(
-        chalk.gray(
-          `We'll create a temporary Prisma Postgres database (valid for 24 hours).\n` +
-            `You can claim it to make it permanent or use it for prototyping.`
-        )
-      );
-      log.message("");
-
       // Prompt for region
       region = await promptForRegion(region);
-    } else {
-      // Show minimal header for non-interactive mode
-      log.info(chalk.cyan.bold("🚀 Prisma Postgres Create DB"));
-      log.message(
-        chalk.gray(
-          `Creating a temporary Prisma Postgres database in ${region}...`
-        )
-      );
-      log.message("");
     }
 
     // Validate the region
