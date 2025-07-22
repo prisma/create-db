@@ -30,7 +30,7 @@ export default {
 
 		// --- Get available regions ---
 		if (url.pathname === '/regions' && request.method === 'GET') {
-			const regionsResponse = await fetch('https://api.prisma.io/regions', {
+			const regionsResponse = await fetch('https://api.prisma.io/v1/regions/postgres', {
 				headers: { Authorization: `Bearer ${env.INTEGRATION_TOKEN}` },
 			});
 			const regionsText = await regionsResponse.text();
@@ -55,7 +55,7 @@ export default {
 			}
 
 			const payload = JSON.stringify({ region, name });
-			const prismaResponse = await fetch('https://api.prisma.io/projects', {
+			const prismaResponse = await fetch('https://api.prisma.io/v1/projects', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -68,7 +68,8 @@ export default {
 
 			// Trigger delete workflow for the new project
 			try {
-				const projectID = JSON.parse(prismaText).id;
+				const response = JSON.parse(prismaText);
+				const projectID = response.data ? response.data.id : response.id;
 				await env.DELETE_DB_WORKFLOW.create({ params: { projectID } });
 				env.CREATE_DB_DATASET.writeDataPoint({
 					blobs: ['database_created'],

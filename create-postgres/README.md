@@ -1,13 +1,13 @@
 # Create DB CLI
 
-CLI tool for provisioning a [temporary Prisma Postgres databases](https://www.prisma.io/postgres?utm_source=create_db_npm_docs).
+CLI tool for provisioning a [temporary Prisma Postgres databases](https://www.prisma.io/postgres?utm_source=create_postgres_npm_docs).
 
 ## Usage
 
 ```bash
-npx create-db                    # Default region (us-east-1)
-npx create-db --region eu-west-1 # Custom region
-npx create-db --i               # Interactive region selection
+npx create-postgres                    # Default region (us-east-1)
+npx create-postgres --region eu-west-1 # Custom region
+npx create-postgres --i               # Interactive region selection
 ```
 
 ## Key Files
@@ -44,7 +44,7 @@ CLAIM_DB_WORKER_URL="http://127.0.0.1:8787"
 ## Test Locally
 
 ```bash
-npx create-db
-npx create-db --region eu-west-1
-npx create-db --i
+npx create-postgres
+npx create-postgres --region eu-west-1
+npx create-postgres --i
 ```

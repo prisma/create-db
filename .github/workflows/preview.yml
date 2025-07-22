@@ -13,6 +13,8 @@ on:
 env:
   # each folder under the repo root that contains one of your CLIs
   WORKSPACES: create-db create-pg create-postgres
+  CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+  CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
 
 jobs:
   preview:
@@ -71,10 +73,21 @@ jobs:
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Bump & publish CLI previews
-        env:
-          CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
-          CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
         run: |
+          # Resolve URLs with fallback
+          CREATE_DB_WORKER_URL="${{ steps.deploy-db.outputs.deployment-url || secrets.CREATE_DB_WORKER_URL }}"
+          CLAIM_DB_WORKER_URL="${{ steps.deploy-claim.outputs.deployment-url || secrets.CLAIM_DB_WORKER_URL }}"
+
+          # Persist for next steps
+          echo "CREATE_DB_WORKER_URL=$CREATE_DB_WORKER_URL" >> $GITHUB_ENV
+          echo "CLAIM_DB_WORKER_URL=$CLAIM_DB_WORKER_URL" >> $GITHUB_ENV
+
+          export CREATE_DB_WORKER_URL
+          export CLAIM_DB_WORKER_URL
+
+          echo "Using CREATE_DB_WORKER_URL=$CREATE_DB_WORKER_URL"
+          echo "Using CLAIM_DB_WORKER_URL=$CLAIM_DB_WORKER_URL"
+
           for pkg in $WORKSPACES; do
             cd "$pkg"
             npm version prerelease \

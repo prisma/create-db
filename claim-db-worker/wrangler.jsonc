@@ -2,7 +2,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "claim-db-worker",
 	"main": "src/index.ts",
-	"account_id": "0ef7f922ce028e16c1a44d98c86511b0",
+	"account_id": "16b32bbb36161aca01a6357a37bc453e",
 	"compatibility_date": "2025-06-28",
 	"observability": {
 		"enabled": true,
