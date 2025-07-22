@@ -1,5 +1,11 @@
 # create-db
 
+## 0.0.5
+
+### Patch Changes
+
+- e1631bc: docs: add READMEs for each repo
+
 ## 0.0.4
 
 ### Patch Changes
