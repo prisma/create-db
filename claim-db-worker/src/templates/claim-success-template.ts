@@ -114,7 +114,7 @@ export function getClaimSuccessHtml(projectID: string) {
     </div>
     <div class="title">Congratulations!</div>
     <div class="message">You have successfully claimed your database</div>
-    <a class="success-btn" href="https://prisma.io" target="_blank" rel="noopener">
+    <a class="success-btn" href="https://console.prisma.io/" target="_blank" rel="noopener">
       Go use your database
       <img src="/arrow-up.svg" alt="Arrow up" class="arrow-up-icon">
     </a>
