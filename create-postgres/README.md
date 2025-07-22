@@ -1,6 +1,6 @@
 # Create DB CLI
 
-CLI tool for provisioning a temporary Prisma Postgres databases.
+CLI tool for provisioning a [temporary Prisma Postgres databases](https://www.prisma.io/postgres?utm_source=create_postgres_npm_docs).
 
 ## Usage
 
