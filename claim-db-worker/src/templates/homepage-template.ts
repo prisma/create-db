@@ -23,7 +23,7 @@ export function getHomepageHtml() {
 		/>
 		<meta name="twitter:image" content="/og-image.png" />
 		<link rel="shortcut icon" type="image/png" href="/favicon.png" />
-		<title>Animated Terminal</title>
+		<title>Prisma Postgres Create DB</title>
 		<style>
 			@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&display=swap');
 			* {
@@ -36,7 +36,7 @@ export function getHomepageHtml() {
 				background-size: cover;
 				font-family: 'Barlow', system-ui, sans-serif;
 				color: #e2e8f0;
-				padding: 4rem;
+				padding: 6rem;
 				display: flex;
 				align-items: center;
 				justify-content: center;
@@ -248,14 +248,25 @@ export function getHomepageHtml() {
 			}
 			.options-row {
 				background: #090a15;
+				height: 48px;
+				display: flex;
+				align-items: center;
 			}
 			.options-row .options-flag {
 				background: #090a15;
+				padding: 0 16px;
+				height: 48px;
+				display: flex;
+				align-items: center;
 			}
 			.options-row .options-desc {
 				background: #090a15;
 				font-family: 'Barlow', sans-serif;
 				font-weight: 400;
+				padding: 0 16px;
+				height: 48px;
+				display: flex;
+				align-items: center;
 			}
 			.flag-box {
 				display: inline-block;
@@ -266,7 +277,7 @@ export function getHomepageHtml() {
 				font-family: 'Roboto Mono', monospace;
 				font-weight: 700;
 				line-height: 18px;
-				padding: 8px 24px;
+				padding: 4px 24px;
 			}
 			.section-container {
 				display: flex;
@@ -325,25 +336,27 @@ export function getHomepageHtml() {
 							If you want to keep it, claim it with your Prisma account. Otherwise,
 							<span class="step-italic">it will expire after 24 hours.</span>
 						</div>
-					</div>
-				</div>
-				<div class="options-table">
-					<div class="options-header">
-						<div class="options-flag">Flag</div>
-						<div class="options-desc">Description</div>
-					</div>
-					<div class="options-row">
-						<div class="options-flag"><span class="flag-box">--name</span></div>
-						<div class="options-desc">Name of the database</div>
-					</div>
-					<div class="options-row">
-						<div class="options-flag"><span class="flag-box">--region</span></div>
-						<div class="options-desc">DB Region</div>
-					</div>
-					<div class="options-row">
-						<div class="options-flag"><span class="flag-box">--direct</span></div>
-						<div class="options-desc">Enable TCP access</div>
-					</div>
+                        </div>
+                        <div class="step">
+                        <div class="step-header">
+                                    <div class="step-number">4</div>
+                                    <div class="step-title">Options</div>
+                                </div>
+                        <div class="options-table">
+                            <div class="options-header">
+                                <div class="options-flag">Flag</div>
+                                <div class="options-desc">Description</div>
+                            </div>
+                            <div class="options-row">
+                                <div class="options-flag"><span class="flag-box">--region</span></div>
+                                <div class="options-desc">DB Region</div>
+                            </div>
+                            <div class="options-row">
+                                <div class="options-flag"><span class="flag-box">--direct</span></div>
+                                <div class="options-desc">Enable TCP access</div>
+                            </div>
+                        </div>
+                        </div>
 				</div>
 			</section>
 

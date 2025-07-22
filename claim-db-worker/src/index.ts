@@ -43,12 +43,6 @@ export default {
 		// 	});
 		// }
 
-		if (url.pathname === '/') {
-			return new Response(getHomepageHtml(), {
-				headers: { 'Content-Type': 'text/html' },
-			});
-		}
-
 		// --- OAuth Callback Handler ---
 		if (url.pathname === '/auth/callback') {
 			const code = url.searchParams.get('code');
@@ -122,7 +116,9 @@ export default {
 
 		// --- Main Claim Page Handler ---
 		const projectID = url.searchParams.get('projectID');
-		if (projectID) {
+		if (projectID && projectID !== 'undefined') {
+			console.log('projectID: ', projectID);
+			console.log('Claim Page');
 			const redirectUri = new URL('/auth/callback', request.url);
 			redirectUri.searchParams.set('projectID', projectID);
 
@@ -135,6 +131,10 @@ export default {
 			});
 			const authUrl = `https://auth.prisma.io/authorize?${authParams.toString()}`;
 			return new Response(getClaimHtml(projectID, authUrl), {
+				headers: { 'Content-Type': 'text/html' },
+			});
+		} else if (url.pathname === '/' && projectID !== 'undefined') {
+			return new Response(getHomepageHtml(), {
 				headers: { 'Content-Type': 'text/html' },
 			});
 		}
