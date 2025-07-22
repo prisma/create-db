@@ -191,7 +191,8 @@ export async function getRegions() {
 
   try {
     const data = await res.json();
-    return Array.isArray(data) ? data : data.data;
+    const regions = Array.isArray(data) ? data : data.data;
+    return regions.filter(region => region.status === 'available');
   } catch (e) {
     handleError("Failed to parse JSON from /regions endpoint.", e);
   }

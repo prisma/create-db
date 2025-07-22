@@ -30,7 +30,7 @@ export default {
 
 		// --- Get available regions ---
 		if (url.pathname === '/regions' && request.method === 'GET') {
-			const regionsResponse = await fetch('https://api.prisma.io/regions', {
+			const regionsResponse = await fetch('https://api.prisma.io/v1/regions/postgres', {
 				headers: { Authorization: `Bearer ${env.INTEGRATION_TOKEN}` },
 			});
 			const regionsText = await regionsResponse.text();
