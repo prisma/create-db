@@ -82,6 +82,9 @@ jobs:
           echo "CREATE_DB_WORKER_URL=$CREATE_DB_WORKER_URL" >> $GITHUB_ENV
           echo "CLAIM_DB_WORKER_URL=$CLAIM_DB_WORKER_URL" >> $GITHUB_ENV
 
+          export CREATE_DB_WORKER_URL
+          export CLAIM_DB_WORKER_URL
+
           echo "Using CREATE_DB_WORKER_URL=$CREATE_DB_WORKER_URL"
           echo "Using CLAIM_DB_WORKER_URL=$CLAIM_DB_WORKER_URL"
 
