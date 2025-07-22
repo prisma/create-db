@@ -13,6 +13,8 @@ on:
 env:
   # each folder under the repo root that contains one of your CLIs
   WORKSPACES: create-db create-pg create-postgres
+  CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+  CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
 
 jobs:
   preview:
@@ -75,6 +77,8 @@ jobs:
           CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
           CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
         run: |
+          export CREATE_DB_WORKER_URL=$CREATE_DB_WORKER_URL
+          export CLAIM_DB_WORKER_URL=$CLAIM_DB_WORKER_URL
           for pkg in $WORKSPACES; do
             cd "$pkg"
             npm version prerelease \
