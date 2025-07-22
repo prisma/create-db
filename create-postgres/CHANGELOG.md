@@ -1,5 +1,13 @@
 # create-postgres
 
+## 0.0.5
+
+### Patch Changes
+
+- e1631bc: docs: add READMEs for each repo
+- Updated dependencies [e1631bc]
+  - create-db@0.0.5
+
 ## 0.0.4
 
 ### Patch Changes
