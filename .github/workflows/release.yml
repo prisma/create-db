@@ -36,36 +36,42 @@ jobs:
       - name: ❌ Disable pnpm git-checks
         run: pnpm config set git-checks false
 
-      - name: 📄 Copy README to child CLIs
-        run: |
-          for pkg in create-pg create-postgres; do
-            cp create-db/README.md "$pkg/README.md"
-          done
-
       - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
-      # Always publish the packages, regardless of changesets
+      # Publish each CLI package using the version in package.json
       - name: 🚀 Publish Each CLI Package
         run: |
-          export CREATE_DB_WORKER_URL="${{ secrets.CREATE_DB_WORKER_URL }}"
-          export CLAIM_DB_WORKER_URL="${{ secrets.CLAIM_DB_WORKER_URL }}"
-
-          echo "Using CREATE_DB_WORKER_URL=$CREATE_DB_WORKER_URL"
-          echo "Using CLAIM_DB_WORKER_URL=$CLAIM_DB_WORKER_URL"
+          echo "Using CREATE_DB_WORKER_URL=${CREATE_DB_WORKER_URL}"
+          echo "Using CLAIM_DB_WORKER_URL=${CLAIM_DB_WORKER_URL}"
 
           for pkg in $WORKSPACES; do
             echo "Publishing $pkg to npm..."
             cd "$pkg"
-            npm version patch --no-git-tag-version
-            pnpm publish --access public || echo "Publish failed for $pkg"
+            # pnpm publish --access public || echo "Publish failed for $pkg"
+            # First try to publish
+            if ! pnpm publish --access public; then
+              echo "Publish failed, trying to bump version and retry..."
+              npm version patch --no-git-tag-version
+              pnpm publish --access public || echo "Publish failed again for $pkg"
+            fi
             cd - >/dev/null
           done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
+          CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+          CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
 
       - name: 🧹 Cleanup npm auth
         run: rm -f ~/.npmrc
+
+      # Create a default changeset if none exist
+      - name: 📝 Ensure Changeset Exists
+        run: |
+          if [ -z "$(ls -A .changeset 2>/dev/null)" ]; then
+            echo "No changeset found. Creating a default one..."
+            pnpm changeset add --empty --message "chore(release): auto-generated changeset"
+          fi
 
       # Finally, create a PR for version bump + changelogs
       - name: 📝 Prepare Changesets PR
@@ -73,5 +79,7 @@ jobs:
         uses: changesets/action@v1
         with:
           version: pnpm changeset version
+          commit: "chore(release): version packages"
+          title: "chore(release): version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
