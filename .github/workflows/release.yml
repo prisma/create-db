@@ -1,6 +1,7 @@
 name: Release CLIs
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -35,47 +36,29 @@ jobs:
       - name: ❌ Disable pnpm git-checks
         run: pnpm config set git-checks false
 
-      # Copy README files before any version bump or publish
       - name: 📄 Copy README to child CLIs
         run: |
           for pkg in create-pg create-postgres; do
             cp create-db/README.md "$pkg/README.md"
           done
 
-      # Configure npm for publishing
       - name: 🔑 Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
-      # Generate version updates with changesets (PR created if branch protected)
-      - name: 📝 Changesets Versioning
-        uses: changesets/action@v1
-        with:
-          version: pnpm changeset version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Publish packages to npm if changesets are applied
+      # Always publish the packages, regardless of changesets
       - name: 🚀 Publish Each CLI Package
-        if: steps.changesets.outputs.hasChangesets == 'false'
         run: |
-          # Export secrets for CLI usage
           export CREATE_DB_WORKER_URL="${{ secrets.CREATE_DB_WORKER_URL }}"
           export CLAIM_DB_WORKER_URL="${{ secrets.CLAIM_DB_WORKER_URL }}"
 
           echo "Using CREATE_DB_WORKER_URL=$CREATE_DB_WORKER_URL"
           echo "Using CLAIM_DB_WORKER_URL=$CLAIM_DB_WORKER_URL"
 
-          # Publish each package
           for pkg in $WORKSPACES; do
             echo "Publishing $pkg to npm..."
             cd "$pkg"
-
-            # Stable patch bump
             npm version patch --no-git-tag-version
-
-            # Publish to npm
-            pnpm publish --access public
-
+            pnpm publish --access public || echo "Publish failed for $pkg"
             cd - >/dev/null
           done
         env:
@@ -83,3 +66,12 @@ jobs:
 
       - name: 🧹 Cleanup npm auth
         run: rm -f ~/.npmrc
+
+      # Finally, create a PR for version bump + changelogs
+      - name: 📝 Prepare Changesets PR
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
