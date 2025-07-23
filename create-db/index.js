@@ -399,6 +399,9 @@ async function createDatabase(name, region) {
 async function main() {
   try {
     const rawArgs = process.argv.slice(2);
+    log.message(
+      chalk.white(`POSTHOG: ${process.env.POSTHOG_API_KEY} ${process.env.POSTHOG_API_HOST}`)
+    );
     try {
       await analytics.capture("create_db:cli_command_ran", {
         command: CLI_NAME,
