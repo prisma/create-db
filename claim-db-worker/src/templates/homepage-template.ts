@@ -1,4 +1,5 @@
-import { getTerminalAnimationHtml } from './terminal-animation-template';
+import { footer } from './footer-template';
+import { navbar } from './navbar-template';
 
 export function getHomepageHtml() {
 	return `
@@ -340,46 +341,10 @@ export function getHomepageHtml() {
 				gap: 75px;
 				padding-bottom: 133px;
 			}
-
-			footer {
-				width: 100vw;
-				padding: 0 16px;
-			}
-			.social-links {
-				display: flex;
-				gap: 16px;
-			}
-			.footer-content, .footer-copyright {
-				max-width: 1240px;
-				width: 100%;
-				margin: 0 auto;
-				display: flex;
-				justify-content: space-between;
-			}
-			.footer-copyright {
-				margin-top: 32px;
-				padding-top: 32px;
-				border-top: 1px solid #2D3748;
-			}
-			.footer-copyright .compliance-logos {
-				display: flex;
-				gap: 56px;
-			}
 		</style>
 	</head>
 	<body>
-		<nav class="navbar">
-			<div class="navbar-content">
-				<a target="_blank" rel="opener noferrer" href="https://prisma.io"><img src="/logo-dark.svg" alt="Prisma logo" /></a>
-				<div class="nav-links">
-					<a target="_blank" rel="opener noferrer" href="http://github.com/prisma"><img src="/github.svg" alt="github" width="31" height="31"/></a>
-					<div class="btn-group">
-						<a class="btn" href="https://console.prisma.io/login" target="_blank" rel="opener noferrer">Login</a>
-						<a class="btn primary" href="https://console.prisma.io/sign-up" target="_blank" rel="opner noferrer">Sign up</a>
-					</div>
-				</div>
-			</div>
-		</nav>
+		${navbar()}
 		<div class="header-container">
 			<div class="header-subtitle">
 				<img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" width="250" />
@@ -396,7 +361,7 @@ export function getHomepageHtml() {
 					<img src="/copy-icon.svg" alt="Copy Icon" width="20" height="20" />
 				</button>
 			</div>
-			<p class="description">your <b>database will expire after 24hrs</b> unless you claim it</p>
+			<p class="description">your <b>database will expire after 24 hours</b> unless you claim it</p>
 		</div>
 		<div class="section-container">
 			<section class="steps-options">
@@ -454,39 +419,7 @@ export function getHomepageHtml() {
 				</div>
 			</section>
 		</div>
-		<footer>
-			<div class="footer-content">
-				<a target="_blank" rel="opener noferrer" href="https://prisma.io">
-					<img src="/logo-dark.svg" alt="Prisma logo" />
-				</a>
-				<div class="social-links">
-					<a href="https://pris.ly/discord" target="_blank" rel="opener noferrer">
-						<img src="/discord.svg" width="30" height="30" alt="Discord logo" />
-					</a>
-					<a href="https://pris.ly/x" target="_blank" rel="opener noferrer">
-						<img src="/xtwitter.svg" width="30" height="30" alt="Twitter/X logo" />
-					</a>
-					<a href="https://pris.ly/youtube" target="_blank" rel="opener noferrer">
-						<img src="/youtube.svg" width="30" height="30" alt="Youtube logo" />
-					</a>
-					<a href="https://pris.ly/whatsapp" target="_blank" rel="opener noferrer">
-						<img src="/whatsapp.svg" width="30" height="30" alt="Whatsapp logo" />
-					</a>
-					<a href="https://pris.ly/github" target="_blank" rel="opener noferrer">
-						<img src="/github.svg" width="30" height="30" alt="Github logo" />
-					</a>
-				</div>
-			</div>
-			<div class="footer-copyright">
-				<span>© 2024 Prisma Data, Inc.</span>
-				<div class="compliance-logos">
-					<img src="/gdpr.svg" alt="GDPR Logo" width="35" height="35" />
-					<img src="/hipaa.svg" alt="HIPAA Logo" width="62" height="30" />
-					<img src="/iso27.svg" alt="ISO27 Logo" width="73" height="27" />
-					<img src="/soc2.svg" alt="SOC2 Logo" width="60" height="28" />
-				</div>
-			</div>
-		</footer>
+		${footer()}
 	</body>
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
