@@ -14,7 +14,11 @@ export function getClaimHtml(projectID: string, authUrl: string) {
     @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&display=swap');
     body {
       font-family: 'Barlow', system-ui, sans-serif;
-      background: url('/hero-background.svg') no-repeat center center fixed;
+			backdrop-filter: blur(12px);
+				background: radial-gradient(circle at 30% 30%, rgba(0, 128, 128, 0.2), transparent 50%),
+            radial-gradient(circle at 70% 70%, rgba(0, 128, 128, 0.2), transparent 50%),
+            #050d0f;
+				background-size: cover;
       background-size: cover;
       margin: 0;
       padding: 0;

@@ -33,7 +33,11 @@ export function getHomepageHtml() {
 				box-sizing: border-box;
 			}
 			body {
-				background: url('/hero-background.svg') no-repeat center center, linear-gradient(180deg, #090A15 0%, rgba(9, 10, 21, 0.5) 19.02%, rgba(9, 10, 21, 0.5) 74%, rgba(9, 10, 21, 0.95) 100%);
+				backdrop-filter: blur(12px);
+				background: radial-gradient(circle at 30% 30%, rgba(0, 128, 128, 0.2), transparent 50%),
+            radial-gradient(circle at 70% 70%, rgba(0, 128, 128, 0.2), transparent 50%),
+            #050d0f;
+				background-size: cover;
 				background-size: cover;
 				font-family: 'Barlow', system-ui, sans-serif;
 				color: #e2e8f0;
