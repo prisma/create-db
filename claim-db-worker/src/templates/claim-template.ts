@@ -9,6 +9,7 @@ export function getClaimHtml(projectID: string, authUrl: string) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="shortcut icon" type="image/png" href="/favicon.png"/>
+  <link rel="preload" as="image" href="/hero-background.svg" type="image/svg+xml" />
   <title>Claim Database</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&display=swap');

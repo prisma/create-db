@@ -8,6 +8,7 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 	<head>
 		<meta charset="UTF-8" />
 		<link rel="shortcut icon" type="image/png" href="/favicon.png"/>
+		<link rel="preload" as="image" href="/hero-background.svg" type="image/svg+xml" />
 		<title>${title}</title>
 		<style>
 			@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&display=swap');
