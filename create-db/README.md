@@ -85,7 +85,7 @@ The CLI output includes a **claim URL** that allows you to keep the database per
 
 **What claiming does:**
 
-- Moves the database into your Prisma Postgres account.
+- Moves the database into your Prisma Data Platform account.
 - Prevents it from being auto-deleted.
 - Lets you continue using the database as a long-term instance.
 

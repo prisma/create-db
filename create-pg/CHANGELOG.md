@@ -1,5 +1,16 @@
 # create-pg
 
+## 1.0.0
+
+### Major Changes
+
+- release: version 1
+
+### Patch Changes
+
+- Updated dependencies
+  - create-db@1.0.0
+
 ## 0.0.0-0.0.9-20250723085902
 
 ### Minor Changes
