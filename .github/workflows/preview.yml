@@ -78,8 +78,8 @@ jobs:
       - name: 🚀 Bump & publish CLI previews
         env:
           WORKSPACES: create-db create-pg create-postgres
-          POSTHOG_API_HOST: ${{ env.POSTHOG_API_HOST }}
-          POSTHOG_API_KEY: ${{ env.POSTHOG_API_KEY }}
+          POSTHOG_API_HOST: ${{ secrets.POSTHOG_API_HOST }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
           CREATE_DB_WORKER_URL: ${{ env.CREATE_DB_WORKER_URL }}
           CLAIM_DB_WORKER_URL: ${{ env.CLAIM_DB_WORKER_URL }}
         run: |
@@ -94,13 +94,17 @@ jobs:
 
           echo "Using CREATE_DB_WORKER_URL=$CREATE_DB_WORKER_URL"
           echo "Using CLAIM_DB_WORKER_URL=$CLAIM_DB_WORKER_URL"
+          echo "Using POSTHOG_API_HOST=${POSTHOG_API_HOST}"
+          echo "PostHog API Key is set: $([[ -n "$POSTHOG_API_KEY" ]] && echo "YES" || echo "NO")"
+          echo "PostHog API Key length: ${#POSTHOG_API_KEY}"
+          echo "PostHog API Host starts with https: $([[ "$POSTHOG_API_HOST" == https* ]] && echo "YES" || echo "NO")"
 
           for pkg in $WORKSPACES; do
             cd "$pkg"
             export CREATE_DB_WORKER_URL
             export CLAIM_DB_WORKER_URL
-            export POSTHOG_API_HOST="${{ env.POSTHOG_API_HOST }}"
-            export POSTHOG_API_KEY="${{ env.POSTHOG_API_KEY }}"
+            export POSTHOG_API_HOST="${POSTHOG_API_HOST}"
+            export POSTHOG_API_KEY="${POSTHOG_API_KEY}"
 
             npm version prerelease \
               --preid "$PRE_TAG" \
