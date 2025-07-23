@@ -82,8 +82,6 @@ export default {
 
 			const tokenData = (await tokenResponse.json()) as { access_token: string };
 
-			console.log('tokenData: ', JSON.stringify(tokenData, null, 2));
-
 			// Transfer project
 			const transferResponse = await fetch(`https://api.prisma.io/v1/projects/${projectID}/transfer`, {
 				method: 'POST',
@@ -99,7 +97,6 @@ export default {
 					blobs: ['database_claimed'],
 					indexes: ['claim_db'],
 				});
-
 				return new Response(getClaimSuccessHtml(projectID), {
 					headers: { 'Content-Type': 'text/html' },
 				});
@@ -117,8 +114,6 @@ export default {
 		// --- Main Claim Page Handler ---
 		const projectID = url.searchParams.get('projectID');
 		if (projectID && projectID !== 'undefined') {
-			console.log('projectID: ', projectID);
-			console.log('Claim Page');
 			const redirectUri = new URL('/auth/callback', request.url);
 			redirectUri.searchParams.set('projectID', projectID);
 
