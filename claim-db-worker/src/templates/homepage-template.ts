@@ -222,7 +222,7 @@ export function getHomepageHtml() {
 				background: #121521;
 			}
 			.options-flag {
-				width: 164px;
+				width: 250px;
 				padding: 8px 16px;
 				background: #121521;
 				color: #e2e8f0;
@@ -300,7 +300,7 @@ export function getHomepageHtml() {
 			<h1 class="title">Want a free, instant Prisma Postgres database?</h1>
 			<div class="code-snippet">
 				<span class="code-icon">$</span>
-				<span class="code-text">npx create-db</span>
+				<span class="code-text">npx create-db@latest</span>
 				<button class="copy-btn" aria-label="Copy command">
 					<img src="/copy-icon.svg" alt="Copy Icon" width="20" height="20" />
 				</button>
@@ -316,7 +316,7 @@ export function getHomepageHtml() {
 							<div class="step-title">Deploy in seconds</div>
 						</div>
 						<div class="step-desc">
-							Run <span class="step-code">npx create-db</span> in your terminal to get a Prisma Postgres database instantly - no login, no
+							Run <span class="step-code">npx create-db@latest</span> in your terminal to get a Prisma Postgres database instantly - no login, no
 							setup.
 						</div>
 					</div>
@@ -349,11 +349,15 @@ export function getHomepageHtml() {
                             </div>
                             <div class="options-row">
                                 <div class="options-flag"><span class="flag-box">--region</span></div>
-                                <div class="options-desc">DB Region</div>
+                                <div class="options-desc">Specify the database region</div>
                             </div>
-                            <div class="options-row">
-                                <div class="options-flag"><span class="flag-box">--direct</span></div>
-                                <div class="options-desc">Enable TCP access</div>
+							<div class="options-row">
+                                <div class="options-flag"><span class="flag-box">--interactive</span></div>
+                                <div class="options-desc">Run in interactive mode</div>
+                            </div>
+                           <div class="options-row">
+                                <div class="options-flag"><span class="flag-box">--help</span></div>
+                                <div class="options-desc">Show all available options</div>
                             </div>
                         </div>
                         </div>
@@ -368,7 +372,7 @@ export function getHomepageHtml() {
 			const copyBtn = document.querySelector('.copy-btn');
 			if (copyBtn) {
 				copyBtn.addEventListener('click', function () {
-					const command = 'npx create-db';
+					const command = 'npx create-db@latest';
 					navigator.clipboard.writeText(command).then(() => {
 						// Optional: Visual feedback
 						copyBtn.setAttribute('aria-label', 'Copied!');
