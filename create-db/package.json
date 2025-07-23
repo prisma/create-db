@@ -1,6 +1,6 @@
 {
   "name": "create-db",
-  "version": "0.0.10",
+  "version": "0.0.12",
   "description": "Instantly create a temporary Prisma Postgres database with one command, then claim and persist it in your Prisma Data Platform project when ready.",
   "main": "index.js",
   "author": "",
@@ -39,6 +39,7 @@
   "files": [
     "index.js",
     "README.md",
+    "demo.gif",
     "analytics.js"
   ]
 }

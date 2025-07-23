@@ -1,3 +1,6 @@
+import { footer } from "./footer-template";
+import { navbar } from "./navbar-template";
+
 export function getErrorHtml(title: string, message: string, details?: string) {
 	return `
 	<!DOCTYPE html>
@@ -11,18 +14,24 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 			body {
 				margin: 0;
 				padding: 0;
-				min-height: 100vh;
       	background: url('/hero-background.svg') no-repeat center center fixed;
       	background-size: cover;
 				color: #fff;
 				font-family: 'Barlow', system-ui, sans-serif;
 				display: flex;
-				align-items: center;
-				justify-content: center;
+				justify-content: space-between;
+				flex-direction: column;
+				min-height: 100vh;
 			}
 
 			.container {
 				text-align: center;
+				display: flex;
+				flex-direction: column;
+				min-height: 50vh;
+				height: 100%;
+				align-items: center;
+				justify-content: space-between;
 			}
 
 			.error-header {
@@ -77,26 +86,30 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 		</style>
 	</head>
 	<body>
+  		${navbar()}
 		<div class="container">
-			<div class="error-header">
-				<span class="error-x" aria-label="Error">
-					<svg width="64" height="64" viewBox="0 0 96 96" fill="none" aria-hidden="true" style="display: block">
-						<circle cx="48" cy="48" r="40" fill="#FC8181" />
-						<line x1="34" y1="34" x2="62" y2="62" stroke="#222B32" stroke-width="8" stroke-linecap="round" />
-						<line x1="62" y1="34" x2="34" y2="62" stroke="#222B32" stroke-width="8" stroke-linecap="round" />
-					</svg>
-				</span>
-				<span class="title">${title}</span>
+			<div class="content">
+				<div class="error-header">
+					<span class="error-x" aria-label="Error">
+						<svg width="64" height="64" viewBox="0 0 96 96" fill="none" aria-hidden="true" style="display: block">
+							<circle cx="48" cy="48" r="40" fill="#FC8181" />
+							<line x1="34" y1="34" x2="62" y2="62" stroke="#222B32" stroke-width="8" stroke-linecap="round" />
+							<line x1="62" y1="34" x2="34" y2="62" stroke="#222B32" stroke-width="8" stroke-linecap="round" />
+						</svg>
+					</span>
+					<span class="title">${title}</span>
+				</div>
+				<div class="message">${message}</div>
+				${
+					details
+						? `
+				<pre class="error-details"><code>${details}</code></pre>
+				`
+						: ''
+				}
 			</div>
-			<div class="message">${message}</div>
-			${
-				details
-					? `
-			<pre class="error-details"><code>${details}</code></pre>
-			`
-					: ''
-			}
 		</div>
+  		${footer()}
 	</body>
 </html>
 
