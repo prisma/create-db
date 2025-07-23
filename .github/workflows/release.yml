@@ -10,6 +10,8 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 env:
   WORKSPACES: create-db create-pg create-postgres
+  POSTHOG_API_HOST: ${{ secrets.POSTHOG_API_HOST }}
+  POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
 
 jobs:
   release:
@@ -44,10 +46,13 @@ jobs:
         run: |
           echo "Using CREATE_DB_WORKER_URL=${CREATE_DB_WORKER_URL}"
           echo "Using CLAIM_DB_WORKER_URL=${CLAIM_DB_WORKER_URL}"
+          echo "Using POSTHOG_API_HOST=${POSTHOG_API_HOST}"
 
           for pkg in $WORKSPACES; do
             echo "Publishing $pkg to npm..."
             cd "$pkg"
+            export POSTHOG_API_HOST="${{ secrets.POSTHOG_API_HOST }}"
+            export POSTHOG_API_KEY="${{ secrets.POSTHOG_API_KEY }}"
             # pnpm publish --access public || echo "Publish failed for $pkg"
             # First try to publish
             if ! pnpm publish --access public; then
@@ -61,6 +66,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
           CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
           CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
+          POSTHOG_API_HOST: ${{ secrets.POSTHOG_API_HOST }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
 
       - name: 🧹 Cleanup npm auth
         run: rm -f ~/.npmrc

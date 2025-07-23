@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import dotenv from "dotenv";
+dotenv.config();
+
 import {
   select,
   spinner,
@@ -7,13 +10,10 @@ import {
   outro,
   log,
   cancel,
-  confirm,
 } from "@clack/prompts";
 import chalk from "chalk";
-import dotenv from "dotenv";
 import terminalLink from "terminal-link";
-
-dotenv.config();
+import { analytics } from "./analytics.js";
 
 const CREATE_DB_WORKER_URL =
   process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
@@ -265,6 +265,17 @@ async function promptForRegion(defaultRegion) {
     process.exit(0);
   }
 
+  // Track region selection event
+  try {
+    await analytics.capture("create_db:region_selected", {
+      command: CLI_NAME,
+      region: region,
+      "selection-method": "interactive"
+    });
+  } catch (error) {
+    // Silently fail analytics
+  }
+
   return region;
 }
 
@@ -284,6 +295,19 @@ async function createDatabase(name, region) {
     s.stop(
       "We're experiencing a high volume of requests. Please try again later."
     );
+    
+    // Track database creation failure
+    try {
+      await analytics.capture("create_db:database_creation_failed", {
+        command: CLI_NAME,
+        region: region,
+        "error-type": "rate_limit",
+        "status-code": 429,
+      });
+    } catch (error) {
+      // Silently fail analytics
+    }
+    
     process.exit(1);
   }
 
@@ -293,6 +317,18 @@ async function createDatabase(name, region) {
     s.stop(
       `Error creating database: ${result.error.message || "Unknown error"}`
     );
+    
+    // Track database creation failure
+    try {
+      await analytics.capture("create_db:database_creation_failed", {
+        command: CLI_NAME,
+        region: region,
+        "error-type": "api_error",
+        "error-message": result.error.message,
+      });
+    } catch (error) {
+      // Silently fail analytics
+    }
     process.exit(1);
   }
 
@@ -362,6 +398,23 @@ async function createDatabase(name, region) {
 
 async function main() {
   try {
+    const rawArgs = process.argv.slice(2);
+    try {
+      await analytics.capture("create_db:cli_command_ran", {
+        command: CLI_NAME,
+        "full-command": `${CLI_NAME} ${rawArgs.join(' ')}`.trim(),
+        "has-region-flag": rawArgs.includes('--region') || rawArgs.includes('-r'),
+        "has-interactive-flag": rawArgs.includes('--interactive') || rawArgs.includes('-i'),
+        "has-help-flag": rawArgs.includes('--help') || rawArgs.includes('-h'),
+        "has-list-regions-flag": rawArgs.includes('--list-regions'),
+        "node-version": process.version,
+        platform: process.platform,
+        arch: process.arch
+      });
+    } catch (error) {
+      // Silently fail analytics
+    }
+
     // Parse command line arguments
     const { flags } = await parseArgs();
 
@@ -386,6 +439,17 @@ async function main() {
     // Apply command line flags
     if (flags.region) {
       region = flags.region;
+      
+      // Track region selection via flag
+      try {
+        await analytics.capture("create_db:region_selected", {
+          command: CLI_NAME,
+          region: region,
+          "selection-method": "flag"
+        });
+      } catch (error) {
+        // Silently fail analytics
+      }
     }
     if (flags.interactive) {
       chooseRegionPrompt = true;

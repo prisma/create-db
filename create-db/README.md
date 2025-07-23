@@ -2,8 +2,6 @@
 
 `create-db` is an open-source CLI tool that provisions [**temporary Prisma Postgres databases**](https://www.prisma.io/postgres?utm_source=create_db_npm_docs) with a single command.
 
-![Demo Gif](demo.gif)
-
 Each database is available for **24 hours** by default. To keep the database permanently, you can **claim it for free** using the URL displayed in the CLI output.
 
 This tool is designed for developers who need a fast way to test, prototype, or integrate Prisma Postgres without manual setup or creating an account.
