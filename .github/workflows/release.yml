@@ -65,6 +65,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
           CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
           CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
+          POSTHOG_API_HOST: ${{ secrets.POSTHOG_API_HOST }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
 
       - name: 🧹 Cleanup npm auth
         run: rm -f ~/.npmrc
