@@ -76,6 +76,12 @@ jobs:
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
 
       - name: 🚀 Bump & publish CLI previews
+        env:
+          WORKSPACES: create-db create-pg create-postgres
+          POSTHOG_API_HOST: ${{ env.POSTHOG_API_HOST }}
+          POSTHOG_API_KEY: ${{ env.POSTHOG_API_KEY }}
+          CREATE_DB_WORKER_URL: ${{ env.CREATE_DB_WORKER_URL }}
+          CLAIM_DB_WORKER_URL: ${{ env.CLAIM_DB_WORKER_URL }}
         run: |
           # Resolve URLs with fallback
           CREATE_DB_WORKER_URL="${{ steps.deploy-db.outputs.deployment-url || secrets.CREATE_DB_WORKER_URL }}"
@@ -93,8 +99,8 @@ jobs:
             cd "$pkg"
             export CREATE_DB_WORKER_URL
             export CLAIM_DB_WORKER_URL
-            export POSTHOG_API_HOST="${{ secrets.POSTHOG_API_HOST }}"
-            export POSTHOG_API_KEY="${{ secrets.POSTHOG_API_KEY }}"
+            export POSTHOG_API_HOST="${{ env.POSTHOG_API_HOST }}"
+            export POSTHOG_API_KEY="${{ env.POSTHOG_API_KEY }}"
 
             npm version prerelease \
               --preid "$PRE_TAG" \

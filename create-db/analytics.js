@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from "crypto";
 
 class EventCaptureError extends Error {
   constructor(event, status) {
@@ -8,13 +8,17 @@ class EventCaptureError extends Error {
 
 class PosthogEventCapture {
   async capture(eventName, properties = {}) {
-    const POSTHOG_CAPTURE_URL = process.env.POSTHOG_API_HOST ? process.env.POSTHOG_API_HOST + '/capture' : null
-    const POSTHOG_KEY = process.env.POSTHOG_API_KEY
+    const POSTHOG_CAPTURE_URL = process.env.POSTHOG_API_HOST
+      ? process.env.POSTHOG_API_HOST + "/capture"
+      : null;
+    const POSTHOG_KEY = process.env.POSTHOG_API_KEY;
 
     // Skip if environment variables are not set
     if (!POSTHOG_CAPTURE_URL || !POSTHOG_KEY) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Analytics skipped: POSTHOG_API_HOST or POSTHOG_API_KEY not set');
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "Analytics skipped: POSTHOG_API_HOST or POSTHOG_API_KEY not set"
+        );
       }
       return;
     }
@@ -25,15 +29,15 @@ class PosthogEventCapture {
       distinct_id: randomUUID(),
       properties: {
         $process_person_profile: false,
-        ...properties
-      }
+        ...properties,
+      },
     };
 
     try {
       const response = await fetch(POSTHOG_CAPTURE_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
@@ -43,8 +47,8 @@ class PosthogEventCapture {
       }
     } catch (error) {
       // Silently fail analytics to not disrupt user experience
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Analytics error:', error.message);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Analytics error:", error.message);
       }
     }
   }
