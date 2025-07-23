@@ -52,7 +52,8 @@ jobs:
 
       - name: 🔖 Create unique preview tag
         run: |
-          echo "PRE_TAG=pr${{ github.event.number }}-${{ github.event.pull_request.head.ref }}-${{ github.run_id }}" >> $GITHUB_ENV
+          SAFE_REF=$(echo "${{ github.event.pull_request.head.ref }}" | tr '/' '-')
+          echo "PRE_TAG=pr${{ github.event.number }}-${SAFE_REF}-${{ github.run_id }}" >> $GITHUB_ENV
 
       # — CF Worker preview deploys commented out; we will use pre-built URLs
       # - name: ☁️ Deploy create-db-worker (preview)
