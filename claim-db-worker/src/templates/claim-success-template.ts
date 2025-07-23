@@ -1,3 +1,6 @@
+import { footer } from "./footer-template";
+import { navbar } from "./navbar-template";
+
 export function getClaimSuccessHtml(projectID: string) {
 	return `
 <!DOCTYPE html>
@@ -13,17 +16,26 @@ export function getClaimSuccessHtml(projectID: string) {
       margin: 0;
       padding: 0;
       min-height: 100vh;
-      background: url('/hero-background.svg') no-repeat center center fixed;
+			background: url('/hero-background.svg') no-repeat center center, linear-gradient(180deg, #090A15 0%, rgba(9, 10, 21, 0.5) 19.02%, rgba(9, 10, 21, 0.5) 74%, rgba(9, 10, 21, 0.95) 100%);
       background-size: cover;
       color: #fff;
       font-family: 'Barlow', system-ui, sans-serif;
       display: flex;
-      align-items: center;
-      justify-content: center;
+			overscroll-behavior: none;
+      justify-content: space-between;
+      flex-direction: column;
+      min-height: 100vh;
     }
     .container {
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      min-height: 50vh;
+      height: 100%;
+      align-items: center;
+      justify-content: space-between;
     }
+
     .title {
       font-size: 4rem;
       font-weight: 700;
@@ -109,26 +121,30 @@ export function getClaimSuccessHtml(projectID: string) {
   </style>
 </head>
 <body>
+  ${navbar()}
   <div class="container">
-    <div>
-      <img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" width="250" height="100">
-    </div>
-    <div class="title">Congratulations!</div>
-    <div class="message">You have successfully claimed your database</div>
-    <a class="success-btn" href="https://console.prisma.io/" target="_blank" rel="noopener">
-      Go use your database
-      <img src="/arrow-up.svg" alt="Arrow up" class="arrow-up-icon">
-    </a>
-    <div class="db-img-container">
-      <img src="/db-img.svg" alt="Database Success" class="db-img">
-      <span class="checkmark-icon">
-    <svg width="48" height="48" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      <circle cx="32" cy="32" r="28" fill="#5eead4"/>
-      <path d="M20 34l8 8 16-16" stroke="#222B32" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </span>
+		<div class="content">
+      <div>
+        <img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" width="250" height="100">
+      </div>
+      <div class="title">Congratulations!</div>
+      <div class="message">You have successfully claimed your database</div>
+      <a class="success-btn" href="https://console.prisma.io/" target="_blank" rel="noopener">
+        Go use your database
+        <img src="/arrow-up.svg" alt="Arrow up" class="arrow-up-icon">
+      </a>
+      <div class="db-img-container">
+        <img src="/db-img.svg" alt="Database Success" class="db-img">
+        <span class="checkmark-icon">
+            <svg width="48" height="48" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <circle cx="32" cy="32" r="28" fill="#5eead4"/>
+              <path d="M20 34l8 8 16-16" stroke="#222B32" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </span>
+      </div>
     </div>
   </div>
+  ${footer()}
 </body>
 </html>
 	`;

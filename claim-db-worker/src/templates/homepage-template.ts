@@ -1,4 +1,5 @@
-import { getTerminalAnimationHtml } from './terminal-animation-template';
+import { footer } from './footer-template';
+import { navbar } from './navbar-template';
 
 export function getHomepageHtml() {
 	return `
@@ -285,10 +286,12 @@ export function getHomepageHtml() {
 				align-items: center;
 				justify-content: center;
 				gap: 75px;
+				padding-bottom: 133px;
 			}
 		</style>
 	</head>
 	<body>
+		${navbar()}
 		<div class="header-container">
 			<div>
 				<img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" width="250" style="margin-bottom: 1rem" />
@@ -305,7 +308,7 @@ export function getHomepageHtml() {
 					<img src="/copy-icon.svg" alt="Copy Icon" width="20" height="20" />
 				</button>
 			</div>
-			<p class="description">your <b>database will expire after 24hrs</b> unless you claim it</p>
+			<p class="description">your <b>database will expire after 24 hours</b> unless you claim it</p>
 		</div>
 		<div class="section-container">
 			<section class="steps-options">
@@ -363,9 +366,8 @@ export function getHomepageHtml() {
                         </div>
 				</div>
 			</section>
-
-			${getTerminalAnimationHtml()}
 		</div>
+		${footer()}
 	</body>
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {

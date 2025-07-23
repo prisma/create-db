@@ -1,3 +1,6 @@
+import { footer } from "./footer-template";
+import { navbar } from "./navbar-template";
+
 // claim-db-worker/src/claim-template.ts
 export function getClaimHtml(projectID: string, authUrl: string) {
 	return `<!DOCTYPE html>
@@ -19,8 +22,18 @@ export function getClaimHtml(projectID: string, authUrl: string) {
       color: #fff;
       display: flex;
       flex-direction: column;
+      justify-content: space-between;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .container {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      min-height: 50vh;
+      height: 100%;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
     }
     .logo {
       display: flex;
@@ -102,7 +115,7 @@ export function getClaimHtml(projectID: string, authUrl: string) {
       Claim database
       <img src="/arrow-right.svg" alt="Arrow Right" class="arrow-right-icon">
     </button>
-    <div class="message subtext">*your <span style="font-weight:700;">database will expire after 24hrs</span> unless you <span style="text-decoration:underline;">authenticate</span></div>
+    <div class="message subtext">*your <span style="font-weight:700;">database will expire after 24 hours</span> unless you <span style="text-decoration:underline;">authenticate</span></div>
   </div>
   <script>
     document.getElementById('claim-btn').addEventListener('click', function() {
