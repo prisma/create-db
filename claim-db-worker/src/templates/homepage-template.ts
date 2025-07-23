@@ -24,6 +24,7 @@ export function getHomepageHtml() {
 		/>
 		<meta name="twitter:image" content="/og-image.png" />
 		<link rel="shortcut icon" type="image/png" href="/favicon.png" />
+		<link rel="preload" as="image" href="/hero-background.svg" type="image/svg+xml" />
 		<title>Prisma Postgres Create DB</title>
 		<style>
 			@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&display=swap');
