@@ -1,6 +1,7 @@
 import { getClaimSuccessHtml } from './templates/claim-success-template';
 import { getClaimHtml } from './templates/claim-template';
 import { getErrorHtml } from './templates/error-template';
+import { getHomepageHtml } from './templates/homepage-template';
 
 interface Env {
 	CLAIM_DB_RATE_LIMITER: RateLimit;
@@ -36,11 +37,11 @@ export default {
 		const url = new URL(request.url);
 
 		// Add a test route for local development to preview the success page
-		if (url.pathname === '/test-success') {
-			return new Response(getClaimSuccessHtml('cmddkid4303fly70vbmzqekl9'), {
-				headers: { 'Content-Type': 'text/html' },
-			});
-		}
+		// if (url.pathname === '/test-success') {
+		// 	return new Response(getClaimSuccessHtml('cmddkid4303fly70vbmzqekl9'), {
+		// 		headers: { 'Content-Type': 'text/html' },
+		// 	});
+		// }
 
 		// --- OAuth Callback Handler ---
 		if (url.pathname === '/auth/callback') {
@@ -81,8 +82,6 @@ export default {
 
 			const tokenData = (await tokenResponse.json()) as { access_token: string };
 
-			console.log('tokenData: ', JSON.stringify(tokenData, null, 2));
-
 			// Transfer project
 			const transferResponse = await fetch(`https://api.prisma.io/v1/projects/${projectID}/transfer`, {
 				method: 'POST',
@@ -98,7 +97,6 @@ export default {
 					blobs: ['database_claimed'],
 					indexes: ['claim_db'],
 				});
-
 				return new Response(getClaimSuccessHtml(projectID), {
 					headers: { 'Content-Type': 'text/html' },
 				});
@@ -115,7 +113,7 @@ export default {
 
 		// --- Main Claim Page Handler ---
 		const projectID = url.searchParams.get('projectID');
-		if (projectID) {
+		if (projectID && projectID !== 'undefined') {
 			const redirectUri = new URL('/auth/callback', request.url);
 			redirectUri.searchParams.set('projectID', projectID);
 
@@ -128,6 +126,10 @@ export default {
 			});
 			const authUrl = `https://auth.prisma.io/authorize?${authParams.toString()}`;
 			return new Response(getClaimHtml(projectID, authUrl), {
+				headers: { 'Content-Type': 'text/html' },
+			});
+		} else if (url.pathname === '/' && projectID !== 'undefined') {
+			return new Response(getHomepageHtml(), {
 				headers: { 'Content-Type': 'text/html' },
 			});
 		}

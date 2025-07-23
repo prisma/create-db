@@ -5,11 +5,12 @@ export function getClaimHtml(projectID: string, authUrl: string) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" type="image/png" href="/favicon.png"/>
   <title>Claim Project</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&display=swap');
     body {
-      font-family: 'Inter', system-ui, sans-serif;
+      font-family: 'Barlow', system-ui, sans-serif;
       background: url('/hero-background.svg') no-repeat center center fixed;
       background-size: cover;
       margin: 0;

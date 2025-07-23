@@ -14,12 +14,6 @@
 			"class_name": "DeleteDbWorkflow",
 		},
 	],
-	"kv_namespaces": [
-		{
-			"binding": "CREATE_DB_RATE_LIMIT_KV",
-			"id": "8dc440dbc2034a2fb43c728155cf09bb",
-		},
-	],
 	"analytics_engine_datasets": [
 		{
 			"binding": "CREATE_DB_DATASET",

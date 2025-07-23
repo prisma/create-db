@@ -5,9 +5,10 @@ export function getClaimSuccessHtml(projectID: string) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="shortcut icon" type="image/png" href="/favicon.png"/>
   <title>Congratulations!</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&display=swap');
     body {
       margin: 0;
       padding: 0;
@@ -15,7 +16,7 @@ export function getClaimSuccessHtml(projectID: string) {
       background: url('/hero-background.svg') no-repeat center center fixed;
       background-size: cover;
       color: #fff;
-      font-family: 'Inter', system-ui, sans-serif;
+      font-family: 'Barlow', system-ui, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -109,8 +110,8 @@ export function getClaimSuccessHtml(projectID: string) {
 </head>
 <body>
   <div class="container">
-    <div class="logo">
-      <img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" class="logo-icon">
+    <div>
+      <img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" width="250" height="100">
     </div>
     <div class="title">Congratulations!</div>
     <div class="message">You have successfully claimed your database</div>
