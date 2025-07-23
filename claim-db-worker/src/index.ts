@@ -118,12 +118,15 @@ export default {
 					blobs: ['database_claimed'],
 					indexes: ['claim_db'],
 				});
+				await sendPosthogEvent('create_db:claim_successful', {
+					'project-id': projectID,
+				});
 				return new Response(getClaimSuccessHtml(projectID), {
 					headers: { 'Content-Type': 'text/html' },
 				});
 			} else {
 				const responseText = await transferResponse.text();
-				await sendPosthogEvent('create_db:claim_successful', {
+				await sendPosthogEvent('create_db:claim_failed', {
 					'project-id': projectID,
 					status: transferResponse.status,
 					error: responseText,

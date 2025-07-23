@@ -15,8 +15,11 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 			body {
 				margin: 0;
 				padding: 0;
-      	background: url('/hero-background.svg') no-repeat center center fixed;
-      	background-size: cover;
+				backdrop-filter: blur(12px);
+				background: radial-gradient(circle at 30% 30%, rgba(0, 128, 128, 0.2), transparent 50%),
+            radial-gradient(circle at 70% 70%, rgba(0, 128, 128, 0.2), transparent 50%),
+            #050d0f;
+				background-size: cover;
 				color: #fff;
 				font-family: 'Barlow', system-ui, sans-serif;
 				display: flex;
