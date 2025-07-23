@@ -128,11 +128,6 @@ export default {
 					status: transferResponse.status,
 					error: responseText,
 				});
-				await sendPosthogEvent('create_db:claim_failed', {
-					'project-id': projectID,
-					status: transferResponse.status,
-					error: responseText,
-				});
 				return errorResponse(
 					'Project Transfer Failed',
 					'Failed to transfer the project. Please try again.',
