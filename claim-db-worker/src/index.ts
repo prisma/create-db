@@ -9,6 +9,8 @@ interface Env {
 	CLIENT_SECRET: string;
 	CLIENT_ID: string;
 	CREATE_DB_DATASET: AnalyticsEngineDataset;
+	POSTHOG_API_KEY: string;
+	POSTHOG_API_HOST: string;
 }
 
 const RESPONSE_TYPE = 'code';
@@ -34,14 +36,26 @@ export default {
 			return errorResponse('Rate Limit Exceeded', "We're experiencing high demand. Please try again later.", '', 429);
 		}
 
-		const url = new URL(request.url);
+		async function sendPosthogEvent(event: string, properties: Record<string, any>) {
+			const POSTHOG_API_KEY = env.POSTHOG_API_KEY;
+			const POSTHOG_PROXY_HOST = env.POSTHOG_API_HOST;
 
-		// Add a test route for local development to preview the success page
-		// if (url.pathname === '/test-success') {
-		// 	return new Response(getClaimSuccessHtml('cmddkid4303fly70vbmzqekl9'), {
-		// 		headers: { 'Content-Type': 'text/html' },
-		// 	});
-		// }
+			await fetch(`${POSTHOG_PROXY_HOST}/e`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${POSTHOG_API_KEY}`,
+				},
+				body: JSON.stringify({
+					api_key: POSTHOG_API_KEY,
+					event,
+					properties,
+					distinct_id: 'web-claim',
+				}),
+			});
+		}
+
+		const url = new URL(request.url);
 
 		// --- OAuth Callback Handler ---
 		if (url.pathname === '/auth/callback') {
@@ -49,7 +63,9 @@ export default {
 			const state = url.searchParams.get('state');
 			const projectID = url.searchParams.get('projectID');
 
-			if (!state) return errorResponse('OAuth Error', 'Missing state parameter.', 'Please try again.');
+			if (!state) {
+				return errorResponse('OAuth Error', 'Missing state parameter.', 'Please try again.');
+			}
 			if (!projectID)
 				return errorResponse(
 					'OAuth Error',
@@ -72,6 +88,11 @@ export default {
 
 			if (!tokenResponse.ok) {
 				const text = await tokenResponse.text();
+				await sendPosthogEvent('create_db:claim_failed', {
+					'project-id': projectID,
+					status: tokenResponse.status,
+					error: text,
+				});
 				return errorResponse(
 					'OAuth Error',
 					'Failed to authenticate with Prisma. Please try again.',
@@ -102,6 +123,16 @@ export default {
 				});
 			} else {
 				const responseText = await transferResponse.text();
+				await sendPosthogEvent('create_db:claim_successful', {
+					'project-id': projectID,
+					status: transferResponse.status,
+					error: responseText,
+				});
+				await sendPosthogEvent('create_db:claim_failed', {
+					'project-id': projectID,
+					status: transferResponse.status,
+					error: responseText,
+				});
 				return errorResponse(
 					'Project Transfer Failed',
 					'Failed to transfer the project. Please try again.',
@@ -114,6 +145,11 @@ export default {
 		// --- Main Claim Page Handler ---
 		const projectID = url.searchParams.get('projectID');
 		if (projectID && projectID !== 'undefined') {
+			await sendPosthogEvent('create_db:claim_page_viewed', {
+				'project-id': projectID,
+				'utm-source': url.searchParams.get('utm_source') || 'unknown',
+				'utm-medium': url.searchParams.get('utm_medium') || 'unknown',
+			});
 			const redirectUri = new URL('/auth/callback', request.url);
 			redirectUri.searchParams.set('projectID', projectID);
 
