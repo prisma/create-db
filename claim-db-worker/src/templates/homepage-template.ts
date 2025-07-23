@@ -394,7 +394,7 @@ export function getHomepageHtml() {
                         </div>
                         <div class="step">
                         <div class="step-header">
-                                    <div class="step-number">4</div>
+                                    <div class="step-number">+</div>
                                     <div class="step-title">Options</div>
                                 </div>
                         <div class="options-table">
