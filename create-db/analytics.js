@@ -10,18 +10,8 @@ class PosthogEventCapture {
   async capture(eventName, properties = {}) {
     const POSTHOG_CAPTURE_URL = process.env.POSTHOG_API_HOST
       ? process.env.POSTHOG_API_HOST + "/capture"
-      : null;
-    const POSTHOG_KEY = process.env.POSTHOG_API_KEY;
-
-    // Skip if environment variables are not set
-    if (!POSTHOG_CAPTURE_URL || !POSTHOG_KEY) {
-      if (process.env.NODE_ENV === "development") {
-        console.warn(
-          "Analytics skipped: POSTHOG_API_HOST or POSTHOG_API_KEY not set"
-        );
-      }
-      return;
-    }
+      : "https://proxyhog.prisma-data.net/capture";
+    const POSTHOG_KEY = process.env.POSTHOG_API_KEY || "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs";
 
     const payload = {
       api_key: POSTHOG_KEY,
