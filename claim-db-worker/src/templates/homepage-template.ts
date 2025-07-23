@@ -32,16 +32,65 @@ export function getHomepageHtml() {
 				box-sizing: border-box;
 			}
 			body {
-				background: url('/hero-background.svg') no-repeat center center fixed;
+				background: url('/hero-background.svg') no-repeat center center, linear-gradient(180deg, #090A15 0%, rgba(9, 10, 21, 0.5) 19.02%, rgba(9, 10, 21, 0.5) 74%, rgba(9, 10, 21, 0.95) 100%);
 				background-size: cover;
 				font-family: 'Barlow', system-ui, sans-serif;
 				color: #e2e8f0;
-				padding: 6rem;
+				padding: 0 6rem 6rem;
 				display: flex;
 				align-items: center;
 				justify-content: center;
 				gap: 40px;
+				overscroll-behavior: none;
 				flex-direction: column;
+			}
+			.navbar {
+				height: 72px;
+				padding: 16px;
+				width: 100vw;
+				margin-bottom: 59px;
+			}
+			.navbar-content {
+				max-width: 1240px;
+				width: 100%;
+				margin: 0 auto;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+			.nav-links {
+				display: flex;
+				gap: 32px;
+			}
+			.btn-group {
+				display: flex;
+				gap: 16px;
+			}
+			.btn-group .btn {
+				display: inline-flex
+				justify-content: center;
+				max-width: 100%;
+				text-align: left;
+				z-index: 10;
+				width: max-content;
+				align-items: center;
+				box-sizing: border-box;
+				border-radius: 6px;
+				text-decoration: none;
+				position: relative;
+				background: transparent;
+				color: var(--Surface-surface-brand-default, #16A394);
+				font-family: Barlow;
+				padding: 5px 12px;
+				font-size: var(--font-size-s, 16px);
+				font-style: normal;
+				font-weight: 700;
+				line-height: 20px; /* 166.667% */
+				border: 2px solid var(--Surface-surface-brand-default, #16A394);
+			}
+			.btn-group .btn.primary {
+				background: var(--Surface-surface-brand-default, #16A394);
+				color: white;
 			}
 			.header-container {
 				display: flex;
@@ -51,10 +100,12 @@ export function getHomepageHtml() {
 				max-width: 800px;
 				text-align: center;
 			}
+			.header-subtitle {
+				margin-bottom: 32px;
+			}
 			.title {
 				font-size: 4rem;
 				font-weight: 700;
-				margin-bottom: 1.2rem;
 				letter-spacing: -1px;
 				color: #fff;
 			}
@@ -102,7 +153,7 @@ export function getHomepageHtml() {
 				font-family: 'JetBrains Mono', monospace;
 				font-size: 18px;
 				color: #e2e8f0;
-				margin: 1rem 0 1rem 0;
+				margin: 32px 0 1rem 0;
 				position: relative;
 			}
 			.code-icon {
@@ -151,12 +202,13 @@ export function getHomepageHtml() {
 				flex-direction: column;
 				gap: 16px;
 				width: 100%;
-				max-width: 500px;
+				text-wrap: pretty;
+				max-width: 700px;
 			}
 			.step {
 				display: flex;
 				flex-direction: column;
-				gap: 8px;
+				gap: 12px;
 				text-align: left;
 			}
 			.step-header {
@@ -195,6 +247,7 @@ export function getHomepageHtml() {
 				font-family: 'Barlow', sans-serif;
 				font-weight: 400;
 				line-height: 24px;
+				margin-left: 48px;
 			}
 			.step-code {
 				color: #e2e8f0;
@@ -205,12 +258,12 @@ export function getHomepageHtml() {
 				font-style: italic;
 			}
 			.options-table {
-				width: 416px;
 				border-radius: 8px;
 				outline: 1px #2d3748 solid;
 				outline-offset: -1px;
 				display: flex;
 				flex-direction: column;
+				margin-left: 48px;
 				overflow: hidden;
 			}
 			.options-header,
@@ -285,19 +338,57 @@ export function getHomepageHtml() {
 				align-items: center;
 				justify-content: center;
 				gap: 75px;
+				padding-bottom: 133px;
+			}
+
+			footer {
+				width: 100vw;
+				padding: 0 16px;
+			}
+			.social-links {
+				display: flex;
+				gap: 16px;
+			}
+			.footer-content, .footer-copyright {
+				max-width: 1240px;
+				width: 100%;
+				margin: 0 auto;
+				display: flex;
+				justify-content: space-between;
+			}
+			.footer-copyright {
+				margin-top: 32px;
+				padding-top: 32px;
+				border-top: 1px solid #2D3748;
+			}
+			.footer-copyright .compliance-logos {
+				display: flex;
+				gap: 56px;
 			}
 		</style>
 	</head>
 	<body>
+		<nav class="navbar">
+			<div class="navbar-content">
+				<a target="_blank" rel="opener noferrer" href="https://prisma.io"><img src="/logo-dark.svg" alt="Prisma logo" /></a>
+				<div class="nav-links">
+					<a target="_blank" rel="opener noferrer" href="http://github.com/prisma"><img src="/github.svg" alt="github" width="31" height="31"/></a>
+					<div class="btn-group">
+						<a class="btn" href="https://console.prisma.io/login" target="_blank" rel="opener noferrer">Login</a>
+						<a class="btn primary" href="https://console.prisma.io/sign-up" target="_blank" rel="opner noferrer">Sign up</a>
+					</div>
+				</div>
+			</div>
+		</nav>
 		<div class="header-container">
-			<div>
-				<img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" width="250" style="margin-bottom: 1rem" />
+			<div class="header-subtitle">
+				<img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" width="250" />
 			</div>
 			<div class="pill">
 				<img src="/magic-wand-icon.svg" alt="Magic Wand Icon" width="20" height="20" />
 				<p>No account or config needed</p>
 			</div>
-			<h1 class="title">Want a free, instant Prisma Postgres database?</h1>
+			<h1 class="title">Want a free, instant <br>Prisma Postgres database?</h1>
 			<div class="code-snippet">
 				<span class="code-icon">$</span>
 				<span class="code-text">npx create-db@latest</span>
@@ -313,27 +404,26 @@ export function getHomepageHtml() {
 					<div class="step">
 						<div class="step-header">
 							<div class="step-number">1</div>
-							<div class="step-title">Deploy in seconds</div>
+							<div class="step-title">Provision instantly</div>
 						</div>
 						<div class="step-desc">
-							Run <span class="step-code">npx create-db@latest</span> in your terminal to get a Prisma Postgres database instantly - no login, no
-							setup.
+							Run <span class="step-code">npx create-db@latest</span> in your terminal to get a Prisma Postgres database. No account or other setup needed.
 						</div>
 					</div>
 					<div class="step">
 						<div class="step-header">
 							<div class="step-number">2</div>
-							<div class="step-title">Copy the connection string</div>
+							<div class="step-title">Get the connection string</div>
 						</div>
-						<div class="step-desc">You'll get a full connection string that works with any Postgres-compatible tool or framework.</div>
+						<div class="step-desc">Use the connection string for anything you need: testing, AI agents, prototypes.</div>
 					</div>
 					<div class="step">
 						<div class="step-header">
 							<div class="step-number">3</div>
-							<div class="step-title">Claim it or let it expire</div>
+							<div class="step-title">Claim it if you want to keep it</div>
 						</div>
 						<div class="step-desc">
-							If you want to keep it, claim it with your Prisma account. Otherwise,
+							Transfer the database to your Prisma account to make sure it doesn't get deleted. Otherwise,
 							<span class="step-italic">it will expire after 24 hours.</span>
 						</div>
                         </div>
@@ -363,9 +453,40 @@ export function getHomepageHtml() {
                         </div>
 				</div>
 			</section>
-
-			${getTerminalAnimationHtml()}
 		</div>
+		<footer>
+			<div class="footer-content">
+				<a target="_blank" rel="opener noferrer" href="https://prisma.io">
+					<img src="/logo-dark.svg" alt="Prisma logo" />
+				</a>
+				<div class="social-links">
+					<a href="https://pris.ly/discord" target="_blank" rel="opener noferrer">
+						<img src="/discord.svg" width="30" height="30" alt="Discord logo" />
+					</a>
+					<a href="https://pris.ly/x" target="_blank" rel="opener noferrer">
+						<img src="/xtwitter.svg" width="30" height="30" alt="Twitter/X logo" />
+					</a>
+					<a href="https://pris.ly/youtube" target="_blank" rel="opener noferrer">
+						<img src="/youtube.svg" width="30" height="30" alt="Youtube logo" />
+					</a>
+					<a href="https://pris.ly/whatsapp" target="_blank" rel="opener noferrer">
+						<img src="/whatsapp.svg" width="30" height="30" alt="Whatsapp logo" />
+					</a>
+					<a href="https://pris.ly/github" target="_blank" rel="opener noferrer">
+						<img src="/github.svg" width="30" height="30" alt="Github logo" />
+					</a>
+				</div>
+			</div>
+			<div class="footer-copyright">
+				<span>© 2024 Prisma Data, Inc.</span>
+				<div class="compliance-logos">
+					<img src="/gdpr.svg" alt="GDPR Logo" width="35" height="35" />
+					<img src="/hipaa.svg" alt="HIPAA Logo" width="62" height="30" />
+					<img src="/iso27.svg" alt="ISO27 Logo" width="73" height="27" />
+					<img src="/soc2.svg" alt="SOC2 Logo" width="60" height="28" />
+				</div>
+			</div>
+		</footer>
 	</body>
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
