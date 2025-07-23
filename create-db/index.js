@@ -267,7 +267,7 @@ async function promptForRegion(defaultRegion) {
 
   // Track region selection event
   try {
-    await analytics.capture("region_selected", {
+    await analytics.capture("create_db:region_selected", {
       command: CLI_NAME,
       region: region,
       selection_method: "interactive"
@@ -298,7 +298,7 @@ async function createDatabase(name, region) {
     
     // Track database creation failure
     try {
-      await analytics.capture("database_creation_failed", {
+      await analytics.capture("create_db:database_creation_failed", {
         command: CLI_NAME,
         region: region,
         error_type: "rate_limit",
@@ -320,7 +320,7 @@ async function createDatabase(name, region) {
     
     // Track database creation failure
     try {
-      await analytics.capture("database_creation_failed", {
+      await analytics.capture("create_db:database_creation_failed", {
         command: CLI_NAME,
         region: region,
         error_type: "api_error",
@@ -400,7 +400,7 @@ async function main() {
   try {
     const rawArgs = process.argv.slice(2);
     try {
-      await analytics.capture("cli_command_ran", {
+      await analytics.capture("create_db:cli_command_ran", {
         command: CLI_NAME,
         full_command: `${CLI_NAME} ${rawArgs.join(' ')}`.trim(),
         has_region_flag: rawArgs.includes('--region') || rawArgs.includes('-r'),
@@ -442,7 +442,7 @@ async function main() {
       
       // Track region selection via flag
       try {
-        await analytics.capture("region_selected", {
+        await analytics.capture("create_db:region_selected", {
           command: CLI_NAME,
           region: region,
           selection_method: "flag"

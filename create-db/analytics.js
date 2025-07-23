@@ -8,7 +8,6 @@ class EventCaptureError extends Error {
 
 class PosthogEventCapture {
   async capture(eventName, properties = {}) {
-    // Read environment variables at runtime (after dotenv.config() has been called)
     const POSTHOG_CAPTURE_URL = process.env.POSTHOG_API_HOST ? process.env.POSTHOG_API_HOST + '/capture' : null
     const POSTHOG_KEY = process.env.POSTHOG_API_KEY
 
