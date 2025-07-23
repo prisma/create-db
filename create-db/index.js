@@ -270,7 +270,7 @@ async function promptForRegion(defaultRegion) {
     await analytics.capture("create_db:region_selected", {
       command: CLI_NAME,
       region: region,
-      selection_method: "interactive"
+      "selection-method": "interactive"
     });
   } catch (error) {
     // Silently fail analytics
@@ -301,8 +301,8 @@ async function createDatabase(name, region) {
       await analytics.capture("create_db:database_creation_failed", {
         command: CLI_NAME,
         region: region,
-        error_type: "rate_limit",
-        status_code: 429,
+        "error-type": "rate_limit",
+        "status-code": 429,
       });
     } catch (error) {
       // Silently fail analytics
@@ -323,8 +323,8 @@ async function createDatabase(name, region) {
       await analytics.capture("create_db:database_creation_failed", {
         command: CLI_NAME,
         region: region,
-        error_type: "api_error",
-        error_message: result.error.message,
+        "error-type": "api_error",
+        "error-message": result.error.message,
       });
     } catch (error) {
       // Silently fail analytics
@@ -402,12 +402,12 @@ async function main() {
     try {
       await analytics.capture("create_db:cli_command_ran", {
         command: CLI_NAME,
-        full_command: `${CLI_NAME} ${rawArgs.join(' ')}`.trim(),
-        has_region_flag: rawArgs.includes('--region') || rawArgs.includes('-r'),
-        has_interactive_flag: rawArgs.includes('--interactive') || rawArgs.includes('-i'),
-        has_help_flag: rawArgs.includes('--help') || rawArgs.includes('-h'),
-        has_list_regions_flag: rawArgs.includes('--list-regions'),
-        node_version: process.version,
+        "full-command": `${CLI_NAME} ${rawArgs.join(' ')}`.trim(),
+        "has-region-flag": rawArgs.includes('--region') || rawArgs.includes('-r'),
+        "has-interactive-flag": rawArgs.includes('--interactive') || rawArgs.includes('-i'),
+        "has-help-flag": rawArgs.includes('--help') || rawArgs.includes('-h'),
+        "has-list-regions-flag": rawArgs.includes('--list-regions'),
+        "node-version": process.version,
         platform: process.platform,
         arch: process.arch
       });
@@ -445,7 +445,7 @@ async function main() {
         await analytics.capture("create_db:region_selected", {
           command: CLI_NAME,
           region: region,
-          selection_method: "flag"
+          "selection-method": "flag"
         });
       } catch (error) {
         // Silently fail analytics
