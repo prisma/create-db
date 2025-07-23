@@ -1,5 +1,5 @@
-import { footer } from "./footer-template";
-import { navbar } from "./navbar-template";
+import { footer } from './footer-template';
+import { navbar } from './navbar-template';
 
 export function getErrorHtml(title: string, message: string, details?: string) {
 	return `
