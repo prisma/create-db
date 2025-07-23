@@ -46,6 +46,10 @@ jobs:
         run: |
           echo "Using CREATE_DB_WORKER_URL=${CREATE_DB_WORKER_URL}"
           echo "Using CLAIM_DB_WORKER_URL=${CLAIM_DB_WORKER_URL}"
+          echo "Using POSTHOG_API_HOST=${POSTHOG_API_HOST}"
+          echo "PostHog API Key is set: $([[ -n "$POSTHOG_API_KEY" ]] && echo "YES" || echo "NO")"
+          echo "PostHog API Key length: ${#POSTHOG_API_KEY}"
+          echo "PostHog API Host starts with https: $([[ "$POSTHOG_API_HOST" == https* ]] && echo "YES" || echo "NO")"
 
           for pkg in $WORKSPACES; do
             echo "Publishing $pkg to npm..."
