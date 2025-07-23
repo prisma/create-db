@@ -38,6 +38,7 @@
   },
   "files": [
     "index.js",
-    "README.md"
+    "README.md",
+    "analytics.js"
   ]
 }
