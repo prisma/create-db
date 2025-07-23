@@ -1,5 +1,16 @@
 # create-postgres
 
+## 0.0.0-0.0.9-20250723085902
+
+### Minor Changes
+
+- Bump versions to 0.0.9
+
+### Patch Changes
+
+- Updated dependencies
+  - create-db@0.0.0-0.0.9-20250723085902
+
 ## 0.0.5
 
 ### Patch Changes

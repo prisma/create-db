@@ -1,6 +1,6 @@
 {
   "name": "create-pg",
-  "version": "0.0.7",
+  "version": "0.0.9",
   "description": "Instantly create a temporary Prisma Postgres database with one command, then claim and persist it in your Prisma Data Platform project when ready.",
   "main": "index.js",
   "author": "",
