@@ -1,5 +1,5 @@
 export function navbar() {
-    return `
+	return `
         <style>
 			.navbar {
 				height: 72px;
@@ -86,11 +86,11 @@ export function navbar() {
 				<div class="nav-links">
 					<a target="_blank" rel="opener noferrer" href="http://github.com/prisma"><img src="/github.svg" alt="github" width="31" height="31"/></a>
 					<div class="btn-group">
-						<a class="btn" href="https://console.prisma.io/login?utm_campaign=&utm_medium=&utm_source=" target="_blank" rel="opener noferrer">Login</a>
-						<a class="btn primary" href="https://console.prisma.io/sign-up?utm_campaign=&utm_medium=&utm_source=" target="_blank" rel="opner noferrer">Sign up</a>
+						<a class="btn" href="https://console.prisma.io/login?utm_campaign=create_db&utm_source=create_db_web" target="_blank" rel="opener noferrer">Login</a>
+						<a class="btn primary" href="https://console.prisma.io/sign-up?utm_campaign=create_db&utm_source=create_db_web" target="_blank" rel="opner noferrer">Sign up</a>
 					</div>
 				</div>
 			</div>
 		</nav>
-    `
+    `;
 }

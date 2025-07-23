@@ -361,7 +361,7 @@ export function getHomepageHtml() {
 					<img src="/copy-icon.svg" alt="Copy Icon" width="20" height="20" />
 				</button>
 			</div>
-			<p class="description">your <b>database will expire after 24 hours</b> unless you claim it</p>
+			<p class="description">your <b>database will be deleted 24 hours after creation</b> unless you claim it</p>
 		</div>
 		<div class="section-container">
 			<section class="steps-options">

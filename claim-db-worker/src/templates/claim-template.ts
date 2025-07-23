@@ -1,5 +1,5 @@
-import { footer } from "./footer-template";
-import { navbar } from "./navbar-template";
+import { footer } from './footer-template';
+import { navbar } from './navbar-template';
 
 // claim-db-worker/src/claim-template.ts
 export function getClaimHtml(projectID: string, authUrl: string) {
@@ -9,7 +9,7 @@ export function getClaimHtml(projectID: string, authUrl: string) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="shortcut icon" type="image/png" href="/favicon.png"/>
-  <title>Claim Project</title>
+  <title>Claim Database</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&display=swap');
     body {
@@ -33,7 +33,6 @@ export function getClaimHtml(projectID: string, authUrl: string) {
       min-height: 50vh;
       height: 100%;
       align-items: center;
-      justify-content: space-between;
     }
     .logo {
       display: flex;
@@ -44,12 +43,6 @@ export function getClaimHtml(projectID: string, authUrl: string) {
     .logo-icon {
       margin-bottom: 1rem;
       width: 236px;
-    }
-    .container {
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
     }
     .title {
       font-size: 4rem;
@@ -106,6 +99,7 @@ export function getClaimHtml(projectID: string, authUrl: string) {
   </style>
 </head>
 <body>
+${navbar()}
   <div class="logo">
     <img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" class="logo-icon">
   <div class="container">
@@ -115,8 +109,9 @@ export function getClaimHtml(projectID: string, authUrl: string) {
       Claim database
       <img src="/arrow-right.svg" alt="Arrow Right" class="arrow-right-icon">
     </button>
-    <div class="message subtext">*your <span style="font-weight:700;">database will expire after 24 hours</span> unless you <span style="text-decoration:underline;">authenticate</span></div>
+    <div class="message subtext">*your <b>database will be deleted 24 hours after creation</b> unless you claim it</div>
   </div>
+  ${footer()}
   <script>
     document.getElementById('claim-btn').addEventListener('click', function() {
       window.open('${authUrl}', '_blank');
