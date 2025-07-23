@@ -1,50 +1,108 @@
-# Create DB CLI
+## **What is `create-db`?**
 
-CLI tool for provisioning a [temporary Prisma Postgres databases](https://www.prisma.io/postgres?utm_source=create_db_npm_docs).
+`create-db` is an open-source CLI tool that provisions [**temporary Prisma Postgres databases**](https://www.prisma.io/postgres?utm_source=create_db_npm_docs) with a single command.
 
-## Usage
+![Demo Gif](demo.gif)
 
-```bash
-npx create-db                    # Default region (us-east-1)
-npx create-db --region eu-west-1 # Custom region
-npx create-db --i               # Interactive region selection
-```
+Each database is available for **24 hours** by default. To keep the database permanently, you can **claim it for free** using the URL displayed in the CLI output.
 
-## Key Files
+This tool is designed for developers who need a fast way to test, prototype, or integrate Prisma Postgres without manual setup or creating an account.
 
-- **Main Logic:** [`index.js`](index.js) - Argument parsing, API requests, and output
-- **Configuration:** [`package.json`](package.json) - CLI entry point and dependencies
-- **Environment:** `.env` - Worker endpoints configuration
+## **Installation and usage**
 
-## Development
+There is no need to install the tool globally. Simply run:
 
 ```bash
-npm install
+npx create-db@latest
 ```
 
-Create `.env` for local development:
-
-```env
-# LOCAL
-CREATE_DB_WORKER_URL="http://127.0.0.1:8787"
-CLAIM_DB_WORKER_URL="http://127.0.0.1:8787"
-
-# PROD
-# CLAIM_DB_WORKER_URL="https://create-db.prisma.io"
-# CREATE_DB_WORKER_URL="https://create-db-temp.prisma.io"
-```
-
-If running both workers locally, use a different port for one and update the URL:
-
-```env
-CREATE_DB_WORKER_URL="http://127.0.0.1:9999"
-CLAIM_DB_WORKER_URL="http://127.0.0.1:8787"
-```
-
-## Test Locally
+You can also use the following aliases:
 
 ```bash
-npx create-db
-npx create-db --region eu-west-1
-npx create-db --i
+npx create-pg@latest
+npx create-postgres@latest
 ```
+
+## **Examples**
+
+```bash
+npx create-db                    # Creates a database in the default region
+npx create-db --region eu-west-1 # Creates a database in a specific region
+npx create-db --i                # Interactive region selection
+
+```
+
+## **Available options**
+
+You can run `npx create-db --help` or `npx create-db -h` to see all the available CLI options:
+
+```
+npx create-db [options]
+
+Options:
+  --region <region>, -r <region>  Specify a region
+                                  Available regions:
+                                  ap-southeast-1, ap-northeast-1,
+                                  eu-central-1, eu-west-3,
+                                  us-east-1, us-west-1
+
+  --interactive, -i               Run in interactive mode
+
+  --help, -h                      Show this help message
+
+```
+
+## **CLI output example**
+
+```
+┌  🚀 Creating a Prisma Postgres database
+│
+│  Provisioning a temporary database in us-east-1...
+│
+│  It will be automatically deleted in 24 hours, but you can claim it.
+│
+◇  Database created successfully!
+│
+●  Connect to your database →
+│
+│    Prisma connection string:
+│    prisma+postgres://accelerate.prisma-data.net/?api_key=...
+│
+│    Standard connection string:
+│    postgresql://<username>:<password>@db.prisma.io:5432/postgres
+│
+◆  Claim your database →
+│
+│    Want to keep your database? Claim for free:
+│    https://create-db.prisma.io?projectID=proj_...
+└
+
+```
+
+## **Claiming a database**
+
+When you create a database using `create-db`, it is temporary and will be deleted automatically after **24 hours**.
+
+The CLI output includes a **claim URL** that allows you to keep the database permanently for free.
+
+**What claiming does:**
+
+- Moves the database into your Prisma Postgres account.
+- Prevents it from being auto-deleted.
+- Lets you continue using the database as a long-term instance.
+
+Example:
+
+```
+◆  Claim your database →
+│
+│    Want to keep your database? Claim for free:
+|
+│    https://create-db.prisma.io?projectID=proj_...
+│
+│    Your database will be deleted on 7/24/2025, 2:25:41 AM if not claimed.
+```
+
+## **Next steps**
+
+- Refer to the section in the official [Prisma Postgres documentation](https://www.prisma.io/docs/postgres/introduction/npx-create-db).
