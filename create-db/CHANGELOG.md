@@ -1,5 +1,11 @@
 # create-db
 
+## 0.0.0-0.0.9-20250723085902
+
+### Minor Changes
+
+- Bump versions to 0.0.9
+
 ## 0.0.5
 
 ### Patch Changes
