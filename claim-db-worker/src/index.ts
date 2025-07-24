@@ -157,6 +157,7 @@ export default {
 				response_type: RESPONSE_TYPE,
 				scope: SCOPE,
 				state: generateState(),
+				utm_source: 'create-db',
 			});
 			const authUrl = `https://auth.prisma.io/authorize?${authParams.toString()}`;
 			return new Response(getClaimHtml(projectID, authUrl), {
