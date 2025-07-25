@@ -157,6 +157,8 @@ export default {
 				response_type: RESPONSE_TYPE,
 				scope: SCOPE,
 				state: generateState(),
+				utm_source: url.searchParams.get('utm_source') || 'unknown',
+				utm_medium: 'cli',
 			});
 			const authUrl = `https://auth.prisma.io/authorize?${authParams.toString()}`;
 			return new Response(getClaimHtml(projectID, authUrl), {
