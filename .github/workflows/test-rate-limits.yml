@@ -1,6 +1,9 @@
 name: Test Rate Limits
 
 on:
+  push:
+    branches:
+      - DC-4638-rate-limit-tests
   workflow_dispatch:
     inputs:
       test_count:
@@ -27,6 +30,8 @@ jobs:
           echo "Testing create-db-worker rate limits..."
           TEST_COUNT=${INPUT_TEST_COUNT:-110}
 
+          echo "Worker URL: $CREATE_DB_WORKER_URL"
+          echo "Test endpoint: $CREATE_DB_WORKER_URL/test"
           echo "Making $TEST_COUNT requests to $CREATE_DB_WORKER_URL/test"
 
           success_count=0
@@ -65,6 +70,8 @@ jobs:
           echo "Testing claim-db-worker rate limits..."
           TEST_COUNT=${INPUT_TEST_COUNT:-110}
 
+          echo "Worker URL: $CLAIM_DB_WORKER_URL"
+          echo "Test endpoint: $CLAIM_DB_WORKER_URL/test"
           echo "Making $TEST_COUNT requests to $CLAIM_DB_WORKER_URL/test"
 
           success_count=0
