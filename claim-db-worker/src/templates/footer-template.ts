@@ -1,8 +1,8 @@
 export function footer() {
-    return `
+	return `
         <style>
             footer {
-                width: 100vw;
+                width: 100%;
                 padding: 0 16px;
 				margin-top: auto;
             }
@@ -16,6 +16,7 @@ export function footer() {
                 margin: 0 auto;
                 display: flex;
                 justify-content: space-between;
+                align-items: center;
             }
             .footer-copyright {
                 margin-top: 32px;
@@ -25,6 +26,53 @@ export function footer() {
             .footer-copyright .compliance-logos {
                 display: flex;
                 gap: 56px;
+            }
+
+            /* Mobile Styles */
+            @media (max-width: 768px) {
+                footer {
+                    padding: 0 20px;
+                }
+                
+                .footer-content, .footer-copyright {
+                    flex-direction: column;
+                    gap: 24px;
+                    text-align: center;
+                }
+                
+                .social-links {
+                    gap: 20px;
+                }
+                
+                .footer-copyright {
+                    margin-top: 24px;
+                    padding-top: 24px;
+                }
+                
+                .footer-copyright .compliance-logos {
+                    gap: 32px;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                }
+            }
+
+            /* Small Mobile Styles */
+            @media (max-width: 480px) {
+                footer {
+                    padding: 0 16px;
+                }
+                
+                .footer-content, .footer-copyright {
+                    gap: 20px;
+                }
+                
+                .social-links {
+                    gap: 16px;
+                }
+                
+                .footer-copyright .compliance-logos {
+                    gap: 24px;
+                }
             }
         </style>
 
@@ -61,5 +109,5 @@ export function footer() {
 				</div>
 			</div>
 		</footer>
-    `
+    `;
 }
