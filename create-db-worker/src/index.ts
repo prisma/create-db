@@ -20,6 +20,22 @@ export default {
 
 		const url = new URL(request.url);
 
+		// --- Test endpoint for rate limit testing ---
+		if (url.pathname === '/test' && request.method === 'GET') {
+			return new Response(
+				JSON.stringify({
+					status: 'success',
+					service: 'create-db-worker',
+					timestamp: Date.now(),
+					message: 'Rate limit test endpoint - if you see this, rate limiting passed',
+				}),
+				{
+					status: 200,
+					headers: { 'Content-Type': 'application/json' },
+				},
+			);
+		}
+
 		// --- Health check route ---
 		if (url.pathname === '/health' && request.method === 'GET') {
 			return new Response(JSON.stringify({ status: 'ok', service: 'create-db', timestamp: Date.now() }), {
