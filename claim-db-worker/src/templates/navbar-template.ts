@@ -4,8 +4,10 @@ export function navbar() {
 			.navbar {
 				height: 72px;
 				padding: 16px;
-				width: 100vw;
-				margin-bottom: 59px;
+				width: 100%;
+				margin-bottom: 24px;
+				box-sizing: border-box;
+				overflow: hidden;
 			}
 			.navbar-content {
 				max-width: 1240px;
@@ -14,6 +16,8 @@ export function navbar() {
 				display: flex;
 				justify-content: space-between;
 				align-items: center;
+				box-sizing: border-box;
+				padding: 0 16px;
 			}
 			.nav-links {
 				display: flex;

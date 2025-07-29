@@ -4,7 +4,10 @@ export function footer() {
             footer {
                 width: 100%;
                 padding: 0 16px;
-				margin-top: auto;
+								margin-top: auto;
+                box-sizing: border-box;
+                overflow: hidden;
+								margin-bottom: 24px;
             }
             .social-links {
                 display: flex;
