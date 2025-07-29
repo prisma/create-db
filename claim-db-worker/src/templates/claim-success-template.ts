@@ -22,42 +22,57 @@ export function getClaimSuccessHtml(projectID: string) {
             radial-gradient(circle at 70% 70%, rgba(0, 128, 128, 0.2), transparent 50%),
             #050d0f;
 			background-size: cover;
-      background-size: cover;
       color: #fff;
       font-family: 'Barlow', system-ui, sans-serif;
       display: flex;
-			overscroll-behavior: none;
-      justify-content: space-between;
       flex-direction: column;
-      min-height: 100vh;
+      overflow-x: hidden;
     }
     .container {
       text-align: center;
       display: flex;
       flex-direction: column;
-      min-height: 50vh;
-      height: 100%;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
+      padding: 0 24px;
+      flex: 1;
+      margin-top: 4rem;
+    }
+
+    .content {
+      max-width: 800px;
+      width: 100%;
+    }
+
+    .logo-container {
+      margin-bottom: 3rem;
+    }
+
+    .logo-container img {
+      width: 250px;
+      height: auto;
     }
 
     .title {
       font-size: 4rem;
       font-weight: 700;
-      margin-bottom: 1.2rem;
+      margin-bottom: 2rem;
       letter-spacing: -1px;
       color: #fff;
+      line-height: 1.1;
     }
     .message {
       font-size: 1.5rem;
       font-weight: 400;
       color: #b5c6d6;
-      margin-bottom: 2.2rem;
+      margin-bottom: 3rem;
     }
     .success-btn {
       display: flex;
       align-items: center;
       gap: 0.75em;
+      width: fit-content;
+      margin: 0 auto;
       background: #24bfa7;
       color: #fff;
       font-size: 1.35rem;
@@ -68,7 +83,7 @@ export function getClaimSuccessHtml(projectID: string) {
       cursor: pointer;
       box-shadow: 0 2px 16px rgba(0,0,0,0.07);
       transition: background 0.2s;
-      margin-bottom: 2.5rem;
+      margin-bottom: 4rem;
       text-decoration: none;
       justify-content: center;
     }
@@ -103,24 +118,116 @@ export function getClaimSuccessHtml(projectID: string) {
       height: 48px;
       display: block;
     }
-    @media (max-width: 600px) {
+
+    /* Mobile Styles */
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 20px;
+        min-height: 40vh;
+      }
+      
+      .content {
+        max-width: 100%;
+      }
+      
+      .logo-container {
+        margin-bottom: 1.5rem;
+      }
+      
+      .logo-container img {
+        width: 200px;
+      }
+      
+      .title {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+      }
+      
+      .message {
+        font-size: 1.25rem;
+        margin-bottom: 1.8rem;
+      }
+      
+      .success-btn {
+        font-size: 1.1rem;
+        padding: 0.8em 1.8em;
+        margin-bottom: 2rem;
+      }
+      
+      .arrow-up-icon {
+        width: 20px;
+        height: 20px;
+      }
+      
+      .db-img {
+        width: 100px;
+        height: 100px;
+      }
+      
+      .checkmark-icon {
+        width: 40px;
+        height: 40px;
+        right: 50%;
+        bottom: 50%;
+        transform: translate(150%, 50%);
+      }
+    }
+
+    /* Small Mobile Styles */
+    @media (max-width: 480px) {
+      .container {
+        padding: 0 16px;
+        min-height: 35vh;
+      }
+      
+      .logo-container {
+        margin-bottom: 1rem;
+      }
+      
+      .logo-container img {
+        width: 180px;
+      }
+      
       .title {
         font-size: 2rem;
+        margin-bottom: 0.8rem;
       }
+      
+      .message {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+      }
+      
       .success-btn {
         font-size: 1rem;
-        padding: 0.7em 1.2em;
+        padding: 0.7em 1.5em;
+        margin-bottom: 1.5rem;
       }
+      
+      .arrow-up-icon {
+        width: 18px;
+        height: 18px;
+      }
+      
       .db-img {
         width: 80px;
         height: 80px;
       }
+      
       .checkmark-icon {
         width: 32px;
         height: 32px;
-        right: 8px;
-        bottom: 8px;
-        transform: none;
+        right: 6px;
+        bottom: 6px;
+      }
+    }
+
+    /* Touch-friendly improvements */
+    @media (hover: none) and (pointer: coarse) {
+      .success-btn {
+        min-height: 44px;
+        padding: 12px 24px;
       }
     }
   </style>
@@ -129,8 +236,8 @@ export function getClaimSuccessHtml(projectID: string) {
   ${navbar()}
   <div class="container">
 		<div class="content">
-      <div>
-        <img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" width="250" height="100">
+      <div class="logo-container">
+        <img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo">
       </div>
       <div class="title">Congratulations!</div>
       <div class="message">You have successfully claimed your database</div>
