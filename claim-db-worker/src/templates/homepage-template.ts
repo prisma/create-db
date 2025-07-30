@@ -39,64 +39,15 @@ export function getHomepageHtml() {
             radial-gradient(circle at 70% 70%, rgba(0, 128, 128, 0.2), transparent 50%),
             #050d0f;
 				background-size: cover;
-				background-size: cover;
 				font-family: 'Barlow', system-ui, sans-serif;
 				color: #e2e8f0;
-				padding: 0 6rem 6rem;
+				padding: 0;
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				gap: 40px;
 				overscroll-behavior: none;
 				flex-direction: column;
-			}
-			.navbar {
-				height: 72px;
-				padding: 16px;
-				width: 100vw;
-				margin-bottom: 59px;
-			}
-			.navbar-content {
-				max-width: 1240px;
-				width: 100%;
-				margin: 0 auto;
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-			}
-			.nav-links {
-				display: flex;
-				gap: 32px;
-			}
-			.btn-group {
-				display: flex;
-				gap: 16px;
-			}
-			.btn-group .btn {
-				display: inline-flex
-				justify-content: center;
-				max-width: 100%;
-				text-align: left;
-				z-index: 10;
-				width: max-content;
-				align-items: center;
-				box-sizing: border-box;
-				border-radius: 6px;
-				text-decoration: none;
-				position: relative;
-				background: transparent;
-				color: var(--Surface-surface-brand-default, #16A394);
-				font-family: Barlow;
-				padding: 5px 12px;
-				font-size: var(--font-size-s, 16px);
-				font-style: normal;
-				font-weight: 700;
-				line-height: 20px; /* 166.667% */
-				border: 2px solid var(--Surface-surface-brand-default, #16A394);
-			}
-			.btn-group .btn.primary {
-				background: var(--Surface-surface-brand-default, #16A394);
-				color: white;
+				min-height: 100vh;
 			}
 			.header-container {
 				display: flex;
@@ -105,15 +56,23 @@ export function getHomepageHtml() {
 				flex-direction: column;
 				max-width: 800px;
 				text-align: center;
+				width: 100%;
+				padding: 0 24px;
 			}
 			.header-subtitle {
 				margin-bottom: 32px;
 			}
+			.header-subtitle img {
+				width: 250px;
+				height: auto;
+			}
 			.title {
 				font-size: 4rem;
 				font-weight: 700;
-				letter-spacing: -1px;
+				letter-spacing: -0.02em;
 				color: #fff;
+				line-height: 1.1;
+				margin-bottom: 24px;
 			}
 			.pill {
 				position: relative;
@@ -124,6 +83,7 @@ export function getHomepageHtml() {
 				align-items: center;
 				gap: 10px;
 				z-index: 1;
+				margin-bottom: 32px;
 			}
 
 			.pill::before {
@@ -131,7 +91,7 @@ export function getHomepageHtml() {
 				position: absolute;
 				inset: 0;
 				border-radius: 100px;
-				padding: 1px; /* border thickness */
+				padding: 1px;
 				background: linear-gradient(0deg, #71e8df 0%, #3f827d 100%);
 				-webkit-mask:
 					linear-gradient(#fff 0 0) content-box,
@@ -145,6 +105,10 @@ export function getHomepageHtml() {
 				font-size: 1rem;
 				font-weight: 700;
 				color: #fff;
+			}
+			.pill img {
+				width: 20px;
+				height: 20px;
 			}
 			.code-snippet {
 				background: #181b23;
@@ -161,14 +125,18 @@ export function getHomepageHtml() {
 				color: #e2e8f0;
 				margin: 32px 0 1rem 0;
 				position: relative;
+				width: 100%;
+				max-width: 600px;
 			}
 			.code-icon {
 				color: #3f4b5b;
 				font-size: 18px;
 				font-weight: 500;
+				flex-shrink: 0;
 			}
 			.code-text {
 				font-size: 18px;
+				white-space: nowrap;
 			}
 			.copy-btn {
 				background: #232634;
@@ -183,10 +151,15 @@ export function getHomepageHtml() {
 				transition:
 					background 0.2s,
 					color 0.2s;
+				flex-shrink: 0;
 			}
 			.copy-btn:hover {
 				background: #2d3748;
 				color: #71e8df;
+			}
+			.copy-btn img {
+				width: 20px;
+				height: 20px;
 			}
 			.description {
 				font-family: 'Barlow', system-ui, sans-serif;
@@ -194,14 +167,27 @@ export function getHomepageHtml() {
 				color: #a0aec0;
 				font-style: italic;
 				margin-top: 0.5rem;
+				text-align: center;
+				max-width: 600px;
 			}
 
+			.section-container {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				justify-content: center;
+				gap: 75px;
+				padding: 133px 24px;
+				width: 100%;
+			}
 			.steps-options {
 				display: flex;
 				flex-direction: column;
 				gap: 24px;
-				align-items: flex-start;
+				align-items: center;
 				margin: 40px 0 32px 0;
+				width: 100%;
+				max-width: 700px;
 			}
 			.steps-list {
 				display: flex;
@@ -230,13 +216,14 @@ export function getHomepageHtml() {
 				font-family: 'Barlow', sans-serif;
 				font-weight: 700;
 				text-transform: uppercase;
-				line-height: 24px;
+				line-height: 1.2;
 				letter-spacing: 2px;
 				width: 36px;
 				height: 36px;
 				display: flex;
 				align-items: center;
 				justify-content: center;
+				flex-shrink: 0;
 			}
 			.step-title {
 				color: #fff;
@@ -244,7 +231,7 @@ export function getHomepageHtml() {
 				font-family: 'Barlow', sans-serif;
 				font-weight: 700;
 				text-transform: uppercase;
-				line-height: 24px;
+				line-height: 1.2;
 				letter-spacing: 2px;
 			}
 			.step-desc {
@@ -252,7 +239,7 @@ export function getHomepageHtml() {
 				font-size: 18px;
 				font-family: 'Barlow', sans-serif;
 				font-weight: 400;
-				line-height: 24px;
+				line-height: 1.4;
 				margin-left: 48px;
 			}
 			.step-code {
@@ -271,6 +258,7 @@ export function getHomepageHtml() {
 				flex-direction: column;
 				margin-left: 48px;
 				overflow: hidden;
+				width: calc(100% - 48px);
 			}
 			.options-header,
 			.options-row {
@@ -288,33 +276,34 @@ export function getHomepageHtml() {
 				font-size: 14px;
 				font-family: 'JetBrains Mono', monospace;
 				font-weight: 700;
-				line-height: 18px;
+				line-height: 1.3;
 				display: flex;
 				align-items: center;
+				flex-shrink: 0;
 			}
 			.options-desc {
 				flex: 1 1 0;
-				height: 48px;
+				min-height: 48px;
 				padding: 8px 16px;
 				background: #121521;
 				color: #e2e8f0;
 				font-size: 14px;
 				font-family: 'JetBrains Mono', monospace;
 				font-weight: 400;
-				line-height: 18px;
+				line-height: 1.3;
 				display: flex;
 				align-items: center;
 			}
 			.options-row {
 				background: #090a15;
-				height: 48px;
+				min-height: 48px;
 				display: flex;
 				align-items: center;
 			}
 			.options-row .options-flag {
 				background: #090a15;
 				padding: 0 16px;
-				height: 48px;
+				min-height: 48px;
 				display: flex;
 				align-items: center;
 			}
@@ -323,7 +312,7 @@ export function getHomepageHtml() {
 				font-family: 'Barlow', sans-serif;
 				font-weight: 400;
 				padding: 0 16px;
-				height: 48px;
+				min-height: 48px;
 				display: flex;
 				align-items: center;
 			}
@@ -335,16 +324,280 @@ export function getHomepageHtml() {
 				font-size: 14px;
 				font-family: 'Roboto Mono', monospace;
 				font-weight: 700;
-				line-height: 18px;
+				line-height: 1.3;
 				padding: 4px 24px;
 			}
-			.section-container {
-				display: flex;
-				flex-direction: row;
-				align-items: center;
-				justify-content: center;
-				gap: 75px;
-				padding-bottom: 133px;
+
+			/* Mobile Styles */
+			@media (max-width: 768px) {
+				body {
+					padding: 0;
+					gap: 0;
+				}
+				
+				.header-container {
+					padding: 0 20px;
+					margin-bottom: 40px;
+				}
+				
+				.header-subtitle {
+					margin-bottom: 24px;
+				}
+				
+				.header-subtitle img {
+					width: 200px;
+				}
+				
+				.title {
+					font-size: 2.5rem;
+					line-height: 1.2;
+					margin-bottom: 20px;
+				}
+				
+				.pill {
+					padding: 8px 16px;
+					gap: 8px;
+					margin-bottom: 24px;
+				}
+				
+				.pill > p {
+					font-size: 0.875rem;
+				}
+				
+				.pill img {
+					width: 18px;
+					height: 18px;
+				}
+				
+				.code-snippet {
+					flex-direction: row;
+					gap: 12px;
+					padding: 16px 20px;
+					margin: 24px 0 12px 0;
+					font-size: 16px;
+					border-radius: 16px;
+				}
+				
+				.code-icon {
+					font-size: 16px;
+				}
+				
+				.code-text {
+					font-size: 16px;
+					white-space: nowrap;
+				}
+				
+				.copy-btn {
+					padding: 8px 12px;
+				}
+				
+				.copy-btn img {
+					width: 18px;
+					height: 18px;
+				}
+				
+				.description {
+					font-size: 13px;
+					margin-top: 8px;
+				}
+				
+				.section-container {
+					flex-direction: column;
+					gap: 40px;
+					padding: 60px 20px;
+				}
+				
+				.steps-options {
+					margin: 0;
+					gap: 20px;
+					align-items: center;
+					max-width: 100%;
+				}
+				
+				.steps-list {
+					max-width: 100%;
+					gap: 24px;
+				}
+				
+				.step {
+					gap: 16px;
+				}
+				
+				.step-header {
+					gap: 12px;
+				}
+				
+				.step-number {
+					width: 32px;
+					height: 32px;
+					font-size: 18px;
+				}
+				
+				.step-title {
+					font-size: 18px;
+				}
+				
+				.step-desc {
+					font-size: 16px;
+					margin-left: 44px;
+					line-height: 1.5;
+				}
+				
+				.step-code {
+					font-size: 16px;
+				}
+				
+				.options-table {
+					margin-left: 44px;
+					width: calc(100% - 44px);
+				}
+				
+				.options-flag {
+					width: 140px;
+					padding: 8px 12px;
+					font-size: 13px;
+					min-width: 140px;
+				}
+				
+				.options-desc {
+					padding: 8px 12px;
+					font-size: 13px;
+					word-wrap: break-word;
+					overflow-wrap: break-word;
+				}
+				
+				.flag-box {
+					font-size: 13px;
+					padding: 3px 16px;
+					white-space: nowrap;
+				}
+			}
+
+			/* Small Mobile Styles */
+			@media (max-width: 480px) {
+				.header-container {
+					padding: 0 16px;
+					margin-bottom: 32px;
+				}
+				
+				.header-subtitle img {
+					width: 180px;
+				}
+				
+				.title {
+					font-size: 2rem;
+					margin-bottom: 16px;
+				}
+				
+				.pill {
+					padding: 6px 12px;
+					margin-bottom: 20px;
+				}
+				
+				.pill > p {
+					font-size: 0.75rem;
+				}
+				
+				.pill img {
+					width: 16px;
+					height: 16px;
+				}
+				
+				.code-snippet {
+					padding: 14px 16px;
+					margin: 20px 0 10px 0;
+					font-size: 14px;
+					border-radius: 12px;
+				}
+				
+				.code-icon {
+					font-size: 14px;
+				}
+				
+				.code-text {
+					font-size: 14px;
+				}
+				
+				.copy-btn {
+					padding: 6px 10px;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+				}
+				
+				.copy-btn img {
+					width: 16px;
+					height: 16px;
+				}
+				
+				.description {
+					font-size: 12px;
+				}
+				
+				.section-container {
+					padding: 40px 16px;
+					gap: 32px;
+				}
+				
+				.steps-list {
+					gap: 20px;
+				}
+				
+				.step {
+					gap: 12px;
+				}
+				
+				.step-number {
+					width: 28px;
+					height: 28px;
+					font-size: 16px;
+				}
+				
+				.step-title {
+					font-size: 16px;
+				}
+				
+				.step-desc {
+					font-size: 14px;
+					margin-left: 40px;
+				}
+				
+				.step-code {
+					font-size: 14px;
+				}
+				
+				.options-table {
+					margin-left: 40px;
+					width: calc(100% - 40px);
+				}
+				
+				.options-flag {
+					width: 140px;
+					padding: 6px 10px;
+					font-size: 12px;
+					min-width: 140px;
+				}
+				
+				.options-desc {
+					padding: 6px 10px;
+					font-size: 12px;
+					word-wrap: break-word;
+					overflow-wrap: break-word;
+				}
+				
+				.flag-box {
+					font-size: 12px;
+					padding: 2px 12px;
+					white-space: nowrap;
+				}
+			}
+
+			/* Touch-friendly improvements */
+			@media (hover: none) and (pointer: coarse) {
+				.copy-btn {
+					min-height: 44px;
+					min-width: 44px;
+				}
 			}
 		</style>
 	</head>
@@ -352,10 +605,10 @@ export function getHomepageHtml() {
 		${navbar()}
 		<div class="header-container">
 			<div class="header-subtitle">
-				<img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" width="250" />
+				<img src="/prisma-postgres-logo.svg" alt="Prisma Postgres Logo" />
 			</div>
 			<div class="pill">
-				<img src="/magic-wand-icon.svg" alt="Magic Wand Icon" width="20" height="20" />
+				<img src="/magic-wand-icon.svg" alt="Magic Wand Icon" />
 				<p>No account or config needed</p>
 			</div>
 			<h1 class="title">Want a free, instant <br>Prisma Postgres database?</h1>
@@ -363,7 +616,7 @@ export function getHomepageHtml() {
 				<span class="code-icon">$</span>
 				<span class="code-text">npx create-db@latest</span>
 				<button class="copy-btn" aria-label="Copy command">
-					<img src="/copy-icon.svg" alt="Copy Icon" width="20" height="20" />
+					<img src="/copy-icon.svg" alt="Copy Icon" />
 				</button>
 			</div>
 			<p class="description">your <b>database will be deleted 24 hours after creation</b> unless you claim it</p>
@@ -415,7 +668,7 @@ export function getHomepageHtml() {
                                 <div class="options-flag"><span class="flag-box">--interactive</span></div>
                                 <div class="options-desc">Run in interactive mode</div>
                             </div>
-                           <div class="options-row">
+                            <div class="options-row">
                                 <div class="options-flag"><span class="flag-box">--help</span></div>
                                 <div class="options-desc">Show all available options</div>
                             </div>

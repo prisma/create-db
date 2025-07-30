@@ -7,6 +7,7 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="shortcut icon" type="image/png" href="/favicon.png"/>
 		<link rel="preload" as="image" href="/hero-background.svg" type="image/svg+xml" />
 		<title>${title}</title>
@@ -26,6 +27,7 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 				justify-content: space-between;
 				flex-direction: column;
 				min-height: 100vh;
+				overflow-x: hidden;
 			}
 
 			.container {
@@ -35,7 +37,13 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 				min-height: 50vh;
 				height: 100%;
 				align-items: center;
-				justify-content: space-between;
+				justify-content: center;
+				padding: 0 24px;
+			}
+
+			.content {
+				max-width: 800px;
+				width: 100%;
 			}
 
 			.error-header {
@@ -58,12 +66,14 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 				font-size: 4rem;
 				font-weight: 700;
 				letter-spacing: -1px;
+				line-height: 1.1;
 			}
 
 			.message {
 				font-size: 1.5rem;
 				margin-bottom: 2.2rem;
 				font-weight: 400;
+				color: #b5c6d6;
 			}
 
 			pre.error-details {
@@ -78,6 +88,8 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 				border: 1.5px solid #2D3748;
 				margin: 0 auto;
 				display: block;
+				max-width: 100%;
+				overflow-x: auto;
 			}
 
 			code {
@@ -86,6 +98,75 @@ export function getErrorHtml(title: string, message: string, details?: string) {
 				font-size: 0.875rem;
 				background: none;
 				border: none;
+			}
+
+			/* Mobile Styles */
+			@media (max-width: 768px) {
+				.container {
+					padding: 0 20px;
+					min-height: 40vh;
+				}
+				
+				.content {
+					max-width: 100%;
+				}
+				
+				.error-header {
+					gap: 0.5rem;
+					margin-bottom: 1rem;
+				}
+				
+				.error-x {
+					font-size: 2rem;
+				}
+				
+				.title {
+					font-size: 2.5rem;
+					line-height: 1.2;
+				}
+				
+				.message {
+					font-size: 1.25rem;
+					margin-bottom: 1.8rem;
+				}
+				
+				pre.error-details {
+					font-size: 0.875rem;
+					padding: 20px 12px;
+				}
+			}
+
+			/* Small Mobile Styles */
+			@media (max-width: 480px) {
+				.container {
+					padding: 0 16px;
+					min-height: 35vh;
+				}
+				
+				.error-header {
+					flex-direction: column;
+					gap: 0.75rem;
+					margin-bottom: 1.5rem;
+				}
+				
+				.error-x {
+					font-size: 2.5rem;
+				}
+				
+				.title {
+					font-size: 2rem;
+					line-height: 1.2;
+				}
+				
+				.message {
+					font-size: 1.1rem;
+					margin-bottom: 1.5rem;
+				}
+				
+				pre.error-details {
+					font-size: 0.8rem;
+					padding: 16px 12px;
+				}
 			}
 		</style>
 	</head>

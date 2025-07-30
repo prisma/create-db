@@ -57,6 +57,12 @@ export default {
 
 		const url = new URL(request.url);
 
+		if (url.pathname === '/success-test') {
+			return new Response(getClaimSuccessHtml('123'), {
+				headers: { 'Content-Type': 'text/html' },
+			});
+		}
+
 		// --- Test endpoint for rate limit testing ---
 		if (url.pathname === '/test' && request.method === 'GET') {
 			return new Response(

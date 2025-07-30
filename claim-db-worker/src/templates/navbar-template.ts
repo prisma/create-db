@@ -4,8 +4,10 @@ export function navbar() {
 			.navbar {
 				height: 72px;
 				padding: 16px;
-				width: 100vw;
-				margin-bottom: 59px;
+				width: 100%;
+				margin-bottom: 24px;
+				box-sizing: border-box;
+				overflow: hidden;
 			}
 			.navbar-content {
 				max-width: 1240px;
@@ -14,6 +16,8 @@ export function navbar() {
 				display: flex;
 				justify-content: space-between;
 				align-items: center;
+				box-sizing: border-box;
+				padding: 0 16px;
 			}
 			.nav-links {
 				display: flex;
@@ -24,7 +28,7 @@ export function navbar() {
 				gap: 16px;
 			}
 			.btn-group .btn {
-				display: inline-flex
+				display: inline-flex;
 				justify-content: center;
 				max-width: 100%;
 				text-align: left;
@@ -78,6 +82,67 @@ export function navbar() {
 				width: calc(100% + 6px);
 				height: calc(100% + 6px);
 				left: -4px;
+			}
+
+			/* Mobile Styles */
+			@media (max-width: 768px) {
+				.navbar {
+					height: 60px;
+					padding: 12px 16px;
+					margin-bottom: 40px;
+				}
+				
+				.navbar-content {
+					max-width: 100%;
+					padding: 0 16px;
+				}
+				
+				.nav-links {
+					display: flex;
+					gap: 16px;
+				}
+				
+				.nav-links img {
+					display: none;
+				}
+				
+				.btn-group {
+					flex-direction: row;
+					gap: 12px;
+				}
+				
+				.btn-group .btn {
+					font-size: 14px;
+					padding: 6px 12px;
+					min-height: 36px;
+				}
+			}
+
+			/* Small Mobile Styles */
+			@media (max-width: 480px) {
+				.navbar {
+					height: 56px;
+					padding: 8px 12px;
+					margin-bottom: 32px;
+				}
+				
+				.navbar-content {
+					padding: 0 12px;
+				}
+				
+				.btn-group .btn {
+					font-size: 13px;
+					padding: 5px 10px;
+					min-height: 32px;
+				}
+			}
+
+			/* Touch-friendly improvements */
+			@media (hover: none) and (pointer: coarse) {
+				.btn-group .btn {
+					min-height: 44px;
+					padding: 8px 16px;
+				}
 			}
         </style>
 		<nav class="navbar">
