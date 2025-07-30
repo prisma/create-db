@@ -166,7 +166,7 @@ npx create-db --interactive
 ```bash
 # Test workers
 cd create-db-worker && pnpm test
-cd ../claim-db-worker && npm test
+cd ../claim-db-worker && pnpm test
 
 # Test CLI (manual testing)
 cd create-db
