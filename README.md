@@ -116,10 +116,9 @@ cd create-db
 pnpm install
 
 # Install dependencies for each package
-cd create-db-worker && npm install
-cd ../claim-db-worker && npm install
-cd ../create-db && npm install
-```
+cd create-db-worker && pnpm install
+cd ../claim-db-worker && pnpm install
+cd ../create-db && pnpm install
 
 ### Local Development
 
