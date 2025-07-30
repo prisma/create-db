@@ -1,6 +1,9 @@
 name: Test Rate Limits
 
 on:
+  push:
+    branches:
+      - DC-4682-rate-limit-test-fix
   workflow_dispatch:
     inputs:
       test_count:
@@ -23,11 +26,12 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Test Create DB Worker Rate Limits
+        shell: bash
         run: |
-          echo "Testing create-db-worker rate limits..."
-          TEST_COUNT=${INPUT_TEST_COUNT:-110}
+          echo "🚀 Testing create-db-worker rate limits..."
+          TEST_COUNT="${{ github.event.inputs.test_count || '110' }}"
 
-          echo "Making $TEST_COUNT requests to $CREATE_DB_WORKER_URL/test"
+          echo "🔁 Making $TEST_COUNT requests to $CREATE_DB_WORKER_URL/test"
 
           success_count=0
           rate_limited_count=0
@@ -36,8 +40,8 @@ jobs:
           for i in $(seq 1 $TEST_COUNT); do
             echo "Request $i/$TEST_COUNT"
             response=$(curl -s -w "%{http_code}" -o /tmp/response_$i.json "$CREATE_DB_WORKER_URL/test")
-            status_code=${response: -3}
-            
+            status_code="${response: -3}"
+
             if [ "$status_code" = "200" ]; then
               echo "  ✅ Success (200)"
               ((success_count++))
@@ -48,8 +52,7 @@ jobs:
               echo "  ❌ Error ($status_code)"
               ((error_count++))
             fi
-            
-            # Small delay between requests
+
             sleep 0.1
           done
 
@@ -60,12 +63,18 @@ jobs:
           echo "  Errors: $error_count"
           echo "  Total: $TEST_COUNT"
 
-      - name: Test Claim DB Worker Rate Limits
-        run: |
-          echo "Testing claim-db-worker rate limits..."
-          TEST_COUNT=${INPUT_TEST_COUNT:-110}
+          if [ "$error_count" -gt 0 ]; then
+            echo "❌ Exiting with error due to unexpected status codes."
+            exit 1
+          fi
 
-          echo "Making $TEST_COUNT requests to $CLAIM_DB_WORKER_URL/test"
+      - name: Test Claim DB Worker Rate Limits
+        shell: bash
+        run: |
+          echo "🚀 Testing claim-db-worker rate limits..."
+          TEST_COUNT="${{ github.event.inputs.test_count || '110' }}"
+
+          echo "🔁 Making $TEST_COUNT requests to $CLAIM_DB_WORKER_URL/test"
 
           success_count=0
           rate_limited_count=0
@@ -74,8 +83,8 @@ jobs:
           for i in $(seq 1 $TEST_COUNT); do
             echo "Request $i/$TEST_COUNT"
             response=$(curl -s -w "%{http_code}" -o /tmp/response_$i.json "$CLAIM_DB_WORKER_URL/test")
-            status_code=${response: -3}
-            
+            status_code="${response: -3}"
+
             if [ "$status_code" = "200" ]; then
               echo "  ✅ Success (200)"
               ((success_count++))
@@ -86,8 +95,7 @@ jobs:
               echo "  ❌ Error ($status_code)"
               ((error_count++))
             fi
-            
-            # Small delay between requests
+
             sleep 0.1
           done
 
@@ -98,14 +106,18 @@ jobs:
           echo "  Errors: $error_count"
           echo "  Total: $TEST_COUNT"
 
+          if [ "$error_count" -gt 0 ]; then
+            echo "❌ Exiting with error due to unexpected status codes."
+            exit 1
+          fi
+
       - name: Summary
         run: |
           echo "🎯 Rate Limit Testing Complete!"
           echo ""
-          echo "Both workers have been tested with ${INPUT_TEST_COUNT:-110} requests each."
-          echo "Check the logs above to see the rate limiting behavior."
+          echo "Both workers have been tested with ${{ github.event.inputs.test_count || '110' }} requests each."
           echo ""
-          echo "Expected behavior:"
-          echo "- First few requests should succeed (200)"
-          echo "- Later requests should be rate limited (429)"
-          echo "- This confirms rate limiting is working correctly"
+          echo "✅ Expected behavior:"
+          echo "- Initial requests return 200 (Success)"
+          echo "- Remaining requests should return 429 (Rate Limited)"
+          echo "- Any other status codes indicate a problem"
