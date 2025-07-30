@@ -61,6 +61,21 @@ export default {
 			return new Response(getClaimSuccessHtml('123'), {
 				headers: { 'Content-Type': 'text/html' },
 			});
+
+		// --- Test endpoint for rate limit testing ---
+		if (url.pathname === '/test' && request.method === 'GET') {
+			return new Response(
+				JSON.stringify({
+					status: 'success',
+					service: 'claim-db-worker',
+					timestamp: Date.now(),
+					message: 'Rate limit test endpoint - if you see this, rate limiting passed',
+				}),
+				{
+					status: 200,
+					headers: { 'Content-Type': 'application/json' },
+				},
+			);
 		}
 
 		// --- OAuth Callback Handler ---

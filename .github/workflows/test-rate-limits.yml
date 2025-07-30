@@ -1,0 +1,111 @@
+name: Test Rate Limits
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_count:
+        description: "Number of requests to make (default: 110)"
+        required: false
+        default: "110"
+        type: string
+
+env:
+  CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+  CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
+
+jobs:
+  test-rate-limits:
+    name: Test Rate Limits
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Test Create DB Worker Rate Limits
+        run: |
+          echo "Testing create-db-worker rate limits..."
+          TEST_COUNT=${INPUT_TEST_COUNT:-110}
+
+          echo "Making $TEST_COUNT requests to $CREATE_DB_WORKER_URL/test"
+
+          success_count=0
+          rate_limited_count=0
+          error_count=0
+
+          for i in $(seq 1 $TEST_COUNT); do
+            echo "Request $i/$TEST_COUNT"
+            response=$(curl -s -w "%{http_code}" -o /tmp/response_$i.json "$CREATE_DB_WORKER_URL/test")
+            status_code=${response: -3}
+            
+            if [ "$status_code" = "200" ]; then
+              echo "  ✅ Success (200)"
+              ((success_count++))
+            elif [ "$status_code" = "429" ]; then
+              echo "  ⚠️  Rate Limited (429)"
+              ((rate_limited_count++))
+            else
+              echo "  ❌ Error ($status_code)"
+              ((error_count++))
+            fi
+            
+            # Small delay between requests
+            sleep 0.1
+          done
+
+          echo ""
+          echo "📊 Create DB Worker Results:"
+          echo "  Success: $success_count"
+          echo "  Rate Limited: $rate_limited_count"
+          echo "  Errors: $error_count"
+          echo "  Total: $TEST_COUNT"
+
+      - name: Test Claim DB Worker Rate Limits
+        run: |
+          echo "Testing claim-db-worker rate limits..."
+          TEST_COUNT=${INPUT_TEST_COUNT:-110}
+
+          echo "Making $TEST_COUNT requests to $CLAIM_DB_WORKER_URL/test"
+
+          success_count=0
+          rate_limited_count=0
+          error_count=0
+
+          for i in $(seq 1 $TEST_COUNT); do
+            echo "Request $i/$TEST_COUNT"
+            response=$(curl -s -w "%{http_code}" -o /tmp/response_$i.json "$CLAIM_DB_WORKER_URL/test")
+            status_code=${response: -3}
+            
+            if [ "$status_code" = "200" ]; then
+              echo "  ✅ Success (200)"
+              ((success_count++))
+            elif [ "$status_code" = "429" ]; then
+              echo "  ⚠️  Rate Limited (429)"
+              ((rate_limited_count++))
+            else
+              echo "  ❌ Error ($status_code)"
+              ((error_count++))
+            fi
+            
+            # Small delay between requests
+            sleep 0.1
+          done
+
+          echo ""
+          echo "📊 Claim DB Worker Results:"
+          echo "  Success: $success_count"
+          echo "  Rate Limited: $rate_limited_count"
+          echo "  Errors: $error_count"
+          echo "  Total: $TEST_COUNT"
+
+      - name: Summary
+        run: |
+          echo "🎯 Rate Limit Testing Complete!"
+          echo ""
+          echo "Both workers have been tested with ${INPUT_TEST_COUNT:-110} requests each."
+          echo "Check the logs above to see the rate limiting behavior."
+          echo ""
+          echo "Expected behavior:"
+          echo "- First few requests should succeed (200)"
+          echo "- Later requests should be rate limited (429)"
+          echo "- This confirms rate limiting is working correctly"
