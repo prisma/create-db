@@ -1,210 +1,203 @@
-# Create DB Monorepo
+# Create DB
 
-*Note: This README is not specifically set up for when it goes open source. There are references to 1Password for example, and no instructions on how to get your own credentials*
-
-This monorepo contains three related projects that work together to provide a complete database provisioning and claiming solution:
-
-1. **`create-db-worker`** - Cloudflare Worker that creates Prisma database projects
-2. **`claim-db-worker`** - Cloudflare Worker that handles database ownership transfer
-3. **`create-db`** - CLI tool for creating temporary databases
+Create temporary Prisma Postgres databases that you can claim permanently.
 
 ## Overview
 
-This system enables users to quickly provision temporary Prisma Postgres databases and optionally claim ownership to make them permanent. The workflow is:
+This monorepo contains tools and services that enable developers to quickly provision temporary Prisma Postgres databases and optionally claim ownership to make them permanent. The system consists of:
 
-1. **Create Database** → User runs CLI to create a temporary database
-2. **Use Database** → User gets 24 hours to work with the database
-3. **Claim Database** → User can claim ownership to make it permanent (optional)
+1. **CLI Tools** - Command-line interfaces for database creation
+2. **Cloudflare Workers** - Backend services for database management and OAuth authentication
+3. **Monorepo Infrastructure** - Shared tooling and versioning
 
+## Packages
 
-## Quick Start for Testing
+### CLI Tools
 
-Here's the minimal setup to just test the CLI against production workers:
+#### `create-db` (Main Package)
 
-### 1. Setup Environment
+- **Purpose**: Primary CLI tool for creating temporary Prisma Postgres databases
+- **Commands**: `create-db`, `create-postgres`, `create-pg`
+- **Features**:
+  - Interactive region selection
+  - Custom region specification
+  - Connection string output
+  - Claim URL generation
+  - Analytics tracking
+
+#### `create-pg` & `create-postgres` (Alias Packages)
+
+- **Purpose**: Alternative command names for the same functionality
+- **Dependencies**: Workspace dependency on `create-db`
+- **Usage**: Provides `create-pg` and `create-postgres` commands
+
+### Backend Services
+
+#### `create-db-worker` (Cloudflare Worker)
+
+- **Purpose**: Handles database creation via Prisma API
+- **Features**:
+  - Rate limiting (100 requests/minute)
+  - Region listing endpoint
+  - Automatic 24-hour deletion scheduling
+  - Health check endpoint
+  - Analytics tracking
+
+**API Endpoints**:
+
+- `GET /health` - Service health check
+- `GET /regions` - List available Prisma Postgres regions
+- `POST /create` - Create new database project
+
+#### `claim-db-worker` (Cloudflare Worker)
+
+- **Purpose**: Handles OAuth-based database ownership transfer
+- **Features**:
+  - Prisma OAuth authentication
+  - Rate limiting (100 requests/minute)
+  - Secure project transfer
+  - User-friendly HTML interfaces
+  - Analytics tracking
+
+**API Endpoints**:
+
+- `GET /claim?projectID=...` - Show claim page
+- `GET /auth/callback` - OAuth callback handler
+
+## Quick Start
+
+### Using the CLI
+
 ```bash
-git clone git@github.com:prisma/create-db-monorepo.git
-cd create-db-monorepo
-cd create-db && npm install
-```
-
-### 2. Create Environment File
-```bash
-echo 'CREATE_DB_WORKER_URL="https://create-db-worker.raycast-0ef.workers.dev"' > .env
-echo 'CLAIM_DB_WORKER_URL="https://claim-db-worker.raycast-0ef.workers.dev"' >> .env
-```
-
-### 3. Test
-```bash
+# Create a database with default settings
 npx create-db
+
+# Create a database in a specific region
+npx create-db --region us-east-1
+
+# Interactive mode to select region
+npx create-db --interactive
+
+# Alternative command names
+npx create-pg --region eu-west-1
+npx create-postgres --interactive
 ```
 
-You should see a connection string and claim URL
+### Environment Setup
 
-*Note: This tests against the production workers, so you don't need to run any local workers.*
+For local development, create a `.env` file in the `create-db/` directory:
 
-## Architecture
+```env
+# Local development
+CREATE_DB_WORKER_URL="http://127.0.0.1:8787"
+CLAIM_DB_WORKER_URL="http://127.0.0.1:9999"
 
-### Create DB Worker (`create-db-worker/`)
-
-**Purpose:** Creates Prisma database projects via the Prisma API.
-
-**Key Features:**
-
-- Supports custom project names and regions
-- Applies rate limiting (100 requests/minute)
-- Automatically schedules deletion after 24 hours
-- Provides regions endpoint for available options
-
-**How it Works:**
-
-1. Receives POST request to `/create` with `region` and `name`
-2. Calls Prisma API to create database project
-3. Triggers `DeleteDbWorkflow` for 24-hour delayed deletion
-4. Returns connection string to user
-
-**Key Files:**
-
-- **Main Logic:** [`src/index.ts`](create-db-worker/src/index.ts)
-- **Delete Workflow:** [`src/delete-workflow.ts`](create-db-worker/src/delete-workflow.ts)
-- **Rate Limiter:** [`src/rate-limiter.ts`](create-db-worker/src/rate-limiter.ts)
-- **Configuration:** [`wrangler.jsonc`](create-db-worker/wrangler.jsonc)
-
-### Claim DB Worker (`claim-db-worker/`)
-
-**Purpose:** Handles database ownership transfer via OAuth authentication.
-
-**Key Features:**
-
-- OAuth authentication with Prisma
-- Rate limiting (100 requests/minute)
-- Secure project transfer
-- User-friendly HTML interfaces
-
-**How it Works:**
-
-1. User visits claim page with `projectID` parameter
-2. User authenticates via Prisma OAuth
-3. Worker exchanges auth code for access token
-4. Worker calls Prisma API to transfer project ownership
-5. Shows success/error page to user
-
-**Key Files:**
-
-- **Main Logic:** [`src/index.ts`](claim-db-worker/src/index.ts)
-- **Rate Limiter:** [`src/rate-limiter.ts`](claim-db-worker/src/rate-limiter.ts)
-- **Claim Template:** [`src/templates/claim-template.ts`](claim-db-worker/src/templates/claim-template.ts)
-- **Success Template:** [`src/templates/claim-success-template.ts`](claim-db-worker/src/templates/claim-success-template.ts)
-- **Configuration:** [`wrangler.jsonc`](claim-db-worker/wrangler.jsonc)
-
-### Create DB CLI (`create-db/`)
-
-**Purpose:** Command-line interface for creating temporary databases.
-
-**Key Features:**
-
-- Interactive region selection
-- Custom region specification
-- Connection string output
-- Claim URL generation
-
-**How it Works:**
-
-1. Parses command line arguments (`--region`, `--i`)
-2. Fetches available regions from worker
-3. Sends creation request to worker
-4. Outputs connection string and claim URL
-
-**Key Files:**
-
-- **Main Logic:** [`index.js`](create-db/index.js)
-- **Configuration:** [`package.json`](create-db/package.json)
+# Production (default)
+# CREATE_DB_WORKER_URL="https://create-db-temp.prisma.io"
+# CLAIM_DB_WORKER_URL="https://create-db.prisma.io"
+```
 
 ## Development Setup
 
-### 1. Clone the Repository
+### Prerequisites
+
+- Node.js 18+
+- pnpm
+- Cloudflare account (for worker development)
+
+### Installation
 
 ```bash
-git clone https://github.com/prisma/create-db-monorepo.git
-cd create-db-monorepo
+# Clone the repository
+git clone https://github.com/prisma/create-db.git
+cd create-db
+
+# Install dependencies
+pnpm install
+
+# Install dependencies for each package
+cd create-db-worker && pnpm install
+cd ../claim-db-worker && pnpm install
+cd ../create-db && pnpm install
+
+### Local Development
+
+#### 1. Configure Environment Variables
+
+**Create DB Worker** (`create-db-worker/.dev.vars`):
+
+```env
+INTEGRATION_TOKEN=your_prisma_integration_token
 ```
 
-### 2. Install Dependencies
+**Claim DB Worker** (`claim-db-worker/.dev.vars`):
+
+```env
+INTEGRATION_TOKEN=your_prisma_integration_token
+CLIENT_SECRET=your_oauth_client_secret
+CLIENT_ID=your_oauth_client_id
+POSTHOG_API_KEY=your_posthog_key
+POSTHOG_API_HOST=your_posthog_host
+```
+
+#### 2. Start Workers
 
 ```bash
-pnpm i
-# Install dependencies for each project
-cd create-db-worker && npm install
-cd ../claim-db-worker && npm install
-cd ../create-db && npm install
-```
-
-### 3. Configure Environment
-
-Create a `.env` file in the `create-db/` directory:
-
-```env
-# LOCAL DEVELOPMENT
-CREATE_DB_WORKER_URL="http://127.0.0.1:8787"
-CLAIM_DB_WORKER_URL="http://127.0.0.1:8787"
-
-# PRODUCTION
-# CREATE_DB_WORKER_URL="https://create-db-worker.raycast-0ef.workers.dev"
-# CLAIM_DB_WORKER_URL="https://claim-db-worker.raycast-0ef.workers.dev"
-```
-
-### 4. Set Up Secrets
-
-For local development, create `.dev.vars` files in both worker directories:
-
-**`create-db-worker/.dev.vars`:**
-
-```env
-INTEGRATION_TOKEN=your_integration_token_here
-```
-
-**`claim-db-worker/.dev.vars`:**
-
-```env
-INTEGRATION_TOKEN=your_integration_token_here
-CLIENT_SECRET=your_client_secret_here
-```
-
-_Note: Integration tokens and client secrets are stored in 1Password._
-
-### 5. Run Locally
-
-**Start Create DB Worker:**
-
-```bash
+# Start Create DB Worker
 cd create-db-worker
 npx wrangler dev
-```
 
-**Start Claim DB Worker _(different port if also running Create DB Worker)_:**
-
-```bash
+# Start Claim DB Worker (in another terminal)
 cd claim-db-worker
 npx wrangler dev --port 9999
 ```
 
-*Note: At the moment, claiming on the local URL is not possible due to the redirect being set to the production url*
-
-**Update environment for different ports if needed:**
-
-```env
-CREATE_DB_WORKER_URL="http://127.0.0.1:8787"
-CLAIM_DB_WORKER_URL="http://127.0.0.1:9999"
-```
-
-**Test CLI:**
+#### 3. Test CLI
 
 ```bash
 cd create-db
 npx create-db
-npx create-db --region eu-west-1
-npx create-db --i
+npx create-db --region us-east-1
+npx create-db --interactive
 ```
+
+### Testing
+
+```bash
+# Test workers
+cd create-db-worker && pnpm test
+cd ../claim-db-worker && pnpm test
+
+# Test CLI (manual testing)
+cd create-db
+npx create-db --help
+```
+
+## Architecture
+
+### Database Lifecycle
+
+1. **Creation**: User runs CLI → Worker creates Prisma project → Returns connection string
+2. **Usage**: User gets 24 hours to work with the database
+3. **Claiming**: User can claim ownership via OAuth (optional)
+4. **Deletion**: Unclaimed databases are automatically deleted after 24 hours
+
+### Rate Limiting
+
+Both workers implement rate limiting:
+
+- **Limit**: 100 requests per minute
+- **Scope**: Global per worker
+- **Configuration**: Managed via Cloudflare Rate Limit bindings
+
+### Analytics
+
+The system tracks usage via PostHog:
+
+- Database creation events
+- Claim attempts and successes
+- Error tracking
+- Usage patterns
 
 ## Deployment
 
@@ -220,69 +213,31 @@ cd ../claim-db-worker
 npx wrangler deploy
 ```
 
-### Publish CLI
+### Publish CLI Packages
 
 ```bash
-cd create-db
-git add .
-git commit -m "..."
-git push
+# Version and publish all packages
+pnpm changeset version
+pnpm changeset publish --filter create-db
+pnpm changeset publish --filter create-pg
+pnpm changeset publish --filter create-postgres
 ```
 
 ## Configuration
 
-### Rate Limiting
+### Worker Configuration
 
-Both workers use the same rate limiting logic:
+**Create DB Worker** (`create-db-worker/wrangler.jsonc`):
 
-- **Default:** 100 requests per minute (global)
-- **Location:** `src/rate-limiter.ts` in each worker
-- **Configuration:** Edit the `checkRateLimit` call in `src/index.ts`
+- Rate limiting: 100 requests/minute
+- Workflow: Delete DB workflow for 24-hour deletion
+- Analytics: Create DB dataset tracking
 
-### OAuth Configuration
+**Claim DB Worker** (`claim-db-worker/wrangler.jsonc`):
 
-The claim worker requires OAuth setup:
-
-- **Callback URL:** Must be configured in Prisma OAuth settings
-- **Client Secret:** Stored as Cloudflare secret
-- **Integration Token:** Stored as Cloudflare secret
-
-### Database Deletion
-
-Temporary databases are automatically deleted after 24 hours:
-
-- **Implementation:** `DeleteDbWorkflow` class in `create-db-worker/src/delete-workflow.ts`
-- **Duration:** 24 hours (configurable)
-- **Safety:** Gracefully handles already-deleted projects
-
-## Monitoring
-
-- **Create DB Worker:** [Cloudflare Dashboard](https://dash.cloudflare.com/0ef7f922ce028e16c1a44d98c86511b0/workers/services/view/create-db-worker/production/metrics)
-- **Claim DB Worker:** [Cloudflare Dashboard](https://dash.cloudflare.com/0ef7f922ce028e16c1a44d98c86511b0/workers/services/view/claim-db-worker/production/metrics)
-
-## API Endpoints
-
-### Create DB Worker
-
-- `POST /create` - Create a new database project
-- `GET /regions` - List available regions
-
-### Claim DB Worker
-
-- `GET /claim?projectID=...` - Show claim page
-- `GET /auth/callback` - OAuth callback handler
-
-## Quick Reference
-
-### Common Tasks
-
-| Task                     | Location                                                |
-| ------------------------ | ------------------------------------------------------- |
-| Edit rate limits         | `src/index.ts` and `src/rate-limiter.ts` in each worker |
-| Edit delete workflow     | `create-db-worker/src/delete-workflow.ts`               |
-| Edit claim/success pages | `claim-db-worker/src/templates/`                        |
-| Edit CLI logic           | `create-db/index.js`                                    |
-| Configure secrets        | Cloudflare dashboard or `.dev.vars`                     |
+- Rate limiting: 100 requests/minute
+- Assets: Static files for HTML templates
+- Analytics: Create DB dataset tracking
 
 ### Environment Variables
 
@@ -290,26 +245,96 @@ Temporary databases are automatically deleted after 24 hours:
 | ---------------------- | ---------------------- | -------------------- |
 | `CREATE_DB_WORKER_URL` | Create worker endpoint | `create-db/.env`     |
 | `CLAIM_DB_WORKER_URL`  | Claim worker endpoint  | `create-db/.env`     |
-| `INTEGRATION_TOKEN`    | API access             | Worker secrets       |
+| `INTEGRATION_TOKEN`    | Prisma API access      | Worker secrets       |
 | `CLIENT_SECRET`        | OAuth secret           | Claim worker secrets |
+| `CLIENT_ID`            | OAuth client ID        | Claim worker secrets |
+| `POSTHOG_API_KEY`      | Analytics key          | Claim worker secrets |
+| `POSTHOG_API_HOST`     | Analytics host         | Claim worker secrets |
 
-## Troubleshooting
+## API Reference
 
-### Local Development Issues
+### Create DB Worker
 
-1. **Port Conflicts:** Use different ports for workers (`--port 9999`)
-3. **Secrets:** Ensure `.dev.vars` files are properly configured
+#### `GET /health`
 
-### Common Errors
+Health check endpoint.
 
-- **Rate Limit Exceeded:** Wait 1 minute or increase limits
-- **OAuth Errors:** Check client secret and callback URL configuration
-- **Database Creation Failed:** Verify integration token permissions
+**Response**:
+
+```json
+{
+  "status": "ok",
+  "service": "create-db",
+  "timestamp": 1234567890
+}
+```
+
+#### `GET /regions`
+
+List available Prisma Postgres regions.
+
+**Response**: Array of region objects from Prisma API
+
+#### `POST /create`
+
+Create a new database project.
+
+**Request Body**:
+
+```json
+{
+  "region": "us-east-1",
+  "name": "my-project"
+}
+```
+
+**Response**: Prisma API project creation response
+
+### Claim DB Worker
+
+#### `GET /claim?projectID=<id>`
+
+Show claim page for a specific project.
+
+#### `GET /auth/callback`
+
+OAuth callback handler for Prisma authentication.
+
+## Project Structure
+
+```
+create-db/
+├── create-db/                 # Main CLI package
+│   ├── index.js              # CLI entry point
+│   ├── analytics.js          # Analytics tracking
+│   └── package.json
+├── create-db-worker/         # Database creation worker
+│   ├── src/
+│   │   ├── index.ts         # Main worker logic
+│   │   └── delete-workflow.ts # 24-hour deletion workflow
+│   └── wrangler.jsonc
+├── claim-db-worker/          # Database claiming worker
+│   ├── src/
+│   │   ├── index.ts         # Main worker logic
+│   │   └── templates/       # HTML templates
+│   └── wrangler.jsonc
+├── create-pg/               # CLI alias package
+├── create-postgres/         # CLI alias package
+├── package.json            # Monorepo configuration
+└── pnpm-workspace.yaml     # Workspace definition
+```
 
 ## Contributing
 
-1. Clone all three repositories
-2. Set up local development environment
-3. Make changes in the appropriate project
-4. Test locally with the CLI
-5. Deploy workers and publish CLI as needed
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test locally with the development setup
+5. Submit a pull request
+
+### Development Workflow
+
+1. **Local Testing**: Use `wrangler dev` for worker development
+2. **CLI Testing**: Test changes in the `create-db` package
+3. **Versioning**: Use changesets for version management
+4. **Deployment**: Deploy workers and publish packages as needed
