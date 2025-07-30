@@ -1,6 +1,6 @@
 # Create DB
 
-A comprehensive solution for creating temporary Prisma Postgres databases with optional permanent claiming capabilities.
+Create temporary Prisma Postgres databases that you can claim permanently.
 
 ## Overview
 
