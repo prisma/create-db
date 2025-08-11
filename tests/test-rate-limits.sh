@@ -5,8 +5,8 @@
 
 # Default values
 TEST_COUNT=${1:-110}
-CREATE_DB_URL=${2:-"http://127.0.0.1:8787"}
-CLAIM_DB_URL=${3:-"http://127.0.0.1:9999"}
+CREATE_DB_URL=${2:-"https://create-db-temp.prisma.io"}
+CLAIM_DB_URL=${3:-"https://create-db.prisma.io"}
 
 echo "🧪 Testing Rate Limits"
 echo "======================"

@@ -12,7 +12,9 @@ export { DeleteDbWorkflow };
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		// --- Rate limiting ---
-		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: request.url });
+		// Use client IP for consistent rate limiting across environments
+		const clientIP = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
+		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: clientIP });
 
 		if (!success) {
 			return new Response(`429 Failure - rate limit exceeded for ${request.url}`, { status: 429 });
