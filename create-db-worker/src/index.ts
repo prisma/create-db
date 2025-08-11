@@ -13,8 +13,11 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		// --- Rate limiting ---
 		// Use client IP for consistent rate limiting across environments
-		const clientIP = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
-		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: clientIP });
+		const clientIP = request.headers.get('x-agent') || request.headers.get('cf-connecting-ip');
+
+		console.log(`Client IP: ${clientIP} - Request URL: ${request.url}`);
+
+		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: clientIP! });
 
 		if (!success) {
 			return new Response(`429 Failure - rate limit exceeded for ${request.url}`, { status: 429 });
