@@ -29,8 +29,6 @@ function errorResponse(title: string, message: string, details?: string, status 
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		// --- Custom KV Rate limiting ---
-
 		// --- Rate limiting ---
 		// Use client IP for consistent rate limiting across environments
 		const clientIP = request.headers.get('x-agent') || request.headers.get('cf-connecting-ip');
