@@ -6,7 +6,10 @@
     "changeset": "changeset",
     "version": "changeset version",
     "publish:cli": "changeset publish --filter create-db",
-    "prepare": "node .husky/install.mjs"
+    "prepare": "node .husky/install.mjs",
+    "deploy-workers": "pnpm run deploy-create-db-worker && pnpm run deploy-claim-worker",
+    "deploy-claim-worker": "cd claim-db-worker && npx wrangler@latest deploy && cd ..",
+    "deploy-create-db-worker": "cd create-db-worker && npx wrangler@latest deploy"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.5",

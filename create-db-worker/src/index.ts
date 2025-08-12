@@ -17,6 +17,7 @@ export default {
 		const rayId = request.headers.get('cf-ray') || request.headers.get('x-ray-id') || 'unknown-ray-id';
 
 		console.log(`Client IP: ${clientIP} - Request URL: ${request.url}`);
+		console.log(`Ray ID: ${rayId} - Request Method: ${request.method}`);
 
 		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: clientIP! });
 
@@ -27,8 +28,6 @@ export default {
 					error: 'Too Many Requests',
 					message: 'You have exceeded the allowed number of requests. Please wait before trying again.',
 					code: 429,
-					ip: clientIP,
-					rayId,
 				}),
 				{
 					status: 429,

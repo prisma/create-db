@@ -37,9 +37,6 @@ test_worker() {
         
         # Make the request with unique agent headers and capture body + status code
         response=$(curl -s \
-          -H "x-agent: $AGENT_ID" \
-          -H "x-Agent: $AGENT_ID" \
-          -H "User-Agent: prisma-rate-limit-test/$AGENT_ID" \
           -w "%{http_code}" \
           -o /tmp/response_$i.json \
           "$endpoint" 2>/dev/null)

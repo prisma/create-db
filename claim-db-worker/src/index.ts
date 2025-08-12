@@ -36,6 +36,9 @@ export default {
 
 		const { success } = await env.CLAIM_DB_RATE_LIMITER.limit({ key: clientIP! });
 
+		console.log(`Client IP: ${clientIP} - Request URL: ${request.url}`);
+		console.log(`Ray ID: ${rayId} - Request Method: ${request.method}`);
+
 		if (!success) {
 			console.log(`Rate limit exceeded for IP: ${clientIP}. Ray ID: ${rayId}. Request blocked to prevent abuse.`);
 			return new Response(
