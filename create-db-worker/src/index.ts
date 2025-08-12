@@ -14,13 +14,27 @@ export default {
 		// --- Rate limiting ---
 		// Use client IP for consistent rate limiting across environments
 		const clientIP = request.headers.get('x-agent') || request.headers.get('cf-connecting-ip');
+		const rayId = request.headers.get('cf-ray') || request.headers.get('x-ray-id') || 'unknown-ray-id';
 
 		console.log(`Client IP: ${clientIP} - Request URL: ${request.url}`);
 
 		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: clientIP! });
 
 		if (!success) {
-			return new Response(`429 Failure - rate limit exceeded for ${request.url}`, { status: 429 });
+			console.log(`Rate limit exceeded for IP: ${clientIP}. Ray ID: ${rayId}. Request blocked to prevent abuse.`);
+			return new Response(
+				JSON.stringify({
+					error: 'Too Many Requests',
+					message: 'You have exceeded the allowed number of requests. Please wait before trying again.',
+					code: 429,
+					ip: clientIP,
+					rayId,
+				}),
+				{
+					status: 429,
+					headers: { 'Content-Type': 'application/json' },
+				},
+			);
 		}
 
 		const url = new URL(request.url);
@@ -32,7 +46,7 @@ export default {
 					status: 'success',
 					service: 'create-db-worker',
 					timestamp: Date.now(),
-					message: 'Rate limit test endpoint - if you see this, rate limiting passed',
+					message: 'Rate limit test endpoint',
 				}),
 				{
 					status: 200,

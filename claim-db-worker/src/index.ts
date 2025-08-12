@@ -29,13 +29,30 @@ function errorResponse(title: string, message: string, details?: string, status 
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		// --- Custom KV Rate limiting ---
+
 		// --- Rate limiting ---
 		// Use client IP for consistent rate limiting across environments
 		const clientIP = request.headers.get('x-agent') || request.headers.get('cf-connecting-ip');
+		const rayId = request.headers.get('cf-ray') || request.headers.get('x-ray-id') || 'unknown-ray-id';
+
 		const { success } = await env.CLAIM_DB_RATE_LIMITER.limit({ key: clientIP! });
 
 		if (!success) {
-			return errorResponse('Rate Limit Exceeded', "We're experiencing high demand. Please try again later.", '', 429);
+			console.log(`Rate limit exceeded for IP: ${clientIP}. Ray ID: ${rayId}. Request blocked to prevent abuse.`);
+			return new Response(
+				JSON.stringify({
+					error: 'Too Many Requests',
+					message: 'You have exceeded the allowed number of requests. Please wait before trying again.',
+					code: 429,
+					ip: clientIP,
+					rayId,
+				}),
+				{
+					status: 429,
+					headers: { 'Content-Type': 'application/json' },
+				},
+			);
 		}
 
 		async function sendPosthogEvent(event: string, properties: Record<string, any>) {
