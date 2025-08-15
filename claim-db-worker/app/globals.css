@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --background-dark: #050d0f;
+  --background-card: #161d2b;
+  --background-code: #181b23;
+  --background-step: #090a15;
+  --background-table-header: #121521;
+  --background-button: #232634;
+  --background-button-hover: #2d3748;
+  
+  --text-white: #ffffff;
+  --text-muted: #a0aec0;
+  --text-dim: #3f4b5b;
+  --text-accent: #71e8df;
+  --text-error: #fc8181;
+  
+  --border-subtle: #2d3748;
+  --border-accent: #71e8df;
+  
+  --gradient-start: #71e8df;
+  --gradient-end: #3f827d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-barlow: var(--font-barlow);
+  --color-dark: var(--background-dark);
+  --color-card: var(--background-card);
+  --color-code: var(--background-code);
+  --color-step: var(--background-step);
+  --color-table-header: var(--background-table-header);
+  --color-button: var(--background-button);
+  --color-button-hover: var(--background-button-hover);
+  
+  --color-white: var(--text-white);
+  --color-muted: var(--text-muted);
+  --color-dim: var(--text-dim);
+  --color-accent: var(--text-accent);
+  --color-error: var(--text-error);
+  
+  --color-subtle: var(--border-subtle);
+  --color-accent: var(--border-accent);
+  
+  --color-gradient-start: var(--gradient-start);
+  --color-gradient-end: var(--gradient-end);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.bg-custom-gradient {
+  background: radial-gradient(circle at 30% 30%, rgba(0, 128, 128, 0.2), transparent 50%),
+              radial-gradient(circle at 70% 70%, rgba(0, 128, 128, 0.2), transparent 50%),
+              var(--color-dark);
+}
