@@ -1,6 +1,6 @@
-# Claim DB Worker - Next.js Version
+# Claim DB Worker
 
-This is a Next.js conversion of the original Cloudflare Worker for claiming Prisma databases. The project maintains all the original functionality while providing a modern Next.js development experience.
+A Cloudflare Worker for claiming Prisma databases. This worker handles OAuth authentication with Prisma and transfers database projects to authenticated users.
 
 ## Features
 
@@ -80,7 +80,7 @@ This is a Next.js conversion of the original Cloudflare Worker for claiming Pris
 
 ## Configuration
 
-The project uses the same Cloudflare Worker bindings as the original:
+The project uses Cloudflare Worker bindings:
 - Rate limiting via `CLAIM_DB_RATE_LIMITER` binding
 - Analytics via `CREATE_DB_DATASET` binding
 - Environment variables as secrets
@@ -99,7 +99,3 @@ The `lib/env.ts` utility handles this automatically.
 - **Local testing**: `npm run dev` then visit with projectID
 - **Rate limit testing**: Visit `/api/test`
 - **Success page testing**: Visit `/api/success-test`
-
-## Original Worker
-
-This is a conversion of the [claim-db-worker](https://github.com/prisma/create-db/tree/main/claim-db-worker) from the Prisma create-db repository.
