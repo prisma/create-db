@@ -3,12 +3,12 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --background-dark: #050d0f;
-  --background-card: #161d2b;
-  --background-code: #181b23;
-  --background-step: #090a15;
-  --background-table-header: #121521;
-  --background-button: #232634;
+  --background-dark: #0f1217;
+  --background-card: #1a1d24;
+  --background-code: #181b22;
+  --background-step: #14171c;
+  --background-table-header: #1c1f26;
+  --background-button: #2d3138;
   --background-button-hover: #2d3748;
   
   --text-white: #ffffff;
@@ -17,7 +17,7 @@
   --text-accent: #71e8df;
   --text-error: #fc8181;
   
-  --border-subtle: #2d3748;
+  --border-subtle: #202734;
   --border-accent: #71e8df;
   
   --gradient-start: #71e8df;

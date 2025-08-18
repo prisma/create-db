@@ -135,7 +135,7 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
         { token: 'operator', foreground: 'e2e8f0' },
       ],
       colors: {
-        'editor.background': '#181b23',
+        'editor.background': '#181b22',
         'editor.foreground': '#e2e8f0',
         'editorLineNumber.foreground': '#718096',
         'editorLineNumber.activeForeground': '#e2e8f0',
@@ -147,7 +147,7 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
         'editorBracketMatch.background': '#2d374850',
         'editorBracketMatch.border': '#5a67d8',
         'editor.lineHighlightBackground': '#2d3748',
-        'editorGutter.background': '#181b23',
+        'editorGutter.background': '#181b22',
         'editorWhitespace.foreground': '#4a5568',
         'editorIndentGuide.background': '#4a5568',
         'editorIndentGuide.activeBackground': '#718096',
@@ -359,8 +359,8 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
         if (isInGenerator && isPropertyValue) {
           if (beforeCursor.includes('provider')) {
             suggestions.push(
-              { label: '"prisma-client-js"', kind: monaco.languages.CompletionItemKind.Value, insertText: '"prisma-client-js"', range },
-              { label: '"prisma-client-py"', kind: monaco.languages.CompletionItemKind.Value, insertText: '"prisma-client-py"', range }
+              { label: '"prisma-client"', kind: monaco.languages.CompletionItemKind.Value, insertText: '"prisma-client"', range },
+              { label: '"prisma-client-js"', kind: monaco.languages.CompletionItemKind.Value, insertText: '"prisma-client-js"', range }
             );
           } else if (beforeCursor.includes('previewFeatures')) {
             const features = ['relationJoins', 'fullTextSearch', 'postgresqlExtensions', 'views', 'multiSchema'];
@@ -383,7 +383,8 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
                 kind: monaco.languages.CompletionItemKind.Class,
                 insertText: [
                   'generator ${1:client} {',
-                  '  provider = "prisma-client-js"',
+                  '  provider = "prisma-client"',
+                  '  output   = "../generated/prisma/client"',
                   '  $0',
                   '}'
                 ].join('\n'),
@@ -655,7 +656,7 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
                 <path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/>
               </svg>
             )}
-            <span className="text-xs font-bold mt-1">{isFormatting ? "..." : "Format"}</span>
+            <span className="text-xs font-bold mt-1">Format</span>
           </button>
         </div>
         {lastPush && (

@@ -22,6 +22,16 @@ function formatPrismaSchema(schema: string): string {
       continue;
     }
 
+    // Clean up excessive whitespace in field assignments (e.g., "output   =           "../generated/prisma/client"")
+    if (line.includes("=")) {
+      const parts = line.split("=");
+      if (parts.length === 2) {
+        const fieldName = parts[0].trim();
+        const fieldValue = parts[1].trim();
+        line = `${fieldName} = ${fieldValue}`;
+      }
+    }
+
     // Add current line with proper indentation
     formattedLines.push("  ".repeat(indentLevel) + line);
 
@@ -31,32 +41,54 @@ function formatPrismaSchema(schema: string): string {
     }
   }
 
-  // Format field alignment within models
+  // Format field alignment within models and other blocks
   const finalLines: string[] = [];
-  let inModel = false;
-  let modelLines: string[] = [];
+  let inBlock = false;
+  let blockLines: string[] = [];
+  let blockType = "";
 
   for (const line of formattedLines) {
     const trimmed = line.trim();
 
-    if (trimmed.startsWith("model ") && trimmed.includes("{")) {
-      inModel = true;
-      modelLines = [line];
-    } else if (inModel && trimmed === "}") {
-      inModel = false;
-      // Format the model fields for alignment
-      const formatted = formatModelFields(modelLines);
+    // Check if we're starting a new block (model, generator, datasource, etc.)
+    if (
+      (trimmed.startsWith("model ") ||
+        trimmed.startsWith("generator ") ||
+        trimmed.startsWith("datasource ")) &&
+      trimmed.includes("{")
+    ) {
+      inBlock = true;
+      blockType = trimmed.split(" ")[0]; // "model", "generator", or "datasource"
+      blockLines = [line];
+    } else if (inBlock && trimmed === "}") {
+      inBlock = false;
+      // Format the block fields for alignment
+      const formatted = formatBlockFields(blockLines, blockType);
       finalLines.push(...formatted);
       finalLines.push(line);
-      modelLines = [];
-    } else if (inModel) {
-      modelLines.push(line);
+      blockLines = [];
+      blockType = "";
+    } else if (inBlock) {
+      blockLines.push(line);
     } else {
       finalLines.push(line);
     }
   }
 
   return finalLines.join("\n");
+}
+
+function formatBlockFields(blockLines: string[], blockType: string): string[] {
+  if (blockLines.length <= 1) return blockLines;
+
+  const [header, ...fieldLines] = blockLines;
+
+  if (blockType === "model") {
+    return formatModelFields(blockLines);
+  } else {
+    // For generator, datasource, and other blocks - align equals signs
+    return formatEqualsAlignment(blockLines);
+  }
 }
 
 function formatModelFields(modelLines: string[]): string[] {
@@ -106,6 +138,57 @@ function formatModelFields(modelLines: string[]): string[] {
     const type = field.type.padEnd(maxTypeWidth);
     const attributes = field.attributes ? ` ${field.attributes}` : "";
     return `${padding}${name} ${type}${attributes}`;
+  });
+
+  return [header, ...formattedFields, ...nonFields];
+}
+
+function formatEqualsAlignment(blockLines: string[]): string[] {
+  if (blockLines.length <= 1) return blockLines;
+
+  const [header, ...fieldLines] = blockLines;
+  const fields: Array<{
+    line: string;
+    name: string;
+    value: string;
+  }> = [];
+  const nonFields: string[] = [];
+
+  // Parse field lines
+  for (const line of fieldLines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("//") || trimmed.startsWith("@@")) {
+      nonFields.push(line);
+      continue;
+    }
+
+    // Parse field: fieldName = value
+    if (trimmed.includes("=")) {
+      const parts = trimmed.split("=");
+      if (parts.length === 2) {
+        const name = parts[0].trim();
+        const value = parts[1].trim();
+        fields.push({ line, name, value });
+      } else {
+        nonFields.push(line);
+      }
+    } else {
+      nonFields.push(line);
+    }
+  }
+
+  if (fields.length === 0) {
+    return blockLines;
+  }
+
+  // Calculate max width for alignment
+  const maxNameWidth = Math.max(...fields.map((f) => f.name.length));
+
+  // Format fields with equals alignment
+  const formattedFields = fields.map((field) => {
+    const padding = "  "; // Base indentation
+    const name = field.name.padEnd(maxNameWidth);
+    return `${padding}${name} = ${field.value}`;
   });
 
   return [header, ...formattedFields, ...nonFields];
