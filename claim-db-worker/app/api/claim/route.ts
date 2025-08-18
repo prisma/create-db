@@ -1,16 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEnv } from "@/lib/env";
 
-const RESPONSE_TYPE = "code";
-const SCOPE = "workspace:admin";
-
-function generateState(): string {
-  return (
-    Math.random().toString(36).substring(2, 15) +
-    Math.random().toString(36).substring(2, 15)
-  );
-}
-
 export async function GET(request: NextRequest) {
   const env = getEnv();
   const { searchParams } = new URL(request.url);
@@ -56,20 +46,5 @@ export async function GET(request: NextRequest) {
     "utm-medium": searchParams.get("utm_medium") || "unknown",
   });
 
-  const redirectUri = new URL("/api/auth/callback", request.url);
-  redirectUri.searchParams.set("projectID", projectID);
-
-  const authParams = new URLSearchParams({
-    client_id: env.CLIENT_ID,
-    redirect_uri: redirectUri.toString(),
-    response_type: RESPONSE_TYPE,
-    scope: SCOPE,
-    state: generateState(),
-    utm_source: searchParams.get("utm_source") || "unknown",
-    utm_medium: "cli",
-  });
-
-  const authUrl = `https://auth.prisma.io/authorize?${authParams.toString()}`;
-
-  return NextResponse.json({ authUrl });
+  return NextResponse.json({ success: true });
 }

@@ -21,12 +21,12 @@ export function CodeSnippet({
     <div className="bg-code border-2 border-accent shadow-lg shadow-cyan-400/20 flex items-center gap-2 p-3 text-white my-6 w-full font-mono rounded-3xl font-bold max-w-xs sm:gap-3 sm:p-4 md:max-w-lg lg:max-w-xl">
       <span className="text-dim text-sm font-medium sm:text-base">$</span>
       <span className="text-sm sm:text-base flex-1 text-start">
-        npx create-db@latest
+        npx create-db<span className="text-muted">@latest</span>
       </span>
       <button
         onClick={handleCopy}
         className="bg-button rounded-lg px-2 py-2 cursor-pointer flex active:scale-95 items-center text-muted transition-all duration-[50ms] hover:bg-button-hover active:bg-button-hover hover:text-accent sm:px-3"
-        aria-label={isCopied ? "Copied!" : "Copy command"}
+        aria-label="Copy command"
       >
         <Image
           src="/copy-icon.svg"

@@ -19,8 +19,27 @@ function ClaimContent() {
     }
   }, [projectID, router]);
 
-  const redirectUri = window.location.origin + "/api/auth/callback";
-  const authUrl = `https://auth.prisma.io/authorize?client_id=${process.env.NEXT_PUBLIC_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=workspace:admin&state=${projectID}&utm_source=${utmSource || 'unknown'}&utm_medium=${utmMedium || 'unknown'}`;
+  const redirectUri = new URL("/api/auth/callback", window.location.origin);
+  redirectUri.searchParams.set("projectID", projectID!);
+
+  function generateState(): string {
+    return (
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15)
+    );
+  }
+
+  const authParams = new URLSearchParams({
+    client_id: process.env.NEXT_PUBLIC_CLIENT_ID!,
+    redirect_uri: redirectUri.toString(),
+    response_type: "code",
+    scope: "workspace:admin",
+    state: generateState(),
+    utm_source: utmSource || "unknown",
+    utm_medium: utmMedium || "unknown",
+  });
+
+  const authUrl = `https://auth.prisma.io/authorize?${authParams.toString()}`;
 
   const handleClaimClick = () => {
     if (authUrl) {
