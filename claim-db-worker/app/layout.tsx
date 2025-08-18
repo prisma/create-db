@@ -3,6 +3,7 @@ import { Barlow } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
+import { DropProvider } from "./contexts/DropContext";
 
 const barlow = Barlow({
   weight: ['400', '500', '700', '800', '900'],
@@ -11,6 +12,7 @@ const barlow = Barlow({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('http://localhost:3000'),
   title: "Prisma Postgres Create DB",
   description: "Get a temporary Prisma Postgres database instantly. No account or config needed. Just run npx create-db.",
   openGraph: {
@@ -39,9 +41,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${barlow.className} antialiased bg-custom-gradient backdrop-filter backdrop-blur-md bg-cover font-barlow text-white p-0 flex items-center justify-center flex-col min-h-screen max-w-screen-xl mx-auto`}>
-        <Navbar />
-        {children}
-        <Footer />
+        <DropProvider>
+          <Navbar />
+          {children}
+          <Footer />
+        </DropProvider>
       </body>
     </html>
   );

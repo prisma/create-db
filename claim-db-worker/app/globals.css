@@ -22,6 +22,9 @@
   
   --gradient-start: #71e8df;
   --gradient-end: #3f827d;
+
+  --button: #16A394;
+  --button-hover: #16a395ba;
 }
 
 @theme inline {
@@ -34,7 +37,6 @@
   --color-step: var(--background-step);
   --color-table-header: var(--background-table-header);
   --color-button: var(--background-button);
-  --color-button-hover: var(--background-button-hover);
   
   --color-white: var(--text-white);
   --color-muted: var(--text-muted);
@@ -44,6 +46,9 @@
   
   --color-subtle: var(--border-subtle);
   --color-accent: var(--border-accent);
+  
+  --color-button: var(--button);
+  --color-button-hover: var(--button-hover);
   
   --color-gradient-start: var(--gradient-start);
   --color-gradient-end: var(--gradient-end);
@@ -66,4 +71,7 @@ body {
   background: radial-gradient(circle at 30% 30%, rgba(0, 128, 128, 0.2), transparent 50%),
               radial-gradient(circle at 70% 70%, rgba(0, 128, 128, 0.2), transparent 50%),
               var(--color-dark);
+}
+button {
+  cursor: pointer;
 }
