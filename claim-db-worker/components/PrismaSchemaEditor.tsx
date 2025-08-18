@@ -157,10 +157,10 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
 
     monaco.editor.setTheme('prisma-dark');
 
-    setCompletionDisposable(
+        setCompletionDisposable(
       monaco.languages.registerCompletionItemProvider('prisma', {
-      triggerCharacters: ['@', '=', '"', ' ', '\n', '{'],
-      provideCompletionItems: (model: any, position: any) => {
+        triggerCharacters: ['@', '=', '"', ' ', '\n', '{'],
+        provideCompletionItems: (model: any, position: any) => {
         const word = model.getWordUntilPosition(position);
         const range = {
           startLineNumber: position.lineNumber,
@@ -726,7 +726,7 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
               autoClosingQuotes: 'always',
               autoIndent: 'full',
               acceptSuggestionOnCommitCharacter: true,
-              acceptSuggestionOnEnter: 'smart',
+              acceptSuggestionOnEnter: 'off',
               tabCompletion: 'on',
               wordBasedSuggestions: 'allDocuments',
               folding: true,
