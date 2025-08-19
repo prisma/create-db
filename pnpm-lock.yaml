@@ -35,6 +35,9 @@ importers:
       '@opennextjs/cloudflare':
         specifier: ^1.6.4
         version: 1.6.4(wrangler@4.30.0)
+      '@prisma/studio-core':
+        specifier: ^0.5.2
+        version: 0.5.2(@prisma/client@6.5.0(typescript@5.8.3))(@types/react@19.1.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       next:
         specifier: 15.4.6
         version: 15.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1395,6 +1398,26 @@ packages:
 
   '@poppinss/exception@1.2.2':
     resolution: {integrity: sha512-m7bpKCD4QMlFCjA/nKTs23fuvoVFoA83brRKmObCUNmi/9tVu8Ve3w4YQAnJu4q3Tjf5fr685HYIC/IA2zHRSg==}
+
+  '@prisma/client@6.5.0':
+    resolution: {integrity: sha512-M6w1Ql/BeiGoZmhMdAZUXHu5sz5HubyVcKukbLs3l0ELcQb8hTUJxtGEChhv4SVJ0QJlwtLnwOLgIRQhpsm9dw==}
+    engines: {node: '>=18.18'}
+    peerDependencies:
+      prisma: '*'
+      typescript: '>=5.1.0'
+    peerDependenciesMeta:
+      prisma:
+        optional: true
+      typescript:
+        optional: true
+
+  '@prisma/studio-core@0.5.2':
+    resolution: {integrity: sha512-F/LOafCIfNkSlCdWvg/1JW4tj+RAePP7/WaSLFWDR8TFXVRy0AhjRhzTmcc+sB+pG6B2LEH04yagVSyjXQ31yg==}
+    peerDependencies:
+      '@prisma/client': 6.5.0
+      '@types/react': ^18.0.0 || ^19.0.0
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
 
   '@rollup/rollup-android-arm-eabi@4.44.2':
     resolution: {integrity: sha512-g0dF8P1e2QYPOj1gu7s/3LVP6kze9A7m6x0BZ9iTdXK8N5c2V7cpBKHV3/9A4Zd8xxavdhK0t4PnqjkqVmUc9Q==}
@@ -5748,6 +5771,17 @@ snapshots:
       supports-color: 10.2.0
 
   '@poppinss/exception@1.2.2': {}
+
+  '@prisma/client@6.5.0(typescript@5.8.3)':
+    optionalDependencies:
+      typescript: 5.8.3
+
+  '@prisma/studio-core@0.5.2(@prisma/client@6.5.0(typescript@5.8.3))(@types/react@19.1.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@prisma/client': 6.5.0(typescript@5.8.3)
+      '@types/react': 19.1.10
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
 
   '@rollup/rollup-android-arm-eabi@4.44.2':
     optional: true

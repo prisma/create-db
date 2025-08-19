@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import PrismaSchemaEditor from "./PrismaSchemaEditor";
+import PrismaStudio from "./PrismaStudio";
 
 interface TabContentProps {
   activeTab?: string;
@@ -85,55 +86,7 @@ model Post {
 
         {activeTab === "studio" && (
           <div className="w-full h-[calc(100%-40px)]">
-            <div className="w-full h-full border border-subtle rounded-lg bg-card">
-              <div className="w-full h-full flex flex-col items-center justify-center p-6">
-                <div className="text-center max-w-md">
-                  <h3 className="text-xl font-semibold mb-2 text-white">Prisma Studio</h3>
-                  <p className="text-muted mb-4">
-                    This would be an embedded version of Prisma Studio for
-                    browsing and editing database records.
-                  </p>
-                  <div className="border border-subtle rounded-md p-4 bg-step">
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="flex space-x-2">
-                        <div className="bg-accent/20 text-accent px-3 py-1 rounded-md text-sm font-medium">
-                          User
-                        </div>
-                        <div className="bg-table-header px-3 py-1 rounded-md text-sm text-white">
-                          Post
-                        </div>
-                      </div>
-                      <button className="inline-flex items-center px-3 py-1 text-sm font-medium text-white bg-button rounded-md hover:bg-button-hover transition-colors">
-                        New Record
-                      </button>
-                    </div>
-                    <div className="border border-subtle rounded-md overflow-hidden">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-table-header">
-                            <th className="p-2 text-left text-white font-medium">id</th>
-                            <th className="p-2 text-left text-white font-medium">email</th>
-                            <th className="p-2 text-left text-white font-medium">name</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="border-t border-subtle">
-                            <td className="p-2 text-white">1</td>
-                            <td className="p-2 text-white">user1@example.com</td>
-                            <td className="p-2 text-white">User One</td>
-                          </tr>
-                          <tr className="border-t border-subtle">
-                            <td className="p-2 text-white">2</td>
-                            <td className="p-2 text-white">user2@example.com</td>
-                            <td className="p-2 text-white">User Two</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <PrismaStudio />
           </div>
         )}
       </div>

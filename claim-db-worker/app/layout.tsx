@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { DropProvider } from "./contexts/DropContext";
+import "@prisma/studio-core/ui/index.css";
 
 const barlow = Barlow({
   weight: ['400', '500', '700', '800', '900'],
