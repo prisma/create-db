@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["@prisma/client", ".prisma/client", "postgres"],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

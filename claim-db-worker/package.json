@@ -1,6 +1,6 @@
 {
-  "name": "next-change-to-worker",
-  "version": "0.1.0",
+  "name": "claim-db-worker",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
-    "@opennextjs/cloudflare": "^1.6.5",
+    "@opennextjs/cloudflare": "^1.6.4",
     "next": "15.4.6",
     "react": "19.1.0",
     "react-dom": "19.1.0"
