@@ -10,7 +10,7 @@ interface Env {
 export { DeleteDbWorkflow };
 
 export default {
-	async fetch(request: Request, env: Env): Promise<Response> {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		// --- Rate limiting ---
 		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: request.url });
 
@@ -84,18 +84,25 @@ export default {
 
 			const prismaText = await prismaResponse.text();
 
-			// Trigger delete workflow for the new project
-			try {
-				const response = JSON.parse(prismaText);
-				const projectID = response.data ? response.data.id : response.id;
-				await env.DELETE_DB_WORKFLOW.create({ params: { projectID } });
-				env.CREATE_DB_DATASET.writeDataPoint({
-					blobs: ['database_created'],
-					indexes: ['create_db'],
-				});
-			} catch (e) {
-				console.error('Error parsing prismaText or triggering workflow:', e);
-			}
+			const backgroundTasks = async () => {
+				try {
+					const response = JSON.parse(prismaText);
+					const projectID = response.data ? response.data.id : response.id;
+
+					const workflowPromise = env.DELETE_DB_WORKFLOW.create({ params: { projectID } });
+
+					const analyticsPromise = env.CREATE_DB_DATASET.writeDataPoint({
+						blobs: ['database_created'],
+						indexes: ['create_db'],
+					});
+
+					await Promise.all([workflowPromise, analyticsPromise]);
+				} catch (e) {
+					console.error('Error in background tasks:', e);
+				}
+			};
+
+			ctx.waitUntil(backgroundTasks());
 
 			return new Response(prismaText, {
 				status: prismaResponse.status,

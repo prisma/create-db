@@ -75,6 +75,8 @@ Usage:
 Options:
   ${chalk.yellow(`--region <region>, -r <region>`)}  Specify the region (e.g., ${regionExamples})
   ${chalk.yellow("--interactive, -i")}               Run in interactive mode to select a region and create the database
+  ${chalk.yellow("--json, -j")}                      Output machine-readable JSON and exit
+  ${chalk.yellow("--list-regions")}                  List available regions and exit
   ${chalk.yellow("--help, -h")}                      Show this help message
 
 Examples:
@@ -82,6 +84,7 @@ Examples:
   ${chalk.gray(`npx ${CLI_NAME} -r us-east-1`)}
   ${chalk.gray(`npx ${CLI_NAME} --interactive`)}
   ${chalk.gray(`npx ${CLI_NAME} -i`)}
+  ${chalk.gray(`npx ${CLI_NAME} --json --region us-east-1`)}
 `);
   process.exit(0);
 }
@@ -317,12 +320,22 @@ async function createDatabase(name, region, returnJson = false) {
   const database = result.data ? result.data.database : result.databases?.[0];
   const projectId = result.data ? result.data.id : result.id;
   const prismaConn = database?.connectionString;
+
   const directConnDetails = result.data
     ? database?.apiKeys?.[0]?.directConnection
     : result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
-  const directConn = directConnDetails
-    ? `postgresql://${directConnDetails.user}:${directConnDetails.pass}@${directConnDetails.host}/postgres`
-    : null;
+  const directUser = directConnDetails?.user
+    ? encodeURIComponent(directConnDetails.user)
+    : "";
+  const directPass = directConnDetails?.pass
+    ? encodeURIComponent(directConnDetails.pass)
+    : "";
+  const directHost = directConnDetails?.host;
+  const directConn =
+    directConnDetails && directHost
+      ? `postgresql://${directUser}:${directPass}@${directHost}/postgres`
+      : null;
+
   const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
   const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -426,6 +439,7 @@ async function main() {
           rawArgs.includes("--interactive") || rawArgs.includes("-i"),
         "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
         "has-list-regions-flag": rawArgs.includes("--list-regions"),
+        "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
         "node-version": process.version,
         platform: process.platform,
         arch: process.arch,
