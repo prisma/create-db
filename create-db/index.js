@@ -315,7 +315,33 @@ async function createDatabase(name, region, returnJson = false) {
     process.exit(1);
   }
 
-  const result = await resp.json();
+  let result;
+  let raw;
+  try {
+    raw = await resp.text();
+    result = JSON.parse(raw);
+  } catch (e) {
+    if (returnJson) {
+      return {
+        error: "invalid_json",
+        message: "Unexpected response from create service.",
+        raw,
+        status: resp.status,
+      };
+    }
+    if (s) {
+      s.stop("Unexpected response from create service.");
+    }
+    try {
+      await analytics.capture("create_db:database_creation_failed", {
+        command: CLI_NAME,
+        region,
+        "error-type": "invalid_json",
+        "status-code": resp.status,
+      });
+    } catch {}
+    process.exit(1);
+  }
 
   const database = result.data ? result.data.database : result.databases?.[0];
   const projectId = result.data ? result.data.id : result.id;
@@ -331,9 +357,13 @@ async function createDatabase(name, region, returnJson = false) {
     ? encodeURIComponent(directConnDetails.pass)
     : "";
   const directHost = directConnDetails?.host;
+  const directPort = directConnDetails?.port
+    ? `:${directConnDetails.port}`
+    : "";
+  const directDbName = directConnDetails?.database || "postgres";
   const directConn =
     directConnDetails && directHost
-      ? `postgresql://${directUser}:${directPass}@${directHost}/postgres`
+      ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}`
       : null;
 
   const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
@@ -448,7 +478,7 @@ async function main() {
 
     const { flags } = await parseArgs();
 
-    if (!flags.help) {
+    if (!flags.help && !flags.json) {
       await isOffline();
     }
 
@@ -482,26 +512,25 @@ async function main() {
     }
 
     if (flags.json) {
-      if (chooseRegionPrompt) {
-        region = await promptForRegion(region);
-      }
-    
-        try {
+      try {
+        if (chooseRegionPrompt) {
+          region = await promptForRegion(region);
+        } else {
           await validateRegion(region, true);
-        } catch (e) {
-          console.log(
-            JSON.stringify(
-              { error: "invalid_region", message: e.message },
-              null,
-              2
-            )
-          );
-          process.exit(1);
         }
-
         const result = await createDatabase(name, region, true);
         console.log(JSON.stringify(result, null, 2));
         process.exit(0);
+      } catch (e) {
+        console.log(
+          JSON.stringify(
+            { error: "cli_error", message: e?.message || String(e) },
+            null,
+            2
+          )
+        );
+        process.exit(1);
+      }
     }
 
     intro(chalk.cyan.bold("🚀 Creating a Prisma Postgres database"));
