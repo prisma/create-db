@@ -70,30 +70,39 @@ export default {
 				return new Response('Missing region or name in request body', { status: 400 });
 			}
 
-			const payload = JSON.stringify({ region, name });
 			const prismaResponse = await fetch('https://api.prisma.io/v1/projects', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					Authorization: `Bearer ${env.INTEGRATION_TOKEN}`,
 				},
-				body: payload,
+				body: JSON.stringify({
+					region,
+					name,
+				}),
 			});
 
 			const prismaText = await prismaResponse.text();
 
-			// Trigger delete workflow for the new project
-			try {
-				const response = JSON.parse(prismaText);
-				const projectID = response.data ? response.data.id : response.id;
-				await env.DELETE_DB_WORKFLOW.create({ params: { projectID } });
-				env.CREATE_DB_DATASET.writeDataPoint({
-					blobs: ['database_created'],
-					indexes: ['create_db'],
-				});
-			} catch (e) {
-				console.error('Error parsing prismaText or triggering workflow:', e);
-			}
+			const backgroundTasks = async () => {
+				try {
+					const response = JSON.parse(prismaText);
+					const projectID = response.data ? response.data.id : response.id;
+
+					const workflowPromise = env.DELETE_DB_WORKFLOW.create({ params: { projectID } });
+
+					const analyticsPromise = env.CREATE_DB_DATASET.writeDataPoint({
+						blobs: ['database_created'],
+						indexes: ['create_db'],
+					});
+
+					await Promise.all([workflowPromise, analyticsPromise]);
+				} catch (e) {
+					console.error('Error in background tasks:', e);
+				}
+			};
+
+			ctx.waitUntil(backgroundTasks());
 
 			return new Response(prismaText, {
 				status: prismaResponse.status,

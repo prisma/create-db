@@ -3,14 +3,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import {
-  select,
-  spinner,
-  intro,
-  outro,
-  log,
-  cancel,
-} from "@clack/prompts";
+import { select, spinner, intro, outro, log, cancel } from "@clack/prompts";
 import chalk from "chalk";
 import terminalLink from "terminal-link";
 import { analytics } from "./analytics.js";
@@ -71,9 +64,7 @@ async function showHelp() {
     if (regions && regions.length > 0) {
       regionExamples = regions.map((r) => r.id).join(", ");
     }
-  } catch {
-    // Fallback to default examples if fetching fails
-  }
+  } catch {}
 
   console.log(`
 ${chalk.cyan.bold("Prisma Postgres Create DB")}
@@ -84,6 +75,8 @@ Usage:
 Options:
   ${chalk.yellow(`--region <region>, -r <region>`)}  Specify the region (e.g., ${regionExamples})
   ${chalk.yellow("--interactive, -i")}               Run in interactive mode to select a region and create the database
+  ${chalk.yellow("--json, -j")}                      Output machine-readable JSON and exit
+  ${chalk.yellow("--list-regions")}                  List available regions and exit
   ${chalk.yellow("--help, -h")}                      Show this help message
 
 Examples:
@@ -91,20 +84,27 @@ Examples:
   ${chalk.gray(`npx ${CLI_NAME} -r us-east-1`)}
   ${chalk.gray(`npx ${CLI_NAME} --interactive`)}
   ${chalk.gray(`npx ${CLI_NAME} -i`)}
+  ${chalk.gray(`npx ${CLI_NAME} --json --region us-east-1`)}
 `);
   process.exit(0);
 }
 
-// Parse command line arguments into flags and positional arguments
 async function parseArgs() {
   const args = process.argv.slice(2);
   const flags = {};
 
-  const allowedFlags = ["region", "help", "list-regions", "interactive"];
+  const allowedFlags = [
+    "region",
+    "help",
+    "list-regions",
+    "interactive",
+    "json",
+  ];
   const shorthandMap = {
     r: "region",
     i: "interactive",
     h: "help",
+    j: "json",
   };
 
   const exitWithError = (message) => {
@@ -116,7 +116,6 @@ async function parseArgs() {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
 
-    // Handle long flags (--region, --help, etc.)
     if (arg.startsWith("--")) {
       const flag = arg.slice(2);
       if (flag === "help") await showHelp();
@@ -134,11 +133,9 @@ async function parseArgs() {
       continue;
     }
 
-    // Handle short and multi-letter shorthand flags
     if (arg.startsWith("-")) {
       const short = arg.slice(1);
 
-      // Check if it's a multi-letter shorthand like -cs or -lr
       if (shorthandMap[short]) {
         const mappedFlag = shorthandMap[short];
         if (mappedFlag === "help") showHelp();
@@ -154,7 +151,6 @@ async function parseArgs() {
         continue;
       }
 
-      // Fall back to single-letter flags like -r -l
       for (const letter of short.split("")) {
         const mappedFlag = shorthandMap[letter];
         if (!mappedFlag) exitWithError(`Invalid flag: -${letter}`);
@@ -181,14 +177,16 @@ async function parseArgs() {
   return { flags };
 }
 
-/**
- * Fetch available regions from the API.
- */
-export async function getRegions() {
+export async function getRegions(returnJson = false) {
   const url = `${CREATE_DB_WORKER_URL}/regions`;
   const res = await fetch(url);
 
   if (!res.ok) {
+    if (returnJson) {
+      throw new Error(
+        `Failed to fetch regions. Status: ${res.status} ${res.statusText}`
+      );
+    }
     handleError(
       `Failed to fetch regions. Status: ${res.status} ${res.statusText}`
     );
@@ -199,18 +197,23 @@ export async function getRegions() {
     const regions = Array.isArray(data) ? data : data.data;
     return regions.filter((region) => region.status === "available");
   } catch (e) {
+    if (returnJson) {
+      throw new Error("Failed to parse JSON from /regions endpoint.");
+    }
     handleError("Failed to parse JSON from /regions endpoint.", e);
   }
 }
 
-/**
- * Validate the provided region against the available list.
- */
-export async function validateRegion(region) {
-  const regions = await getRegions();
+export async function validateRegion(region, returnJson = false) {
+  const regions = await getRegions(returnJson);
   const regionIds = regions.map((r) => r.id);
 
   if (!regionIds.includes(region)) {
+    if (returnJson) {
+      throw new Error(
+        `Invalid region: ${region}. Available regions: ${regionIds.join(", ")}`
+      );
+    }
     handleError(
       `Invalid region: ${chalk.yellow(region)}.\nAvailable regions: ${chalk.green(
         regionIds.join(", ")
@@ -221,9 +224,6 @@ export async function validateRegion(region) {
   return region;
 }
 
-/**
- * Prettified error handler
- */
 function handleError(message, extra = "") {
   console.error(
     "\n" +
@@ -238,8 +238,6 @@ function handleError(message, extra = "") {
   );
   process.exit(1);
 }
-
-// Get region from user input
 
 async function promptForRegion(defaultRegion) {
   let regions;
@@ -265,24 +263,23 @@ async function promptForRegion(defaultRegion) {
     process.exit(0);
   }
 
-  // Track region selection event
   try {
     await analytics.capture("create_db:region_selected", {
       command: CLI_NAME,
       region: region,
-      "selection-method": "interactive"
+      "selection-method": "interactive",
     });
-  } catch (error) {
-    // Silently fail analytics
-  }
+  } catch (error) {}
 
   return region;
 }
 
-// Create a database
-async function createDatabase(name, region) {
-  const s = spinner();
-  s.start("Creating your database...");
+async function createDatabase(name, region, returnJson = false) {
+  let s;
+  if (!returnJson) {
+    s = spinner();
+    s.start("Creating your database...");
+  }
 
   const resp = await fetch(`${CREATE_DB_WORKER_URL}/create`, {
     method: "POST",
@@ -290,13 +287,22 @@ async function createDatabase(name, region) {
     body: JSON.stringify({ region, name, utm_source: CLI_NAME }),
   });
 
-  // Rate limit exceeded
   if (resp.status === 429) {
-    s.stop(
-      "We're experiencing a high volume of requests. Please try again later."
-    );
-    
-    // Track database creation failure
+    if (returnJson) {
+      return {
+        error: "rate_limit_exceeded",
+        message:
+          "We're experiencing a high volume of requests. Please try again later.",
+        status: 429,
+      };
+    }
+
+    if (s) {
+      s.stop(
+        "We're experiencing a high volume of requests. Please try again later."
+      );
+    }
+
     try {
       await analytics.capture("create_db:database_creation_failed", {
         command: CLI_NAME,
@@ -304,21 +310,92 @@ async function createDatabase(name, region) {
         "error-type": "rate_limit",
         "status-code": 429,
       });
-    } catch (error) {
-      // Silently fail analytics
-    }
-    
+    } catch (error) {}
+
     process.exit(1);
   }
 
-  const result = await resp.json();
+  let result;
+  let raw;
+  try {
+    raw = await resp.text();
+    result = JSON.parse(raw);
+  } catch (e) {
+    if (returnJson) {
+      return {
+        error: "invalid_json",
+        message: "Unexpected response from create service.",
+        raw,
+        status: resp.status,
+      };
+    }
+    if (s) {
+      s.stop("Unexpected response from create service.");
+    }
+    try {
+      await analytics.capture("create_db:database_creation_failed", {
+        command: CLI_NAME,
+        region,
+        "error-type": "invalid_json",
+        "status-code": resp.status,
+      });
+    } catch {}
+    process.exit(1);
+  }
+
+  const database = result.data ? result.data.database : result.databases?.[0];
+  const projectId = result.data ? result.data.id : result.id;
+  const prismaConn = database?.connectionString;
+
+  const directConnDetails = result.data
+    ? database?.apiKeys?.[0]?.directConnection
+    : result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
+  const directUser = directConnDetails?.user
+    ? encodeURIComponent(directConnDetails.user)
+    : "";
+  const directPass = directConnDetails?.pass
+    ? encodeURIComponent(directConnDetails.pass)
+    : "";
+  const directHost = directConnDetails?.host;
+  const directPort = directConnDetails?.port
+    ? `:${directConnDetails.port}`
+    : "";
+  const directDbName = directConnDetails?.database || "postgres";
+  const directConn =
+    directConnDetails && directHost
+      ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}`
+      : null;
+
+  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
+  const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  if (returnJson && !result.error) {
+    return {
+      connectionString: prismaConn,
+      directConnectionString: directConn,
+      claimUrl: claimUrl,
+      deletionDate: expiryDate.toISOString(),
+      region: database?.region?.id || region,
+      name: database?.name,
+      projectId: projectId,
+    };
+  }
 
   if (result.error) {
-    s.stop(
-      `Error creating database: ${result.error.message || "Unknown error"}`
-    );
-    
-    // Track database creation failure
+    if (returnJson) {
+      return {
+        error: "api_error",
+        message: result.error.message || "Unknown error",
+        details: result.error,
+      };
+    }
+
+    if (s) {
+      s.stop(
+        `Error creating database: ${result.error.message || "Unknown error"}`
+      );
+    }
+
     try {
       await analytics.capture("create_db:database_creation_failed", {
         command: CLI_NAME,
@@ -326,31 +403,20 @@ async function createDatabase(name, region) {
         "error-type": "api_error",
         "error-message": result.error.message,
       });
-    } catch (error) {
-      // Silently fail analytics
-    }
+    } catch (error) {}
     process.exit(1);
   }
 
-  s.stop("Database created successfully!");
+  if (s) {
+    s.stop("Database created successfully!");
+  }
 
-  const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const expiryFormatted = expiryDate.toLocaleString();
 
   log.message("");
-  // Determine which connection string to display
-  const database = result.data ? result.data.database : result.databases?.[0];
-  const prismaConn = database?.connectionString;
-  const directConnDetails = result.data
-    ? database?.apiKeys?.[0]?.directConnection
-    : result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
-  const directConn = directConnDetails
-    ? `postgresql://${directConnDetails.user}:${directConnDetails.pass}@${directConnDetails.host}/postgres`
-    : null;
 
   log.info(chalk.bold("Connect to your database →"));
 
-  // Show Prisma Postgres connection string
   if (prismaConn) {
     log.message(
       chalk.magenta("  Use this connection string optimized for Prisma ORM:")
@@ -359,7 +425,6 @@ async function createDatabase(name, region) {
     log.message("");
   }
 
-  // Show Direct connection string (if available)
   if (directConn) {
     log.message(
       chalk.cyan("  Use this connection string for everything else:")
@@ -374,9 +439,6 @@ async function createDatabase(name, region) {
     );
   }
 
-  // Claim Database
-  const projectId = result.data ? result.data.id : result.id;
-  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
   const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false });
   log.success(`${chalk.bold("Claim your database →")}`);
   log.message(
@@ -394,35 +456,32 @@ async function createDatabase(name, region) {
   );
 }
 
-// Main function
-
 async function main() {
   try {
     const rawArgs = process.argv.slice(2);
     try {
       await analytics.capture("create_db:cli_command_ran", {
         command: CLI_NAME,
-        "full-command": `${CLI_NAME} ${rawArgs.join(' ')}`.trim(),
-        "has-region-flag": rawArgs.includes('--region') || rawArgs.includes('-r'),
-        "has-interactive-flag": rawArgs.includes('--interactive') || rawArgs.includes('-i'),
-        "has-help-flag": rawArgs.includes('--help') || rawArgs.includes('-h'),
-        "has-list-regions-flag": rawArgs.includes('--list-regions'),
+        "full-command": `${CLI_NAME} ${rawArgs.join(" ")}`.trim(),
+        "has-region-flag":
+          rawArgs.includes("--region") || rawArgs.includes("-r"),
+        "has-interactive-flag":
+          rawArgs.includes("--interactive") || rawArgs.includes("-i"),
+        "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
+        "has-list-regions-flag": rawArgs.includes("--list-regions"),
+        "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
         "node-version": process.version,
         platform: process.platform,
-        arch: process.arch
+        arch: process.arch,
       });
-    } catch (error) {
-      // Silently fail analytics
-    }
+    } catch (error) {}
 
-    // Parse command line arguments
     const { flags } = await parseArgs();
 
-    if (!flags.help) {
+    if (!flags.help && !flags.json) {
       await isOffline();
     }
 
-    // Set default values
     let name = new Date().toISOString();
     let region = "us-east-1";
     let chooseRegionPrompt = false;
@@ -436,23 +495,42 @@ async function main() {
       process.exit(0);
     }
 
-    // Apply command line flags
     if (flags.region) {
       region = flags.region;
-      
-      // Track region selection via flag
+
       try {
         await analytics.capture("create_db:region_selected", {
           command: CLI_NAME,
           region: region,
-          "selection-method": "flag"
+          "selection-method": "flag",
         });
-      } catch (error) {
-        // Silently fail analytics
-      }
+      } catch (error) {}
     }
+
     if (flags.interactive) {
       chooseRegionPrompt = true;
+    }
+
+    if (flags.json) {
+      try {
+        if (chooseRegionPrompt) {
+          region = await promptForRegion(region);
+        } else {
+          await validateRegion(region, true);
+        }
+        const result = await createDatabase(name, region, true);
+        console.log(JSON.stringify(result, null, 2));
+        process.exit(0);
+      } catch (e) {
+        console.log(
+          JSON.stringify(
+            { error: "cli_error", message: e?.message || String(e) },
+            null,
+            2
+          )
+        );
+        process.exit(1);
+      }
     }
 
     intro(chalk.cyan.bold("🚀 Creating a Prisma Postgres database"));
@@ -464,16 +542,12 @@ async function main() {
         `It will be automatically deleted in 24 hours, but you can claim it.`
       )
     );
-    // Interactive mode prompts
     if (chooseRegionPrompt) {
-      // Prompt for region
       region = await promptForRegion(region);
     }
 
-    // Validate the region
     region = await validateRegion(region);
 
-    // Create the database
     await createDatabase(name, region);
 
     outro("");
