@@ -338,6 +338,32 @@ async function createDatabase(name, region, returnJson = false) {
 
   const result = await resp.json();
 
+  // Extract common data once
+  const database = result.data ? result.data.database : result.databases?.[0];
+  const projectId = result.data ? result.data.id : result.id;
+  const prismaConn = database?.connectionString;
+  const directConnDetails = result.data
+    ? database?.apiKeys?.[0]?.directConnection
+    : result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
+  const directConn = directConnDetails
+    ? `postgresql://${directConnDetails.user}:${directConnDetails.pass}@${directConnDetails.host}/postgres`
+    : null;
+  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
+  const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  // For JSON mode, return early before any CLI output
+  if (returnJson && !result.error) {
+    return {
+      connectionString: prismaConn,
+      directConnectionString: directConn,
+      claimUrl: claimUrl,
+      deletionDate: expiryDate.toISOString(),
+      region: database?.region?.id || region,
+      name: database?.name,
+      projectId: projectId
+    };
+  }
+
   if (result.error) {
     if (returnJson) {
       return {
@@ -367,27 +393,16 @@ async function createDatabase(name, region, returnJson = false) {
     process.exit(1);
   }
 
-  if (returnJson) {
-    return result;
-  }
+
 
   if (s) {
     s.stop("Database created successfully!");
   }
 
-  const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const expiryFormatted = expiryDate.toLocaleString();
 
   log.message("");
   // Determine which connection string to display
-  const database = result.data ? result.data.database : result.databases?.[0];
-  const prismaConn = database?.connectionString;
-  const directConnDetails = result.data
-    ? database?.apiKeys?.[0]?.directConnection
-    : result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
-  const directConn = directConnDetails
-    ? `postgresql://${directConnDetails.user}:${directConnDetails.pass}@${directConnDetails.host}/postgres`
-    : null;
 
   log.info(chalk.bold("Connect to your database →"));
 
@@ -416,8 +431,6 @@ async function createDatabase(name, region, returnJson = false) {
   }
 
   // Claim Database
-  const projectId = result.data ? result.data.id : result.id;
-  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
   const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false });
   log.success(`${chalk.bold("Claim your database →")}`);
   log.message(
@@ -477,6 +490,23 @@ async function main() {
       process.exit(0);
     }
 
+    if (flags.region) {
+      region = flags.region;
+      
+      try {
+        await analytics.capture("create_db:region_selected", {
+          command: CLI_NAME,
+          region: region,
+          "selection-method": "flag"
+        });
+      } catch (error) {
+      }
+    }
+
+    if (flags.interactive) {
+      chooseRegionPrompt = true;
+    }
+
     if (flags.json) {
       if (chooseRegionPrompt) {
         region = await promptForRegion(region);
@@ -485,25 +515,6 @@ async function main() {
       const result = await createDatabase(name, region, true);
       console.log(JSON.stringify(result, null, 2));
       process.exit(0);
-    }
-
-    // Apply command line flags
-    if (flags.region) {
-      region = flags.region;
-      
-      // Track region selection via flag
-      try {
-        await analytics.capture("create_db:region_selected", {
-          command: CLI_NAME,
-          region: region,
-          "selection-method": "flag"
-        });
-      } catch (error) {
-        // Silently fail analytics
-      }
-    }
-    if (flags.interactive) {
-      chooseRegionPrompt = true;
     }
 
     intro(chalk.cyan.bold("🚀 Creating a Prisma Postgres database"));

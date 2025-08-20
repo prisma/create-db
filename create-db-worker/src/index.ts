@@ -10,7 +10,7 @@ interface Env {
 export { DeleteDbWorkflow };
 
 export default {
-	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+	async fetch(request: Request, env: Env): Promise<Response> {
 		// --- Rate limiting ---
 		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: request.url });
 
@@ -70,14 +70,16 @@ export default {
 				return new Response('Missing region or name in request body', { status: 400 });
 			}
 
-			const payload = JSON.stringify({ region, name });
 			const prismaResponse = await fetch('https://api.prisma.io/v1/projects', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					Authorization: `Bearer ${env.INTEGRATION_TOKEN}`,
 				},
-				body: payload,
+				body: JSON.stringify({
+					region,
+					name,
+				}),
 			});
 
 			const prismaText = await prismaResponse.text();
