@@ -100,11 +100,12 @@ async function parseArgs() {
   const args = process.argv.slice(2);
   const flags = {};
 
-  const allowedFlags = ["region", "help", "list-regions", "interactive"];
+  const allowedFlags = ["region", "help", "list-regions", "interactive", "json"];
   const shorthandMap = {
     r: "region",
     i: "interactive",
     h: "help",
+    j: "json",
   };
 
   const exitWithError = (message) => {
@@ -184,11 +185,14 @@ async function parseArgs() {
 /**
  * Fetch available regions from the API.
  */
-export async function getRegions() {
+export async function getRegions(returnJson = false) {
   const url = `${CREATE_DB_WORKER_URL}/regions`;
   const res = await fetch(url);
 
   if (!res.ok) {
+    if (returnJson) {
+      throw new Error(`Failed to fetch regions. Status: ${res.status} ${res.statusText}`);
+    }
     handleError(
       `Failed to fetch regions. Status: ${res.status} ${res.statusText}`
     );
@@ -199,6 +203,9 @@ export async function getRegions() {
     const regions = Array.isArray(data) ? data : data.data;
     return regions.filter((region) => region.status === "available");
   } catch (e) {
+    if (returnJson) {
+      throw new Error("Failed to parse JSON from /regions endpoint.");
+    }
     handleError("Failed to parse JSON from /regions endpoint.", e);
   }
 }
@@ -206,11 +213,14 @@ export async function getRegions() {
 /**
  * Validate the provided region against the available list.
  */
-export async function validateRegion(region) {
-  const regions = await getRegions();
+export async function validateRegion(region, returnJson = false) {
+  const regions = await getRegions(returnJson);
   const regionIds = regions.map((r) => r.id);
 
   if (!regionIds.includes(region)) {
+    if (returnJson) {
+      throw new Error(`Invalid region: ${region}. Available regions: ${regionIds.join(", ")}`);
+    }
     handleError(
       `Invalid region: ${chalk.yellow(region)}.\nAvailable regions: ${chalk.green(
         regionIds.join(", ")
@@ -279,10 +289,15 @@ async function promptForRegion(defaultRegion) {
   return region;
 }
 
+
+
 // Create a database
-async function createDatabase(name, region) {
-  const s = spinner();
-  s.start("Creating your database...");
+async function createDatabase(name, region, returnJson = false) {
+  let s;
+  if (!returnJson) {
+    s = spinner();
+    s.start("Creating your database...");
+  }
 
   const resp = await fetch(`${CREATE_DB_WORKER_URL}/create`, {
     method: "POST",
@@ -292,9 +307,19 @@ async function createDatabase(name, region) {
 
   // Rate limit exceeded
   if (resp.status === 429) {
-    s.stop(
-      "We're experiencing a high volume of requests. Please try again later."
-    );
+    if (returnJson) {
+      return {
+        error: "rate_limit_exceeded",
+        message: "We're experiencing a high volume of requests. Please try again later.",
+        status: 429
+      };
+    }
+    
+    if (s) {
+      s.stop(
+        "We're experiencing a high volume of requests. Please try again later."
+      );
+    }
     
     // Track database creation failure
     try {
@@ -314,9 +339,19 @@ async function createDatabase(name, region) {
   const result = await resp.json();
 
   if (result.error) {
-    s.stop(
-      `Error creating database: ${result.error.message || "Unknown error"}`
-    );
+    if (returnJson) {
+      return {
+        error: "api_error",
+        message: result.error.message || "Unknown error",
+        details: result.error
+      };
+    }
+    
+    if (s) {
+      s.stop(
+        `Error creating database: ${result.error.message || "Unknown error"}`
+      );
+    }
     
     // Track database creation failure
     try {
@@ -332,7 +367,13 @@ async function createDatabase(name, region) {
     process.exit(1);
   }
 
-  s.stop("Database created successfully!");
+  if (returnJson) {
+    return result;
+  }
+
+  if (s) {
+    s.stop("Database created successfully!");
+  }
 
   const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const expiryFormatted = expiryDate.toLocaleString();
@@ -433,6 +474,16 @@ async function main() {
 
     if (flags["list-regions"]) {
       await listRegions();
+      process.exit(0);
+    }
+
+    if (flags.json) {
+      if (chooseRegionPrompt) {
+        region = await promptForRegion(region);
+      }
+      
+      const result = await createDatabase(name, region, true);
+      console.log(JSON.stringify(result, null, 2));
       process.exit(0);
     }
 
