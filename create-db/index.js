@@ -485,10 +485,23 @@ async function main() {
       if (chooseRegionPrompt) {
         region = await promptForRegion(region);
       }
+    
+        try {
+          await validateRegion(region, true);
+        } catch (e) {
+          console.log(
+            JSON.stringify(
+              { error: "invalid_region", message: e.message },
+              null,
+              2
+            )
+          );
+          process.exit(1);
+        }
 
-      const result = await createDatabase(name, region, true);
-      console.log(JSON.stringify(result, null, 2));
-      process.exit(0);
+        const result = await createDatabase(name, region, true);
+        console.log(JSON.stringify(result, null, 2));
+        process.exit(0);
     }
 
     intro(chalk.cyan.bold("🚀 Creating a Prisma Postgres database"));
