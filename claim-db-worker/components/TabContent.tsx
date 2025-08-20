@@ -5,11 +5,13 @@ import PrismaStudio from "./PrismaStudio";
 interface TabContentProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
+  connectionString: string;
 }
 
 const TabContent = ({
   activeTab = "schema",
   onTabChange = () => {},
+  connectionString,
 }: TabContentProps) => {
   const [schemaContent, setSchemaContent] = useState<string>(
     `// This is your Prisma schema file,
@@ -86,7 +88,7 @@ model Post {
 
         {activeTab === "studio" && (
           <div className="w-full h-[calc(100%-40px)]">
-            <PrismaStudio />
+            <PrismaStudio connectionString={connectionString} />
           </div>
         )}
       </div>
