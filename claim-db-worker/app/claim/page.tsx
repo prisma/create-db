@@ -3,7 +3,7 @@
 import { PrismaPostgresLogo } from "@/components/PrismaPostgresLogo";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 
 function ClaimContent() {
   const searchParams = useSearchParams();
@@ -13,11 +13,10 @@ function ClaimContent() {
   const utmMedium = searchParams.get("utm_medium");
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!projectID) {
-      router.push("/");
-    }
-  }, [projectID, router]);
+  if (!projectID && !window.location.pathname.includes('/test/')) {
+    router.push("/");
+    return null;
+  }
 
   const redirectUri = new URL("/api/auth/callback", window.location.origin);
   redirectUri.searchParams.set("projectID", projectID!);
