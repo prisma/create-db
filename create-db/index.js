@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 dotenv.config();
 
 import { select, spinner, intro, outro, log, cancel } from "@clack/prompts";
@@ -57,6 +59,31 @@ function getCommandName() {
 
 const CLI_NAME = getCommandName();
 
+function readUserEnvFile() {
+  const userCwd = process.cwd();
+  const envPath = path.join(userCwd, '.env');
+  
+  if (!fs.existsSync(envPath)) {
+    return {};
+  }
+  
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  const envVars = {};
+  
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const [key, ...valueParts] = trimmed.split('=');
+      if (key && valueParts.length > 0) {
+        const value = valueParts.join('=').replace(/^["']|["']$/g, '');
+        envVars[key.trim()] = value.trim();
+      }
+    }
+  });
+  
+  return envVars;
+}
+
 async function showHelp() {
   let regionExamples = "us-east-1, eu-west-1";
   try {
@@ -99,12 +126,14 @@ async function parseArgs() {
     "list-regions",
     "interactive",
     "json",
+    "source",
   ];
   const shorthandMap = {
     r: "region",
     i: "interactive",
     h: "help",
     j: "json",
+    s: "source",
   };
 
   const exitWithError = (message) => {
@@ -127,6 +156,8 @@ async function parseArgs() {
           exitWithError("Missing value for --region flag.");
         flags.region = region;
         i++;
+      } else if (flag === "source") {
+        flags.source = true;
       } else {
         flags[flag] = true;
       }
@@ -145,6 +176,8 @@ async function parseArgs() {
             exitWithError("Missing value for -r flag.");
           flags.region = region;
           i++;
+        } else if (mappedFlag === "source") {
+          flags.source = true;
         } else {
           flags[mappedFlag] = true;
         }
@@ -164,6 +197,8 @@ async function parseArgs() {
             exitWithError("Missing value for -r flag.");
           flags.region = region;
           i++;
+        } else if (mappedFlag === "source") {
+          flags.source = true;
         } else {
           flags[mappedFlag] = true;
         }
@@ -239,7 +274,7 @@ function handleError(message, extra = "") {
   process.exit(1);
 }
 
-async function promptForRegion(defaultRegion) {
+async function promptForRegion(defaultRegion, source) {
   let regions;
   try {
     regions = await getRegions();
@@ -264,17 +299,23 @@ async function promptForRegion(defaultRegion) {
   }
 
   try {
-    await analytics.capture("create_db:region_selected", {
+    const analyticsProps = {
       command: CLI_NAME,
       region: region,
       "selection-method": "interactive",
-    });
+    };
+    
+    if (source) {
+      analyticsProps.source = source;
+    }
+    
+    await analytics.capture("create_db:region_selected", analyticsProps);
   } catch (error) {}
 
   return region;
 }
 
-async function createDatabase(name, region, returnJson = false) {
+async function createDatabase(name, region, source, returnJson = false ) {
   let s;
   if (!returnJson) {
     s = spinner();
@@ -284,7 +325,7 @@ async function createDatabase(name, region, returnJson = false) {
   const resp = await fetch(`${CREATE_DB_WORKER_URL}/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ region, name, utm_source: CLI_NAME }),
+    body: JSON.stringify({ region, name, utm_source: source }),
   });
 
   if (resp.status === 429) {
@@ -304,12 +345,18 @@ async function createDatabase(name, region, returnJson = false) {
     }
 
     try {
-      await analytics.capture("create_db:database_creation_failed", {
+      const analyticsProps = {
         command: CLI_NAME,
         region: region,
         "error-type": "rate_limit",
         "status-code": 429,
-      });
+      };
+      
+      if (source) {
+        analyticsProps.source = source;
+      }
+      
+      await analytics.capture("create_db:database_creation_failed", analyticsProps);
     } catch (error) {}
 
     process.exit(1);
@@ -333,12 +380,18 @@ async function createDatabase(name, region, returnJson = false) {
       s.stop("Unexpected response from create service.");
     }
     try {
-      await analytics.capture("create_db:database_creation_failed", {
+      const analyticsProps = {
         command: CLI_NAME,
         region,
         "error-type": "invalid_json",
         "status-code": resp.status,
-      });
+      };
+      
+      if (source) {
+        analyticsProps.source = source;
+      }
+      
+      await analytics.capture("create_db:database_creation_failed", analyticsProps);
     } catch {}
     process.exit(1);
   }
@@ -366,7 +419,7 @@ async function createDatabase(name, region, returnJson = false) {
       ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}`
       : null;
 
-  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
+  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${source}&utm_medium=cli`;
   const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   if (returnJson && !result.error) {
@@ -397,12 +450,18 @@ async function createDatabase(name, region, returnJson = false) {
     }
 
     try {
-      await analytics.capture("create_db:database_creation_failed", {
+      const analyticsProps = {
         command: CLI_NAME,
         region: region,
         "error-type": "api_error",
         "error-message": result.error.message,
-      });
+      };
+      
+      if (source) {
+        analyticsProps.source = source;
+      }
+      
+      await analytics.capture("create_db:database_creation_failed", analyticsProps);
     } catch (error) {}
     process.exit(1);
   }
@@ -459,8 +518,29 @@ async function createDatabase(name, region, returnJson = false) {
 async function main() {
   try {
     const rawArgs = process.argv.slice(2);
+    
+    const { flags } = await parseArgs();
+    
+          let source;
+    if (flags.source) {
+      const userEnvVars = readUserEnvFile();
+      const userCwd = process.cwd();
+      const envPath = path.join(userCwd, '.env');
+      
+      if (fs.existsSync(envPath)) {
+        const ctaVars = [];
+        if (userEnvVars.CTA_VERSION) ctaVars.push(`v${userEnvVars.CTA_VERSION}`);
+        if (userEnvVars.CTA_FRAMEWORK) ctaVars.push(userEnvVars.CTA_FRAMEWORK);
+        if (userEnvVars.CTA_FRAMEWORK_VERSION) ctaVars.push(`fv${userEnvVars.CTA_FRAMEWORK_VERSION}`);
+        
+        if (ctaVars.length > 0) {
+          source = ctaVars.join('-');
+        }
+      }
+    }
+    
     try {
-      await analytics.capture("create_db:cli_command_ran", {
+      const analyticsProps = {
         command: CLI_NAME,
         "full-command": `${CLI_NAME} ${rawArgs.join(" ")}`.trim(),
         "has-region-flag":
@@ -470,13 +550,20 @@ async function main() {
         "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
         "has-list-regions-flag": rawArgs.includes("--list-regions"),
         "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
+        "has-source-flag": rawArgs.includes("--source") || rawArgs.includes("-s"),
         "node-version": process.version,
         platform: process.platform,
         arch: process.arch,
-      });
-    } catch (error) {}
-
-    const { flags } = await parseArgs();
+      };
+      
+      if (source) {
+        analyticsProps.source = source;
+      }
+      
+      await analytics.capture("create_db:cli_command_ran", analyticsProps);
+    } catch (error) {
+      console.error("Error:", error.message);
+    }
 
     if (!flags.help && !flags.json) {
       await isOffline();
@@ -499,12 +586,39 @@ async function main() {
       region = flags.region;
 
       try {
-        await analytics.capture("create_db:region_selected", {
+        const analyticsProps = {
           command: CLI_NAME,
           region: region,
           "selection-method": "flag",
-        });
+        };
+        
+        if (source) {
+          analyticsProps.source = source;
+        }
+        
+        await analytics.capture("create_db:region_selected", analyticsProps);
       } catch (error) {}
+    }
+
+    if (flags.source) {
+      const userCwd = process.cwd();
+      const envPath = path.join(userCwd, '.env');
+      
+      if (!fs.existsSync(envPath)) {
+        console.error(chalk.red("Error: Source not configured correctly."));
+        process.exit(1);
+      }
+      
+      const userEnvVars = readUserEnvFile();
+      const ctaVars = [];
+      if (userEnvVars.CTA_VERSION) ctaVars.push(`v${userEnvVars.CTA_VERSION}`);
+      if (userEnvVars.CTA_FRAMEWORK) ctaVars.push(userEnvVars.CTA_FRAMEWORK);
+      if (userEnvVars.CTA_FRAMEWORK_VERSION) ctaVars.push(`fv${userEnvVars.CTA_FRAMEWORK_VERSION}`);
+      
+      if (ctaVars.length === 0) {
+        console.error(chalk.red("Error: Source not configured correctly."));
+        process.exit(1);
+      }
     }
 
     if (flags.interactive) {
@@ -514,11 +628,11 @@ async function main() {
     if (flags.json) {
       try {
         if (chooseRegionPrompt) {
-          region = await promptForRegion(region);
+          region = await promptForRegion(region, source);
         } else {
           await validateRegion(region, true);
         }
-        const result = await createDatabase(name, region, true);
+        const result = await createDatabase(name, region, source, true);
         console.log(JSON.stringify(result, null, 2));
         process.exit(0);
       } catch (e) {
@@ -543,12 +657,12 @@ async function main() {
       )
     );
     if (chooseRegionPrompt) {
-      region = await promptForRegion(region);
+      region = await promptForRegion(region, source);
     }
 
     region = await validateRegion(region);
 
-    await createDatabase(name, region);
+    await createDatabase(name, region, source);
 
     outro("");
   } catch (error) {
