@@ -49,7 +49,7 @@ const DropProjectPage = () => {
         console.log("expirationTime", expirationTime);
         setLoading(false);
       } else {
-        const errorText = await response.text();
+        const errorText = data.error || "Unknown error";
         router.replace(
           `/error?title=${encodeURIComponent("Error")}&message=${encodeURIComponent(errorText)}&details=${encodeURIComponent(errorText)}`
         );
