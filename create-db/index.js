@@ -126,14 +126,12 @@ async function parseArgs() {
     "list-regions",
     "interactive",
     "json",
-    "source",
   ];
   const shorthandMap = {
     r: "region",
     i: "interactive",
     h: "help",
     j: "json",
-    s: "source",
   };
 
   const exitWithError = (message) => {
@@ -156,8 +154,6 @@ async function parseArgs() {
           exitWithError("Missing value for --region flag.");
         flags.region = region;
         i++;
-      } else if (flag === "source") {
-        flags.source = true;
       } else {
         flags[flag] = true;
       }
@@ -176,8 +172,6 @@ async function parseArgs() {
             exitWithError("Missing value for -r flag.");
           flags.region = region;
           i++;
-        } else if (mappedFlag === "source") {
-          flags.source = true;
         } else {
           flags[mappedFlag] = true;
         }
@@ -197,8 +191,6 @@ async function parseArgs() {
             exitWithError("Missing value for -r flag.");
           flags.region = region;
           i++;
-        } else if (mappedFlag === "source") {
-          flags.source = true;
         } else {
           flags[mappedFlag] = true;
         }
@@ -522,22 +514,10 @@ async function main() {
     
     const { flags } = await parseArgs();
     
-          let source;
-    if (flags.source) {
-      const userEnvVars = readUserEnvFile();
-      const userCwd = process.cwd();
-      const envPath = path.join(userCwd, '.env');
-      
-      if (fs.existsSync(envPath)) {
-        const ctaVars = [];
-        if (userEnvVars.CTA_VERSION) ctaVars.push(`v${userEnvVars.CTA_VERSION}`);
-        if (userEnvVars.CTA_FRAMEWORK) ctaVars.push(userEnvVars.CTA_FRAMEWORK);
-        if (userEnvVars.CTA_FRAMEWORK_VERSION) ctaVars.push(`fv${userEnvVars.CTA_FRAMEWORK_VERSION}`);
-        
-        if (ctaVars.length > 0) {
-          source = ctaVars.join('-');
-        }
-      }
+    let source;
+    const userEnvVars = readUserEnvFile();
+    if (userEnvVars.PRISMA_ACTOR_NAME && userEnvVars.PRISMA_ACTOR_PROJECT) {
+      source = `${userEnvVars.PRISMA_ACTOR_NAME}/${userEnvVars.PRISMA_ACTOR_PROJECT}`;
     }
     
     try {
@@ -551,7 +531,7 @@ async function main() {
         "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
         "has-list-regions-flag": rawArgs.includes("--list-regions"),
         "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
-        "has-source-flag": rawArgs.includes("--source") || rawArgs.includes("-s"),
+        "has-source-from-env": !!source,
         "node-version": process.version,
         platform: process.platform,
         arch: process.arch,
@@ -601,26 +581,7 @@ async function main() {
       } catch (error) {}
     }
 
-    if (flags.source) {
-      const userCwd = process.cwd();
-      const envPath = path.join(userCwd, '.env');
-      
-      if (!fs.existsSync(envPath)) {
-        console.error(chalk.red("Error: Source not configured correctly."));
-        process.exit(1);
-      }
-      
-      const userEnvVars = readUserEnvFile();
-      const ctaVars = [];
-      if (userEnvVars.CTA_VERSION) ctaVars.push(`v${userEnvVars.CTA_VERSION}`);
-      if (userEnvVars.CTA_FRAMEWORK) ctaVars.push(userEnvVars.CTA_FRAMEWORK);
-      if (userEnvVars.CTA_FRAMEWORK_VERSION) ctaVars.push(`fv${userEnvVars.CTA_FRAMEWORK_VERSION}`);
-      
-      if (ctaVars.length === 0) {
-        console.error(chalk.red("Error: Source not configured correctly."));
-        process.exit(1);
-      }
-    }
+
 
     if (flags.interactive) {
       chooseRegionPrompt = true;
