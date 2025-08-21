@@ -431,6 +431,7 @@ async function createDatabase(name, region, source, returnJson = false ) {
       region: database?.region?.id || region,
       name: database?.name,
       projectId: projectId,
+      source: source || null,
     };
   }
 
