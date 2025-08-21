@@ -415,7 +415,7 @@ async function createDatabase(name, region, source, returnJson = false ) {
   const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   if (returnJson && !result.error) {
-    return {
+    const jsonResponse = {
       connectionString: prismaConn,
       directConnectionString: directConn,
       claimUrl: claimUrl,
@@ -423,8 +423,13 @@ async function createDatabase(name, region, source, returnJson = false ) {
       region: database?.region?.id || region,
       name: database?.name,
       projectId: projectId,
-      source: source || null,
     };
+    
+    if (source) {
+      jsonResponse.source = source;
+    }
+    
+    return jsonResponse;
   }
 
   if (result.error) {
