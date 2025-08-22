@@ -61,26 +61,26 @@ const CLI_NAME = getCommandName();
 
 function readUserEnvFile() {
   const userCwd = process.cwd();
-  const envPath = path.join(userCwd, '.env');
-  
+  const envPath = path.join(userCwd, ".env");
+
   if (!fs.existsSync(envPath)) {
     return {};
   }
-  
-  const envContent = fs.readFileSync(envPath, 'utf8');
+
+  const envContent = fs.readFileSync(envPath, "utf8");
   const envVars = {};
-  
-  envContent.split('\n').forEach(line => {
+
+  envContent.split("\n").forEach((line) => {
     const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      const [key, ...valueParts] = trimmed.split('=');
+    if (trimmed && !trimmed.startsWith("#")) {
+      const [key, ...valueParts] = trimmed.split("=");
       if (key && valueParts.length > 0) {
-        const value = valueParts.join('=').replace(/^["']|["']$/g, '');
+        const value = valueParts.join("=").replace(/^["']|["']$/g, "");
         envVars[key.trim()] = value.trim();
       }
     }
   });
-  
+
   return envVars;
 }
 
@@ -266,7 +266,7 @@ function handleError(message, extra = "") {
   process.exit(1);
 }
 
-async function promptForRegion(defaultRegion, source) {
+async function promptForRegion(defaultRegion, userAgent) {
   let regions;
   try {
     regions = await getRegions();
@@ -296,18 +296,18 @@ async function promptForRegion(defaultRegion, source) {
       region: region,
       "selection-method": "interactive",
     };
-    
-    if (source) {
-      analyticsProps.source = source;
+
+    if (userAgent) {
+      analyticsProps["user-agent"] = userAgent;
     }
-    
+
     await analytics.capture("create_db:region_selected", analyticsProps);
   } catch (error) {}
 
   return region;
 }
 
-async function createDatabase(name, region, source, returnJson = false ) {
+async function createDatabase(name, region, userAgent, returnJson = false) {
   let s;
   if (!returnJson) {
     s = spinner();
@@ -317,7 +317,7 @@ async function createDatabase(name, region, source, returnJson = false ) {
   const resp = await fetch(`${CREATE_DB_WORKER_URL}/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ region, name, utm_source: source }),
+    body: JSON.stringify({ region, name, utm_source: userAgent }),
   });
 
   if (resp.status === 429) {
@@ -343,12 +343,15 @@ async function createDatabase(name, region, source, returnJson = false ) {
         "error-type": "rate_limit",
         "status-code": 429,
       };
-      
-      if (source) {
-        analyticsProps.source = source;
+
+      if (userAgent) {
+        analyticsProps["user-agent"] = userAgent;
       }
-      
-      await analytics.capture("create_db:database_creation_failed", analyticsProps);
+
+      await analytics.capture(
+        "create_db:database_creation_failed",
+        analyticsProps
+      );
     } catch (error) {}
 
     process.exit(1);
@@ -378,12 +381,15 @@ async function createDatabase(name, region, source, returnJson = false ) {
         "error-type": "invalid_json",
         "status-code": resp.status,
       };
-      
-      if (source) {
-        analyticsProps.source = source;
+
+      if (userAgent) {
+        analyticsProps["user-agent"] = userAgent;
       }
-      
-      await analytics.capture("create_db:database_creation_failed", analyticsProps);
+
+      await analytics.capture(
+        "create_db:database_creation_failed",
+        analyticsProps
+      );
     } catch {}
     process.exit(1);
   }
@@ -411,7 +417,7 @@ async function createDatabase(name, region, source, returnJson = false ) {
       ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}`
       : null;
 
-  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${source}&utm_medium=cli`;
+  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${userAgent}&utm_medium=cli`;
   const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   if (returnJson && !result.error) {
@@ -424,11 +430,11 @@ async function createDatabase(name, region, source, returnJson = false ) {
       name: database?.name,
       projectId: projectId,
     };
-    
-    if (source) {
-      jsonResponse.source = source;
+
+    if (userAgent) {
+      jsonResponse.source = userAgent;
     }
-    
+
     return jsonResponse;
   }
 
@@ -454,12 +460,15 @@ async function createDatabase(name, region, source, returnJson = false ) {
         "error-type": "api_error",
         "error-message": result.error.message,
       };
-      
-      if (source) {
-        analyticsProps.source = source;
+
+      if (userAgent) {
+        analyticsProps["user-agent"] = userAgent;
       }
-      
-      await analytics.capture("create_db:database_creation_failed", analyticsProps);
+
+      await analytics.capture(
+        "create_db:database_creation_failed",
+        analyticsProps
+      );
     } catch (error) {}
     process.exit(1);
   }
@@ -516,15 +525,15 @@ async function createDatabase(name, region, source, returnJson = false ) {
 async function main() {
   try {
     const rawArgs = process.argv.slice(2);
-    
+
     const { flags } = await parseArgs();
-    
-    let source;
+
+    let userAgent;
     const userEnvVars = readUserEnvFile();
     if (userEnvVars.PRISMA_ACTOR_NAME && userEnvVars.PRISMA_ACTOR_PROJECT) {
-      source = `${userEnvVars.PRISMA_ACTOR_NAME}/${userEnvVars.PRISMA_ACTOR_PROJECT}`;
+      userAgent = `${userEnvVars.PRISMA_ACTOR_NAME}/${userEnvVars.PRISMA_ACTOR_PROJECT}`;
     }
-    
+
     try {
       const analyticsProps = {
         command: CLI_NAME,
@@ -536,16 +545,16 @@ async function main() {
         "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
         "has-list-regions-flag": rawArgs.includes("--list-regions"),
         "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
-        "has-source-from-env": !!source,
+        "has-source-from-env": !!userAgent,
         "node-version": process.version,
         platform: process.platform,
         arch: process.arch,
       };
-      
-      if (source) {
-        analyticsProps.source = source;
+
+      if (userAgent) {
+        analyticsProps["user-agent"] = userAgent;
       }
-      
+
       await analytics.capture("create_db:cli_command_ran", analyticsProps);
     } catch (error) {
       console.error("Error:", error.message);
@@ -577,16 +586,14 @@ async function main() {
           region: region,
           "selection-method": "flag",
         };
-        
-        if (source) {
-          analyticsProps.source = source;
+
+        if (userAgent) {
+          analyticsProps["user-agent"] = userAgent;
         }
-        
+
         await analytics.capture("create_db:region_selected", analyticsProps);
       } catch (error) {}
     }
-
-
 
     if (flags.interactive) {
       chooseRegionPrompt = true;
@@ -595,11 +602,11 @@ async function main() {
     if (flags.json) {
       try {
         if (chooseRegionPrompt) {
-          region = await promptForRegion(region, source);
+          region = await promptForRegion(region, userAgent);
         } else {
           await validateRegion(region, true);
         }
-        const result = await createDatabase(name, region, source, true);
+        const result = await createDatabase(name, region, userAgent, true);
         console.log(JSON.stringify(result, null, 2));
         process.exit(0);
       } catch (e) {
@@ -624,12 +631,12 @@ async function main() {
       )
     );
     if (chooseRegionPrompt) {
-      region = await promptForRegion(region, source);
+      region = await promptForRegion(region, userAgent);
     }
 
     region = await validateRegion(region);
 
-    await createDatabase(name, region, source);
+    await createDatabase(name, region, userAgent);
 
     outro("");
   } catch (error) {
