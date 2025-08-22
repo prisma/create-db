@@ -70,57 +70,59 @@ export default function DatabaseConnection({
       </div>
 
       <div className="flex items-center gap-2 mb-4">
-        <div
-          className="bg-card p-3 rounded-md font-mono text-sm flex-1 h-12 text-white border border-subtle min-w-0 overflow-x-auto custom-scrollbar"
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "transparent transparent",
-            scrollbarGutter: "stable",
-          }}
-        >
-          <div className="whitespace-nowrap flex items-center h-full">
-            {getConnectionString()}
+        {getConnectionString() ===
+        "Connection string hidden, if you need one please generate a new one." ? (
+          <button
+            className="bg-card p-3 rounded-md font-mono text-sm flex-1 h-12 text-white border border-subtle min-w-0 hover:bg-step transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            onClick={onGetNewConnectionStrings}
+            disabled={fetchingNewConnections}
+          >
+            {fetchingNewConnections ? (
+              <svg
+                className="h-5 w-5 animate-spin"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            )}
+            Generate New Connection Strings
+          </button>
+        ) : (
+          <div className="bg-card p-3 rounded-md font-mono text-sm flex-1 h-12 text-white border border-subtle min-w-0 overflow-x-auto custom-scrollbar">
+            <div className="whitespace-nowrap flex items-center h-full">
+              {getConnectionString()}
+            </div>
           </div>
-        </div>
+        )}
         <button
-          className="flex items-center justify-center w-12 h-12 text-muted border border-subtle rounded-md hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={onGetNewConnectionStrings}
-          disabled={fetchingNewConnections}
-          title="Regenerate connection strings"
-        >
-          {fetchingNewConnections ? (
-            <svg
-              className="h-5 w-5 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          ) : (
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          )}
-        </button>
-        <button
-          className="flex items-center justify-center w-12 h-12 text-muted border border-subtle rounded-md hover:text-white transition-colors"
+          className={`flex items-center justify-center w-12 h-12 border border-subtle rounded-md transition-colors ${
+            !connectionStringsVisible
+              ? "text-muted opacity-50 pointer-events-none"
+              : "text-muted hover:text-white"
+          }`}
           onClick={handleCopyConnectionString}
+          disabled={!connectionStringsVisible}
           title="Copy connection string"
         >
           {copied ? (

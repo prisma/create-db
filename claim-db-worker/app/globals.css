@@ -77,6 +77,21 @@ button {
   cursor: pointer;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+html {
+  /* Firefox - Hides track and changes thumb color */
+  scrollbar-color: hsla(0, 0%, 46%, 0.5) transparent;
+}
+
+/* Chrome - Hides track and width/height set for vertical/horizontal scrollbars */
+::-webkit-scrollbar {
+  background-color: transparent;
+  width: 7px;
+  height: 7px;
+}
+
+/* Chrome - Changes thumb color and rounds scrollbar edges, in Chrome any 
+scrollbar changes disables default styling and rounding so corners appear squared */
+::-webkit-scrollbar-thumb {
+  background-color: hsla(0, 0%, 46%, 0.5);
+  border-radius: 8px;
 }
