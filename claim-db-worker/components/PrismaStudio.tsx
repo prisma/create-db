@@ -1,6 +1,7 @@
 import { Studio } from "@prisma/studio-core/ui";
 import { createPostgresAdapter } from "@prisma/studio-core/data/postgres-core";
 import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
+import "@prisma/studio-core/ui/index.css";
 import { useMemo } from "react";
 
 export default function PrismaStudio({

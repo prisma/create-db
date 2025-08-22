@@ -4,7 +4,6 @@ import "./globals.css";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { DropProvider } from "./contexts/DropContext";
-import "@prisma/studio-core/ui/index.css";
 import { Toaster } from "react-hot-toast";
 
 const barlow = Barlow({
@@ -48,7 +47,7 @@ export default function RootLayout({
       <body
         className={`${barlow.className} antialiased bg-custom-gradient backdrop-filter backdrop-blur-md bg-cover font-barlow text-white p-0 min-h-screen w-full`}
       >
-        <Toaster />
+        <Toaster toastOptions={{ duration: 4000 }} />
         <DropProvider>
           <div className="flex items-center justify-center flex-col min-h-screen max-w-screen-xl mx-auto w-full">
             <Navbar />
