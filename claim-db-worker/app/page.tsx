@@ -73,7 +73,26 @@ function HomePageContent() {
 
         <CodeSnippet />
 
-        <p className="text-xs text-muted italic mt-2 text-center max-w-2xl px-2 sm:text-xs md:text-xs lg:text-sm">
+        <a
+          href="/web"
+          className="flex items-center justify-center gap-3 bg-[#24bfa7] hover:bg-[#16A394] text-white font-bold text-base sm:text-lg lg:text-xl border-none rounded-lg px-5 py-2.5 sm:px-6 sm:py-3 lg:px-8 lg:py-4 cursor-pointer shadow-lg transition-all duration-200 mt-3 min-h-[44px] sm:min-h-[52px] lg:min-h-[60px] mx-auto"
+        >
+          Try it in the browser
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 12h14M12 5l7 7-7 7"
+            />
+          </svg>
+        </a>
+        <p className="text-xs text-muted italic mt-7 text-center max-w-2xl px-2 sm:text-xs md:text-xs lg:text-sm">
           your <b>database will be deleted 24 hours after creation</b> unless
           you claim it
         </p>
