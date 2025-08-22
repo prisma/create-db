@@ -9,7 +9,7 @@ interface DatabaseConnectionProps {
   fetchingNewConnections: boolean;
 }
 
-const CodeSnippet = ({ children }: { children: React.ReactNode }) => (
+const InlineCode = ({ children }: { children: React.ReactNode }) => (
   <code className="bg-step px-3 py-2 rounded text-white text-base">
     {children}
   </code>
@@ -170,30 +170,29 @@ export default function DatabaseConnection({
             </h3>
             <div className="space-y-6">
               <StepItem number={1}>
-                Create a <CodeSnippet>.env</CodeSnippet> file in your project
-                root
+                Create a <InlineCode>.env</InlineCode> file in your project root
               </StepItem>
               <StepItem number={2}>
                 Add the connection string as{" "}
-                <CodeSnippet>DATABASE_URL</CodeSnippet>
+                <InlineCode>DATABASE_URL</InlineCode>
               </StepItem>
               <StepItem number={3}>
                 Install Prisma:{" "}
-                <CodeSnippet>npm install prisma @prisma/client</CodeSnippet>
+                <InlineCode>npm install prisma @prisma/client</InlineCode>
               </StepItem>
               <StepItem number={4}>
-                Initialize Prisma: <CodeSnippet>npx prisma init</CodeSnippet>
+                Initialize Prisma: <InlineCode>npx prisma init</InlineCode>
               </StepItem>
               <StepItem number={5}>
-                Update your <CodeSnippet>schema.prisma</CodeSnippet> with your
+                Update your <InlineCode>schema.prisma</InlineCode> with your
                 models
               </StepItem>
               <StepItem number={6}>
                 Push schema to database:{" "}
-                <CodeSnippet>npx prisma db push</CodeSnippet>
+                <InlineCode>npx prisma db push</InlineCode>
               </StepItem>
               <StepItem number={7}>
-                Generate client: <CodeSnippet>npx prisma generate</CodeSnippet>
+                Generate client: <InlineCode>npx prisma generate</InlineCode>
               </StepItem>
             </div>
           </div>
@@ -204,7 +203,7 @@ export default function DatabaseConnection({
             </h3>
             <div className="space-y-6">
               <StepItem number={1}>
-                Install pg: <CodeSnippet>npm install pg @types/pg</CodeSnippet>
+                Install pg: <InlineCode>npm install pg @types/pg</InlineCode>
               </StepItem>
               <StepItem number={2}>Create a client connection:</StepItem>
               <div className="ml-12">
@@ -220,12 +219,12 @@ await client.connect();`}
               </div>
               <StepItem number={3}>
                 Execute queries:{" "}
-                <CodeSnippet>
+                <InlineCode>
                   const result = await client.query('SELECT * FROM users')
-                </CodeSnippet>
+                </InlineCode>
               </StepItem>
               <StepItem number={4}>
-                Close connection: <CodeSnippet>await client.end()</CodeSnippet>
+                Close connection: <InlineCode>await client.end()</InlineCode>
               </StepItem>
             </div>
           </div>
