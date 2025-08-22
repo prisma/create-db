@@ -8,10 +8,17 @@ class EventCaptureError extends Error {
 
 class PosthogEventCapture {
   async capture(eventName, properties = {}) {
-    const POSTHOG_CAPTURE_URL = process.env.POSTHOG_API_HOST
-      ? process.env.POSTHOG_API_HOST + "/capture"
-      : "https://proxyhog.prisma-data.net/capture";
-    const POSTHOG_KEY = process.env.POSTHOG_API_KEY || "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs";
+    const POSTHOG_API_HOST = process.env.POSTHOG_API_HOST;
+    const POSTHOG_KEY = process.env.POSTHOG_API_KEY;
+    if (!POSTHOG_API_HOST || !POSTHOG_KEY) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "Analytics disabled: missing POSTHOG_API_HOST or POSTHOG_API_KEY."
+        );
+      }
+      return;
+    }
+    const POSTHOG_CAPTURE_URL = `${POSTHOG_API_HOST.replace(/\/+$/, "")}/capture`;
 
     const payload = {
       api_key: POSTHOG_KEY,
