@@ -44,7 +44,6 @@ export async function POST(request: NextRequest) {
     }
 
     const result = (await prismaResponse.json()) as PrismaProject;
-    console.log("result", result);
     return NextResponse.json({
       response: result,
       connectionString: result.connectionString || result.database_url,

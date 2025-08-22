@@ -7,18 +7,20 @@ import { DropProvider } from "./contexts/DropContext";
 import "@prisma/studio-core/ui/index.css";
 
 const barlow = Barlow({
-  weight: ['400', '500', '700', '800', '900'],
+  weight: ["400", "500", "700", "800", "900"],
   subsets: ["latin"],
-  variable: '--font-barlow',
+  variable: "--font-barlow",
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('http://localhost:3000'),
+  metadataBase: new URL("http://localhost:3000"),
   title: "Prisma Postgres Create DB",
-  description: "Get a temporary Prisma Postgres database instantly. No account or config needed. Just run npx create-db.",
+  description:
+    "Get a temporary Prisma Postgres database instantly. No account or config needed. Just run npx create-db.",
   openGraph: {
     title: "Want a free, instant Prisma Postgres database?",
-    description: "Get a temporary Prisma Postgres database instantly. No account or config needed. Just run npx create-db.",
+    description:
+      "Get a temporary Prisma Postgres database instantly. No account or config needed. Just run npx create-db.",
     images: ["/og-image.png"],
     type: "website",
     url: "https://create-db.prisma.io/",
@@ -26,7 +28,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Want a free, instant Prisma Postgres database?",
-    description: "Get a temporary Prisma Postgres database instantly. No account or config needed. Just run npx create-db.",
+    description:
+      "Get a temporary Prisma Postgres database instantly. No account or config needed. Just run npx create-db.",
     images: ["/og-image.png"],
   },
   icons: {
@@ -41,7 +44,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${barlow.className} antialiased bg-custom-gradient backdrop-filter backdrop-blur-md bg-cover font-barlow text-white p-0 flex items-center justify-center flex-col min-h-screen max-w-screen-xl mx-auto`}>
+      <body
+        className={`${barlow.className} antialiased bg-custom-gradient backdrop-filter backdrop-blur-md bg-cover font-barlow text-white p-0 flex items-center justify-center flex-col min-h-screen max-w-screen-xl mx-auto`}
+      >
         <DropProvider>
           <Navbar />
           {children}

@@ -51,10 +51,12 @@ function HomePageContent() {
   const router = useRouter();
 
   useEffect(() => {
-    const projectID = searchParams.get('projectID');
-    if (projectID && projectID !== 'undefined') {
+    const projectID = searchParams.get("projectID");
+    if (projectID && projectID !== "undefined") {
       // Redirect to claim API route
-      router.push(`/api/claim?projectID=${projectID}&utm_source=${searchParams.get('utm_source') || 'unknown'}&utm_medium=${searchParams.get('utm_medium') || 'unknown'}`);
+      router.push(
+        `/api/claim?projectID=${projectID}&utm_source=${searchParams.get("utm_source") || "unknown"}&utm_medium=${searchParams.get("utm_medium") || "unknown"}`
+      );
     }
   }, [searchParams, router]);
 
@@ -107,7 +109,6 @@ function PillBadge() {
     </div>
   );
 }
-
 
 function Step({ step }: { step: (typeof steps)[0] }) {
   return (
