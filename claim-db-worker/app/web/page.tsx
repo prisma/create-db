@@ -6,18 +6,19 @@ import TabContent from "@/components/TabContent";
 import { useDropContext } from "../contexts/DropContext";
 import toast from "react-hot-toast";
 import { customToast } from "@/lib/custom-toast";
+import { cookieUtils } from "@/lib/utils";
 
 const DB_KEY = "temp_db_info";
 
 const dbStorage = {
   save: (data: any) => {
     try {
-      localStorage.setItem(DB_KEY, JSON.stringify(data));
+      cookieUtils.set(DB_KEY, JSON.stringify(data), 1);
     } catch {}
   },
   load: () => {
     try {
-      const stored = localStorage.getItem(DB_KEY);
+      const stored = cookieUtils.get(DB_KEY);
       if (!stored) return null;
       const data = JSON.parse(stored);
       return Date.now() > data.expirationTime ? null : data;
@@ -25,7 +26,7 @@ const dbStorage = {
       return null;
     }
   },
-  clear: () => localStorage.removeItem(DB_KEY),
+  clear: () => cookieUtils.remove(DB_KEY),
 };
 
 const WebPage = () => {
@@ -67,11 +68,7 @@ const WebPage = () => {
       const stored = dbStorage.load();
 
       if (stored) {
-        updateDbData({
-          ...stored,
-          connectionString: "",
-          directConnectionString: "",
-        });
+        updateDbData(stored);
         updateState({ loading: false });
         setIsLoading(false);
         return;
@@ -104,8 +101,8 @@ const WebPage = () => {
 
           const persistentData = {
             projectId: result.projectId,
-            connectionString: "",
-            directConnectionString: "",
+            connectionString,
+            directConnectionString,
             expirationTime,
             databaseId: result.databaseId,
           };
@@ -187,12 +184,22 @@ const WebPage = () => {
 
       if (response.ok) {
         const result = (await response.json()) as any;
-        updateDbData({
+        const newConnectionStrings = {
           connectionString: result.data?.connectionString || "",
           directConnectionString:
             result.directConnectionString ||
             "Direct connection string not available",
-        });
+        };
+        updateDbData(newConnectionStrings);
+
+        const stored = dbStorage.load();
+        if (stored) {
+          const updatedData = {
+            ...stored,
+            ...newConnectionStrings,
+          };
+          dbStorage.save(updatedData);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch new connection strings:", error);
