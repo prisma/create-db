@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import TabContent from "@/components/TabContent";
 import { useDropContext } from "../contexts/DropContext";
 
@@ -27,23 +27,26 @@ const dbStorage = {
 };
 
 const WebPage = () => {
-  const [state, setState] = useState({
-    dbData: {
-      connectionString: "",
-      directConnectionString: "",
-      projectId: "",
-      databaseId: "",
-      expirationTime: null as number | null,
-    },
-    loading: true,
-    activeTab: "connection",
-    connectionType: "prisma" as "prisma" | "direct",
-    copied: false,
-    fetchingNewConnections: false,
+  const [state, setState] = useState(() => {
+    return {
+      dbData: {
+        connectionString: "",
+        directConnectionString: "",
+        projectId: "",
+        databaseId: "",
+        expirationTime: null as number | null,
+      },
+      loading: true,
+      activeTab: "connection",
+      connectionType: "prisma" as "prisma" | "direct",
+      copied: false,
+      fetchingNewConnections: false,
+    };
   });
 
   const { setTimeRemaining, setProjectId } = useDropContext();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const updateState = (updates: Partial<typeof state>) =>
     setState((prev) => ({ ...prev, ...updates }));
@@ -53,6 +56,8 @@ const WebPage = () => {
       ...prev,
       dbData: { ...prev.dbData, ...updates },
     }));
+
+  const currentTab = searchParams.get("tab") || "connection";
 
   useEffect(() => {
     const initializeDatabase = async () => {
@@ -196,6 +201,16 @@ const WebPage = () => {
     window.location.reload();
   };
 
+  const handleTabChange = (tab: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (tab === "connection") {
+      params.delete("tab");
+    } else {
+      params.set("tab", tab);
+    }
+    router.push(`/web?${params.toString()}`);
+  };
+
   if (state.loading) {
     return (
       <div className="w-full max-w-7xl mx-auto px-4 pb-16 font-barlow">
@@ -228,8 +243,8 @@ const WebPage = () => {
     <div className="w-full max-w-7xl mx-auto px-4 pb-16 font-barlow">
       <div className="flex-1 min-h-[calc(100vh-280px)]">
         <TabContent
-          activeTab={state.activeTab}
-          onTabChange={(tab) => updateState({ activeTab: tab })}
+          activeTab={currentTab}
+          onTabChange={handleTabChange}
           connectionString={getConnectionString()}
           connectionType={state.connectionType}
           setConnectionType={(type) => updateState({ connectionType: type })}
