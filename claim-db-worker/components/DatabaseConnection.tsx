@@ -196,62 +196,239 @@ export default function DatabaseConnection({
             </h3>
             <div className="space-y-6">
               <StepItem number={1}>
-                Create a <InlineCode>.env</InlineCode> file in your project root
+                Install Prisma CLI and Client:{" "}
+                <InlineCode>npm install prisma --save-dev</InlineCode>
+                <br />
+                <InlineCode>
+                  npm install @prisma/extension-accelerate @prisma/client
+                </InlineCode>
               </StepItem>
               <StepItem number={2}>
-                Add the connection string as{" "}
-                <InlineCode>DATABASE_URL</InlineCode>
+                Initialize Prisma in your project:{" "}
+                <InlineCode>npx prisma init</InlineCode>
               </StepItem>
               <StepItem number={3}>
-                Install Prisma:{" "}
-                <InlineCode>npm install prisma @prisma/client</InlineCode>
+                Update your <InlineCode>.env</InlineCode> file with the
+                connection string:
               </StepItem>
+              <div className="ml-12">
+                <pre className="bg-step p-4 rounded text-white text-sm overflow-x-auto leading-relaxed">
+                  {`DATABASE_URL="${getConnectionString()}"
+DIRECT_URL="${getConnectionString()}"`}
+                </pre>
+              </div>
               <StepItem number={4}>
-                Initialize Prisma: <InlineCode>npx prisma init</InlineCode>
+                Optional: Add Prisma Accelerate for connection pooling and
+                caching:
               </StepItem>
+              <div className="ml-12">
+                <pre className="bg-step p-4 rounded text-white text-sm overflow-x-auto leading-relaxed">
+                  {`# Install Accelerate extension
+npm install @prisma/extension-accelerate
+
+# Update .env with Accelerate URL (get from https://cloud.prisma.io)
+DATABASE_URL="prisma://aws-us-east-1.prisma-data.com/__PROJECT_ID__?api_key=__API_KEY__"
+DIRECT_URL="${getConnectionString()}"`}
+                </pre>
+              </div>
               <StepItem number={5}>
-                Update your <InlineCode>schema.prisma</InlineCode> with your
-                models
+                Configure your <InlineCode>schema.prisma</InlineCode> file:
               </StepItem>
+              <div className="ml-12">
+                <pre className="bg-step p-4 rounded text-white text-sm overflow-x-auto leading-relaxed">
+                  {`generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}`}
+                </pre>
+              </div>
               <StepItem number={6}>
-                Push schema to database:{" "}
+                Push your schema to the database:{" "}
                 <InlineCode>npx prisma db push</InlineCode>
               </StepItem>
               <StepItem number={7}>
-                Generate client: <InlineCode>npx prisma generate</InlineCode>
+                Generate Prisma Client:{" "}
+                <InlineCode>npx prisma generate</InlineCode>
+              </StepItem>
+              <StepItem number={8}>
+                Create a database client file (e.g.,{" "}
+                <InlineCode>lib/prisma.ts</InlineCode>):
+              </StepItem>
+              <div className="ml-12">
+                <pre className="bg-step p-4 rounded text-white text-sm overflow-x-auto leading-relaxed">
+                  {`import { PrismaClient } from '@prisma/client'
+import { withAccelerate } from '@prisma/extension-accelerate'
+
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
+
+export const prisma = globalForPrisma.prisma || 
+  new PrismaClient().$extends(withAccelerate())
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma`}
+                </pre>
+              </div>
+              <StepItem number={9}>
+                Use Prisma Client in your application:
+              </StepItem>
+              <div className="ml-12">
+                <pre className="bg-step p-4 rounded text-white text-sm overflow-x-auto leading-relaxed">
+                  {`import { prisma } from './lib/prisma'
+
+// Create a user
+const user = await prisma.user.create({
+  data: {
+    email: 'user@example.com',
+    name: 'John Doe',
+  },
+})
+
+// Query users with caching (if using Accelerate)
+const users = await prisma.user.findMany({
+  include: {
+    // Include related data
+  },
+})`}
+                </pre>
+              </div>
+              <StepItem number={10}>
+                Optional: Use Prisma Studio to view your data:{" "}
+                <InlineCode>npx prisma studio</InlineCode>
               </StepItem>
             </div>
           </div>
         ) : (
           <div>
             <h3 className="text-lg font-medium text-white mb-4">
-              Setup with pg (node-postgres):
+              Setup with Direct PostgreSQL Connection:
             </h3>
             <div className="space-y-6">
               <StepItem number={1}>
-                Install pg: <InlineCode>npm install pg @types/pg</InlineCode>
+                Install the PostgreSQL client:{" "}
+                <InlineCode>npm install pg @types/pg</InlineCode>
               </StepItem>
-              <StepItem number={2}>Create a client connection:</StepItem>
+              <StepItem number={2}>
+                Create a database connection file (e.g.,{" "}
+                <InlineCode>lib/db.ts</InlineCode>):
+              </StepItem>
               <div className="ml-12">
-                <pre className="bg-step p-6 rounded text-white text-base overflow-x-auto leading-relaxed">
-                  {`import { Client } from 'pg';
+                <pre className="bg-step p-4 rounded text-white text-sm overflow-x-auto leading-relaxed">
+                  {`import { Pool, Client } from 'pg'
 
+// For connection pooling (recommended for production)
+const pool = new Pool({
+  connectionString: '${getConnectionString()}',
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+})
+
+// For single connections
 const client = new Client({
   connectionString: '${getConnectionString()}'
-});
+})
 
-await client.connect();`}
+export { pool, client }`}
                 </pre>
               </div>
-              <StepItem number={3}>
-                Execute queries:{" "}
-                <InlineCode>
-                  const result = await client.query('SELECT * FROM users')
-                </InlineCode>
-              </StepItem>
+              <StepItem number={3}>Create database utility functions:</StepItem>
+              <div className="ml-12">
+                <pre className="bg-step p-4 rounded text-white text-sm overflow-x-auto leading-relaxed">
+                  {`import { pool } from './lib/db'
+
+export async function query(text: string, params?: any[]) {
+  const start = Date.now()
+  const res = await pool.query(text, params)
+  const duration = Date.now() - start
+  console.log('Executed query', { text, duration, rows: res.rowCount })
+  return res
+}
+
+export async function getClient() {
+  const client = await pool.connect()
+  const query = client.query
+  const release = client.release
+  
+  client.query = (...args) => {
+    client.lastQuery = args
+    return query.apply(client, args)
+  }
+  
+  client.release = () => {
+    client.lastQuery = null
+    return release.apply(client)
+  }
+  
+  return client
+}`}
+                </pre>
+              </div>
               <StepItem number={4}>
-                Close connection: <InlineCode>await client.end()</InlineCode>
+                Use the connection in your application:
               </StepItem>
+              <div className="ml-12">
+                <pre className="bg-step p-4 rounded text-white text-sm overflow-x-auto leading-relaxed">
+                  {`import { query, getClient } from './lib/db'
+
+// Simple query
+const result = await query('SELECT * FROM users WHERE id = $1', [userId])
+
+// Transaction example
+const client = await getClient()
+try {
+  await client.query('BEGIN')
+  await client.query('INSERT INTO users(name, email) VALUES($1, $2)', ['John', 'john@example.com'])
+  await client.query('INSERT INTO profiles(user_id, bio) VALUES($1, $2)', [userId, 'Bio text'])
+  await client.query('COMMIT')
+} catch (e) {
+  await client.query('ROLLBACK')
+  throw e
+} finally {
+  client.release()
+}`}
+                </pre>
+              </div>
+              <StepItem number={5}>
+                Create database tables (if needed):
+              </StepItem>
+              <div className="ml-12">
+                <pre className="bg-step p-4 rounded text-white text-sm overflow-x-auto leading-relaxed">
+                  {`CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_users_email ON users(email);`}
+                </pre>
+              </div>
+              <StepItem number={6}>
+                Handle connection cleanup in your application:
+              </StepItem>
+              <div className="ml-12">
+                <pre className="bg-step p-4 rounded text-white text-sm overflow-x-auto leading-relaxed">
+                  {`// In your main application file
+process.on('SIGINT', async () => {
+  await pool.end()
+  process.exit(0)
+})`}
+                </pre>
+              </div>
             </div>
           </div>
         )}
