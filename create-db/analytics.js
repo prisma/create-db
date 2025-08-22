@@ -8,12 +8,8 @@ class EventCaptureError extends Error {
 
 class PosthogEventCapture {
   async capture(eventName, properties = {}) {
-    const POSTHOG_CAPTURE_URL = process.env.POSTHOG_API_HOST
-      ? process.env.POSTHOG_API_HOST + "/capture"
-      : "https://proxyhog.prisma-data.net/capture";
-    const POSTHOG_KEY =
-      process.env.POSTHOG_API_KEY ||
-      "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs";
+    const POSTHOG_CAPTURE_URL = process.env.POSTHOG_API_HOST + "/capture";
+    const POSTHOG_KEY = process.env.POSTHOG_API_KEY;
 
     const payload = {
       api_key: POSTHOG_KEY,
