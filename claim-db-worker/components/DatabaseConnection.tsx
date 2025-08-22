@@ -1,12 +1,13 @@
+"use client";
+
+import React, { useState } from "react";
+
 interface DatabaseConnectionProps {
   connectionType: "prisma" | "direct";
   setConnectionType: (type: "prisma" | "direct") => void;
   getConnectionString: () => string;
   handleCopyConnectionString: () => void;
   copied: boolean;
-  connectionStringsVisible: boolean;
-  onGetNewConnectionStrings: () => void;
-  fetchingNewConnections: boolean;
 }
 
 const InlineCode = ({ children }: { children: React.ReactNode }) => (
@@ -40,10 +41,9 @@ export default function DatabaseConnection({
   getConnectionString,
   handleCopyConnectionString,
   copied,
-  connectionStringsVisible,
-  onGetNewConnectionStrings,
-  fetchingNewConnections,
 }: DatabaseConnectionProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="bg-card rounded-lg border border-subtle p-6 w-full h-full flex flex-col">
       <div className="flex bg-step rounded-md p-1 w-full mb-3">
@@ -70,59 +70,85 @@ export default function DatabaseConnection({
       </div>
 
       <div className="flex items-center gap-2 mb-4">
-        {getConnectionString() ===
-        "Connection string hidden, if you need one please generate a new one." ? (
-          <button
-            className="bg-card p-3 rounded-md font-mono text-sm flex-1 h-12 text-white border border-subtle min-w-0 hover:bg-step transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            onClick={onGetNewConnectionStrings}
-            disabled={fetchingNewConnections}
-          >
-            {fetchingNewConnections ? (
-              <svg
-                className="h-5 w-5 animate-spin"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-            )}
-            Generate New Connection Strings
-          </button>
-        ) : (
-          <div className="bg-card p-3 rounded-md font-mono text-sm flex-1 h-12 text-white border border-subtle min-w-0 overflow-x-auto custom-scrollbar">
-            <div className="whitespace-nowrap flex items-center h-full">
-              {getConnectionString()}
-            </div>
-          </div>
-        )}
+        <div className="bg-card rounded-md font-mono text-sm flex-1 h-12 border border-subtle min-w-0 flex items-center">
+          <input
+            type={showPassword ? "text" : "password"}
+            value={getConnectionString()}
+            readOnly
+            className="bg-transparent p-3 text-white text-sm flex-1 outline-none"
+            style={{ fontFamily: "monospace" }}
+          />
+        </div>
         <button
-          className={`flex items-center justify-center w-12 h-12 border border-subtle rounded-md transition-colors ${
-            !connectionStringsVisible
-              ? "text-muted opacity-50 pointer-events-none"
-              : "text-muted hover:text-white"
-          }`}
+          className="flex items-center justify-center w-12 h-12 border border-subtle rounded-md transition-colors text-muted hover:text-white"
+          onClick={() => setShowPassword(!showPassword)}
+          title={
+            showPassword ? "Hide connection string" : "Show connection string"
+          }
+        >
+          {showPassword ? (
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 9c-2.4 2.667 -5.4 4 -9 4c-3.6 0 -6.6 -1.333 -9 -4"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 15l2.5 -3.8"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 14.976l-2.492 -3.776"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 17l.5 -4"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 17l-.5 -4"
+              />
+            </svg>
+          ) : (
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
+            </svg>
+          )}
+        </button>
+        <button
+          className="flex items-center justify-center w-12 h-12 border border-subtle rounded-md transition-colors text-muted hover:text-white"
           onClick={handleCopyConnectionString}
-          disabled={!connectionStringsVisible}
           title="Copy connection string"
         >
           {copied ? (
