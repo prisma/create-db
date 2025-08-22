@@ -27,38 +27,44 @@ const dbStorage = {
 };
 
 const DropPage = () => {
-  const [dbData, setDbData] = useState({
-    connectionString: "",
-    directConnectionString: "",
-    projectId: "",
-    databaseId: "",
-    expirationTime: null as number | null,
+  const [state, setState] = useState({
+    dbData: {
+      connectionString: "",
+      directConnectionString: "",
+      projectId: "",
+      databaseId: "",
+      expirationTime: null as number | null,
+    },
+    loading: true,
+    activeTab: "connection",
+    connectionType: "prisma" as "prisma" | "direct",
+    copied: false,
+    fetchingNewConnections: false,
   });
-  const [connectionStringsVisible, setConnectionStringsVisible] =
-    useState(false);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("connection");
-  const [connectionType, setConnectionType] = useState<"prisma" | "direct">(
-    "prisma"
-  );
-  const [copied, setCopied] = useState(false);
-  const [fetchingNewConnections, setFetchingNewConnections] = useState(false);
+
   const { setTimeRemaining, setProjectId } = useDropContext();
   const router = useRouter();
+
+  const updateState = (updates: Partial<typeof state>) =>
+    setState((prev) => ({ ...prev, ...updates }));
+
+  const updateDbData = (updates: Partial<typeof state.dbData>) =>
+    setState((prev) => ({
+      ...prev,
+      dbData: { ...prev.dbData, ...updates },
+    }));
 
   useEffect(() => {
     const initializeDatabase = async () => {
       const stored = dbStorage.load();
 
       if (stored) {
-        // Always load stored data without connection strings
-        const storedDataWithoutConnections = {
+        updateDbData({
           ...stored,
           connectionString: "",
           directConnectionString: "",
-        };
-        setDbData(storedDataWithoutConnections);
-        setLoading(false);
+        });
+        updateState({ loading: false });
         return;
       }
 
@@ -78,15 +84,15 @@ const DropPage = () => {
           const directConnectionString = db.apiKeys?.[0]?.directConnection
             ? `postgresql://${db.apiKeys[0].directConnection.user}:${db.apiKeys[0].directConnection.pass}@${db.apiKeys[0].directConnection.host}`
             : "";
+
           const newDbData = {
             projectId: result.projectId,
-            connectionString: connectionString,
-            directConnectionString: directConnectionString,
+            connectionString,
+            directConnectionString,
             expirationTime,
             databaseId: result.databaseId,
           };
 
-          // Save data WITHOUT connection strings for persistence
           const persistentData = {
             projectId: result.projectId,
             connectionString: "",
@@ -95,10 +101,10 @@ const DropPage = () => {
             databaseId: result.databaseId,
           };
 
-          setDbData(newDbData);
+          updateDbData(newDbData);
           dbStorage.save(persistentData);
         }
-        setLoading(false);
+        updateState({ loading: false });
       } catch (error) {
         router.replace(`/error?title=Error&message=Failed to create database`);
       }
@@ -108,16 +114,16 @@ const DropPage = () => {
   }, [router]);
 
   useEffect(() => {
-    if (dbData.projectId) {
-      setProjectId(dbData.projectId);
+    if (state.dbData.projectId) {
+      setProjectId(state.dbData.projectId);
     }
-  }, [dbData.projectId, setProjectId]);
+  }, [state.dbData.projectId, setProjectId]);
 
   useEffect(() => {
-    if (!loading && dbData.expirationTime) {
+    if (!state.loading && state.dbData.expirationTime) {
       const calculateTimeRemaining = () => {
         const now = new Date().getTime();
-        const timeRemainingMs = dbData.expirationTime! - now;
+        const timeRemainingMs = state.dbData.expirationTime! - now;
 
         if (timeRemainingMs <= 0) {
           setTimeRemaining(0);
@@ -125,88 +131,63 @@ const DropPage = () => {
           return;
         }
 
-        const totalSeconds = Math.floor(timeRemainingMs / 1000);
-        setTimeRemaining(totalSeconds);
+        setTimeRemaining(Math.floor(timeRemainingMs / 1000));
       };
 
       calculateTimeRemaining();
-
       const timer = setInterval(calculateTimeRemaining, 1000);
       return () => clearInterval(timer);
     }
-  }, [loading, dbData.expirationTime, setTimeRemaining]);
+  }, [state.loading, state.dbData.expirationTime, setTimeRemaining]);
 
   const getConnectionString = () => {
-    if (connectionType === "prisma") {
-      return (
-        dbData.connectionString ||
-        "Connection string hidden, if you need one please generate a new one."
-      );
-    } else {
-      return (
-        dbData.directConnectionString ||
-        "Connection string hidden, if you need one please generate a new one."
-      );
-    }
+    const connectionString =
+      state.connectionType === "prisma"
+        ? state.dbData.connectionString
+        : state.dbData.directConnectionString;
+
+    return (
+      connectionString ||
+      "Connection string hidden, if you need one please generate a new one."
+    );
   };
 
   const handleCopyConnectionString = async () => {
     const hasConnectionStrings =
-      dbData.connectionString && dbData.directConnectionString;
-    if (!hasConnectionStrings) {
-      return;
-    }
+      state.dbData.connectionString && state.dbData.directConnectionString;
+    if (!hasConnectionStrings) return;
+
     try {
       await navigator.clipboard.writeText(getConnectionString());
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      updateState({ copied: true });
+      setTimeout(() => updateState({ copied: false }), 2000);
     } catch {}
   };
 
   const handleGetNewConnectionStrings = async () => {
-    if (!dbData.databaseId) return;
+    if (!state.dbData.databaseId) return;
 
-    setFetchingNewConnections(true);
+    updateState({ fetchingNewConnections: true });
     try {
       const response = await fetch("/api/get-connection-string", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ databaseId: dbData.databaseId }),
+        body: JSON.stringify({ databaseId: state.dbData.databaseId }),
       });
+
       if (response.ok) {
-        const result = (await response.json()) as {
-          data: {
-            connectionString: string;
-          };
-          directConnectionString?: string;
-          databaseId?: string;
-        };
-        console.log("result", result);
-        console.log(
-          "result.data.connectionString:",
-          result.data?.connectionString
-        );
-        console.log(
-          "result.directConnectionString:",
-          result.directConnectionString
-        );
-        setDbData((prev) => {
-          const newData = {
-            ...prev,
-            connectionString: result.data?.connectionString || "",
-            directConnectionString:
-              result.directConnectionString ||
-              "Direct connection string not available",
-          };
-          console.log("newData.connectionString:", newData.connectionString);
-          return newData;
+        const result = (await response.json()) as any;
+        updateDbData({
+          connectionString: result.data?.connectionString || "",
+          directConnectionString:
+            result.directConnectionString ||
+            "Direct connection string not available",
         });
-        setConnectionStringsVisible(true);
       }
     } catch (error) {
       console.error("Failed to fetch new connection strings:", error);
     } finally {
-      setFetchingNewConnections(false);
+      updateState({ fetchingNewConnections: false });
     }
   };
 
@@ -215,52 +196,57 @@ const DropPage = () => {
     window.location.reload();
   };
 
+  if (state.loading) {
+    return (
+      <div className="w-full max-w-7xl mx-auto px-4 pb-16 font-barlow">
+        <div className="flex flex-col items-center bg-code rounded-lg border border-subtle p-4 mb-4 w-full justify-center min-h-[calc(100vh-280px)]">
+          <div className="animate-pulse">
+            <svg
+              width="48"
+              height="60"
+              viewBox="0 0 58 72"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M0.522473 45.0933C-0.184191 46.246 -0.173254 47.7004 0.550665 48.8423L13.6534 69.5114C14.5038 70.8529 16.1429 71.4646 17.6642 71.0082L55.4756 59.6648C57.539 59.0457 58.5772 56.7439 57.6753 54.7874L33.3684 2.06007C32.183 -0.511323 28.6095 -0.722394 27.1296 1.69157L0.522473 45.0933ZM32.7225 14.1141C32.2059 12.9187 30.4565 13.1028 30.2001 14.3796L20.842 60.9749C20.6447 61.9574 21.5646 62.7964 22.5248 62.5098L48.6494 54.7114C49.4119 54.4838 49.8047 53.6415 49.4891 52.9111L32.7225 14.1141Z"
+                fill="white"
+              />
+            </svg>
+          </div>
+          <p className="mt-4 text-lg text-muted">
+            Setting up your temporary database...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 pb-16 font-barlow">
-      <div className="flex flex-col min-h-[calc(100vh-280px)]">
-        {loading ? (
-          <div className="flex flex-col items-center bg-code rounded-lg border border-subtle p-4 mb-4 w-full justify-center flex-1">
-            <div className="animate-pulse">
-              <svg
-                width="48"
-                height="60"
-                viewBox="0 0 58 72"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M0.522473 45.0933C-0.184191 46.246 -0.173254 47.7004 0.550665 48.8423L13.6534 69.5114C14.5038 70.8529 16.1429 71.4646 17.6642 71.0082L55.4756 59.6648C57.539 59.0457 58.5772 56.7439 57.6753 54.7874L33.3684 2.06007C32.183 -0.511323 28.6095 -0.722394 27.1296 1.69157L0.522473 45.0933ZM32.7225 14.1141C32.2059 12.9187 30.4565 13.1028 30.2001 14.3796L20.842 60.9749C20.6447 61.9574 21.5646 62.7964 22.5248 62.5098L48.6494 54.7114C49.4119 54.4838 49.8047 53.6415 49.4891 52.9111L32.7225 14.1141Z"
-                  fill="white"
-                />
-              </svg>
-            </div>
-            <p className="mt-4 text-lg text-muted">
-              Setting up your temporary database...
-            </p>
-          </div>
-        ) : (
-          <div className="flex-1 min-h-[calc(100vh-280px)]">
-            <TabContent
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              connectionString={getConnectionString()}
-              connectionType={connectionType}
-              setConnectionType={setConnectionType}
-              getConnectionString={getConnectionString}
-              handleCopyConnectionString={handleCopyConnectionString}
-              copied={copied}
-              projectId={dbData.projectId}
-              onCreateNewDatabase={handleCreateNewDatabase}
-              connectionStringsVisible={
-                !!(dbData.connectionString && dbData.directConnectionString)
-              }
-              onGetNewConnectionStrings={handleGetNewConnectionStrings}
-              fetchingNewConnections={fetchingNewConnections}
-            />
-          </div>
-        )}
+      <div className="flex-1 min-h-[calc(100vh-280px)]">
+        <TabContent
+          activeTab={state.activeTab}
+          onTabChange={(tab) => updateState({ activeTab: tab })}
+          connectionString={getConnectionString()}
+          connectionType={state.connectionType}
+          setConnectionType={(type) => updateState({ connectionType: type })}
+          getConnectionString={getConnectionString}
+          handleCopyConnectionString={handleCopyConnectionString}
+          copied={state.copied}
+          projectId={state.dbData.projectId}
+          onCreateNewDatabase={handleCreateNewDatabase}
+          connectionStringsVisible={
+            !!(
+              state.dbData.connectionString &&
+              state.dbData.directConnectionString
+            )
+          }
+          onGetNewConnectionStrings={handleGetNewConnectionStrings}
+          fetchingNewConnections={state.fetchingNewConnections}
+        />
       </div>
     </div>
   );
