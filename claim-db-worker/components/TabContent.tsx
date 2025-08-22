@@ -14,6 +14,9 @@ interface TabContentProps {
   copied: boolean;
   projectId: string;
   onCreateNewDatabase: () => void;
+  connectionStringsVisible: boolean;
+  onGetNewConnectionStrings: () => void;
+  fetchingNewConnections: boolean;
 }
 
 const TabContent = ({
@@ -27,6 +30,9 @@ const TabContent = ({
   copied,
   projectId,
   onCreateNewDatabase,
+  connectionStringsVisible,
+  onGetNewConnectionStrings,
+  fetchingNewConnections,
 }: TabContentProps) => {
   const [schemaContent, setSchemaContent] = useState<string>(
     `// This is your Prisma schema file,
@@ -143,6 +149,9 @@ model Post {
             getConnectionString={getConnectionString}
             handleCopyConnectionString={handleCopyConnectionString}
             copied={copied}
+            connectionStringsVisible={connectionStringsVisible}
+            onGetNewConnectionStrings={onGetNewConnectionStrings}
+            fetchingNewConnections={fetchingNewConnections}
           />
         </div>
       )}

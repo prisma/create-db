@@ -5,6 +5,7 @@ interface PrismaProject {
   data?: {
     id: string;
     database: {
+      id: string;
       connectionString: string;
       directConnection: {
         user: string;
@@ -44,10 +45,15 @@ export async function POST(request: NextRequest) {
     }
 
     const result = (await prismaResponse.json()) as PrismaProject;
+    console.log(
+      "🚀 Original JSON output from /api/create-db:",
+      JSON.stringify(result, null, 2)
+    );
     return NextResponse.json({
       response: result,
       connectionString: result.connectionString || result.database_url,
       projectId: result.data?.id || result.id,
+      databaseId: result.data?.database.id,
       region: region,
       name: name,
     });

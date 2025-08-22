@@ -31,14 +31,18 @@ const DropPage = () => {
     connectionString: "",
     directConnectionString: "",
     projectId: "",
+    databaseId: "",
     expirationTime: null as number | null,
   });
+  const [connectionStringsVisible, setConnectionStringsVisible] =
+    useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("connection");
   const [connectionType, setConnectionType] = useState<"prisma" | "direct">(
     "prisma"
   );
   const [copied, setCopied] = useState(false);
+  const [fetchingNewConnections, setFetchingNewConnections] = useState(false);
   const { setTimeRemaining, setProjectId } = useDropContext();
   const router = useRouter();
 
@@ -47,7 +51,13 @@ const DropPage = () => {
       const stored = dbStorage.load();
 
       if (stored) {
-        setDbData(stored);
+        // Always load stored data without connection strings
+        const storedDataWithoutConnections = {
+          ...stored,
+          connectionString: "",
+          directConnectionString: "",
+        };
+        setDbData(storedDataWithoutConnections);
         setLoading(false);
         return;
       }
@@ -68,16 +78,25 @@ const DropPage = () => {
           const directConnectionString = db.apiKeys?.[0]?.directConnection
             ? `postgresql://${db.apiKeys[0].directConnection.user}:${db.apiKeys[0].directConnection.pass}@${db.apiKeys[0].directConnection.host}`
             : "";
-
           const newDbData = {
             projectId: result.projectId,
-            connectionString,
-            directConnectionString,
+            connectionString: connectionString,
+            directConnectionString: directConnectionString,
             expirationTime,
+            databaseId: result.databaseId,
+          };
+
+          // Save data WITHOUT connection strings for persistence
+          const persistentData = {
+            projectId: result.projectId,
+            connectionString: "",
+            directConnectionString: "",
+            expirationTime,
+            databaseId: result.databaseId,
           };
 
           setDbData(newDbData);
-          dbStorage.save(newDbData);
+          dbStorage.save(persistentData);
         }
         setLoading(false);
       } catch (error) {
@@ -117,17 +136,78 @@ const DropPage = () => {
     }
   }, [loading, dbData.expirationTime, setTimeRemaining]);
 
-  const getConnectionString = () =>
-    connectionType === "prisma"
-      ? dbData.connectionString
-      : dbData.directConnectionString;
+  const getConnectionString = () => {
+    if (connectionType === "prisma") {
+      return (
+        dbData.connectionString ||
+        "Connection string hidden, if you need one please generate a new one."
+      );
+    } else {
+      return (
+        dbData.directConnectionString ||
+        "Connection string hidden, if you need one please generate a new one."
+      );
+    }
+  };
 
   const handleCopyConnectionString = async () => {
+    const hasConnectionStrings =
+      dbData.connectionString && dbData.directConnectionString;
+    if (!hasConnectionStrings) {
+      return;
+    }
     try {
       await navigator.clipboard.writeText(getConnectionString());
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {}
+  };
+
+  const handleGetNewConnectionStrings = async () => {
+    if (!dbData.databaseId) return;
+
+    setFetchingNewConnections(true);
+    try {
+      const response = await fetch("/api/get-connection-string", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ databaseId: dbData.databaseId }),
+      });
+      if (response.ok) {
+        const result = (await response.json()) as {
+          data: {
+            connectionString: string;
+          };
+          directConnectionString?: string;
+          databaseId?: string;
+        };
+        console.log("result", result);
+        console.log(
+          "result.data.connectionString:",
+          result.data?.connectionString
+        );
+        console.log(
+          "result.directConnectionString:",
+          result.directConnectionString
+        );
+        setDbData((prev) => {
+          const newData = {
+            ...prev,
+            connectionString: result.data?.connectionString || "",
+            directConnectionString:
+              result.directConnectionString ||
+              "Direct connection string not available",
+          };
+          console.log("newData.connectionString:", newData.connectionString);
+          return newData;
+        });
+        setConnectionStringsVisible(true);
+      }
+    } catch (error) {
+      console.error("Failed to fetch new connection strings:", error);
+    } finally {
+      setFetchingNewConnections(false);
+    }
   };
 
   const handleCreateNewDatabase = () => {
@@ -173,6 +253,11 @@ const DropPage = () => {
               copied={copied}
               projectId={dbData.projectId}
               onCreateNewDatabase={handleCreateNewDatabase}
+              connectionStringsVisible={
+                !!(dbData.connectionString && dbData.directConnectionString)
+              }
+              onGetNewConnectionStrings={handleGetNewConnectionStrings}
+              fetchingNewConnections={fetchingNewConnections}
             />
           </div>
         )}
