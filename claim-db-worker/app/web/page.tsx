@@ -185,6 +185,14 @@ const WebPage = () => {
   return (
     <>
       <div className="w-full max-w-7xl mx-auto px-4 pb-16 font-barlow">
+        <div className="mb-4 p-3 bg-card border border-subtle rounded-lg">
+          <p className="text-xs text-muted text-center">
+            <strong>Note:</strong> This database will be automatically deleted
+            after 24 hours unless claimed.{" "}
+            <strong>Do not store sensitive data.</strong>
+          </p>
+        </div>
+
         <div className="flex-1 min-h-[calc(100vh-280px)]">
           <TabContent
             activeTab={currentTab}

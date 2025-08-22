@@ -433,13 +433,6 @@ process.on('SIGINT', async () => {
           </div>
         )}
       </div>
-
-      <div className="mt-6 p-4 bg-card rounded border border-subtle">
-        <p className="text-sm text-muted">
-          <strong>Note:</strong> This database will be automatically deleted
-          after 24 hours unless claimed.
-        </p>
-      </div>
     </div>
   );
 }
