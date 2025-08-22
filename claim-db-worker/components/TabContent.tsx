@@ -84,7 +84,7 @@ model Post {
           }`}
           onClick={() => handleTabChange("connection")}
         >
-          Database Connection
+          Connect to your database
         </button>
         <button
           className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors font-medium ${
@@ -94,7 +94,7 @@ model Post {
           }`}
           onClick={() => handleTabChange("schema")}
         >
-          Schema Editor
+          View your schema
         </button>
         <button
           className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors font-medium ${
@@ -104,45 +104,12 @@ model Post {
           }`}
           onClick={() => handleTabChange("studio")}
         >
-          Prisma Studio
+          View your database
         </button>
       </div>
 
       {activeTab === "connection" && (
-        <div className="w-full">
-          <div className="bg-card rounded-lg border border-subtle p-3 mb-4 w-full">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted">Project ID:</span>
-                <code className="text-sm bg-step px-2 py-1 rounded text-white font-mono">
-                  {projectId}
-                </code>
-              </div>
-              <button
-                onClick={onCreateNewDatabase}
-                className="text-sm text-muted hover:text-white transition-colors"
-              >
-                Create New Database
-              </button>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted">Claim URL:</span>
-                <code className="text-sm bg-step px-2 py-1 rounded text-white font-mono">
-                  {`${window.location.origin}/claim?projectID=${projectId}`}
-                </code>
-              </div>
-              <button
-                onClick={() => {
-                  const claimUrl = `${window.location.origin}/claim?projectID=${projectId}`;
-                  navigator.clipboard.writeText(claimUrl);
-                }}
-                className="text-sm text-muted hover:text-white transition-colors"
-              >
-                Copy Claim URL
-              </button>
-            </div>
-          </div>
+        <div className="w-full mb-4">
           <DatabaseConnection
             connectionType={connectionType}
             setConnectionType={setConnectionType}
@@ -153,6 +120,23 @@ model Post {
             onGetNewConnectionStrings={onGetNewConnectionStrings}
             fetchingNewConnections={fetchingNewConnections}
           />
+          <div className="flex items-center justify-end gap-4 p-1">
+            <button
+              onClick={onCreateNewDatabase}
+              className="text-sm text-muted hover:text-white transition-colors"
+            >
+              Create New Database
+            </button>
+            <button
+              onClick={() => {
+                const claimUrl = `${window.location.origin}/claim?projectID=${projectId}`;
+                navigator.clipboard.writeText(claimUrl);
+              }}
+              className="text-sm text-muted hover:text-white transition-colors"
+            >
+              Copy Claim URL
+            </button>
+          </div>
         </div>
       )}
 

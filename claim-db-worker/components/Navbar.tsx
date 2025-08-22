@@ -20,7 +20,7 @@ export function Navbar() {
           />
         </a>
 
-        {pathname === "/drop" && (
+        {pathname === "/web" && (
           <div className="flex items-center gap-4">
             {timeRemaining ? (
               <button

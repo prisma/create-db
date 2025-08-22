@@ -26,7 +26,7 @@ const dbStorage = {
   clear: () => localStorage.removeItem(DB_KEY),
 };
 
-const DropPage = () => {
+const WebPage = () => {
   const [state, setState] = useState({
     dbData: {
       connectionString: "",
@@ -252,4 +252,4 @@ const DropPage = () => {
   );
 };
 
-export default DropPage;
+export default WebPage;

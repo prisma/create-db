@@ -9,6 +9,31 @@ interface DatabaseConnectionProps {
   fetchingNewConnections: boolean;
 }
 
+const CodeSnippet = ({ children }: { children: React.ReactNode }) => (
+  <code className="bg-step px-3 py-2 rounded text-white text-base">
+    {children}
+  </code>
+);
+
+const StepNumber = ({ number }: { number: number }) => (
+  <div className="flex-shrink-0 w-8 h-8 bg-table-header rounded-full flex items-center justify-center text-white text-sm font-medium">
+    {number}
+  </div>
+);
+
+const StepItem = ({
+  number,
+  children,
+}: {
+  number: number;
+  children: React.ReactNode;
+}) => (
+  <div className="flex items-start gap-4">
+    <StepNumber number={number} />
+    <div className="flex-1 leading-relaxed text-lg text-muted">{children}</div>
+  </div>
+);
+
 export default function DatabaseConnection({
   connectionType,
   setConnectionType,
@@ -20,7 +45,7 @@ export default function DatabaseConnection({
   fetchingNewConnections,
 }: DatabaseConnectionProps) {
   return (
-    <div className="bg-code rounded-lg border border-subtle p-6 w-full h-full flex flex-col">
+    <div className="bg-card rounded-lg border border-subtle p-6 w-full h-full flex flex-col">
       <div className="flex bg-step rounded-md p-1 w-full mb-3">
         <button
           className={`flex-1 px-3 py-1 text-sm rounded-md transition-colors font-medium ${
@@ -135,74 +160,53 @@ export default function DatabaseConnection({
           : "Use this connection string directly with your PostgreSQL client"}
       </p>
 
-      <div className="flex-1 space-y-6">
+      <div className="flex-1 space-y-6 bg-dark rounded-lg p-6">
         {connectionType === "prisma" ? (
           <div>
             <h3 className="text-lg font-medium text-white mb-4">
               Setup with Prisma ORM:
             </h3>
-            <ol className="text-lg text-muted space-y-6 list-decimal list-inside">
-              <li className="leading-relaxed">
-                Create a{" "}
-                <code className="bg-step px-3 py-2 rounded text-white text-base">
-                  .env
-                </code>{" "}
-                file in your project root
-              </li>
-              <li className="leading-relaxed">
+            <div className="space-y-6">
+              <StepItem number={1}>
+                Create a <CodeSnippet>.env</CodeSnippet> file in your project
+                root
+              </StepItem>
+              <StepItem number={2}>
                 Add the connection string as{" "}
-                <code className="bg-step px-3 py-2 rounded text-white text-base">
-                  DATABASE_URL
-                </code>
-              </li>
-              <li className="leading-relaxed">
+                <CodeSnippet>DATABASE_URL</CodeSnippet>
+              </StepItem>
+              <StepItem number={3}>
                 Install Prisma:{" "}
-                <code className="bg-step px-3 py-2 rounded text-white text-base">
-                  npm install prisma @prisma/client
-                </code>
-              </li>
-              <li className="leading-relaxed">
-                Initialize Prisma:{" "}
-                <code className="bg-step px-3 py-2 rounded text-white text-base">
-                  npx prisma init
-                </code>
-              </li>
-              <li className="leading-relaxed">
-                Update your{" "}
-                <code className="bg-step px-3 py-2 rounded text-white text-base">
-                  schema.prisma
-                </code>{" "}
-                with your models
-              </li>
-              <li className="leading-relaxed">
+                <CodeSnippet>npm install prisma @prisma/client</CodeSnippet>
+              </StepItem>
+              <StepItem number={4}>
+                Initialize Prisma: <CodeSnippet>npx prisma init</CodeSnippet>
+              </StepItem>
+              <StepItem number={5}>
+                Update your <CodeSnippet>schema.prisma</CodeSnippet> with your
+                models
+              </StepItem>
+              <StepItem number={6}>
                 Push schema to database:{" "}
-                <code className="bg-step px-3 py-2 rounded text-white text-base">
-                  npx prisma db push
-                </code>
-              </li>
-              <li className="leading-relaxed">
-                Generate client:{" "}
-                <code className="bg-step px-3 py-2 rounded text-white text-base">
-                  npx prisma generate
-                </code>
-              </li>
-            </ol>
+                <CodeSnippet>npx prisma db push</CodeSnippet>
+              </StepItem>
+              <StepItem number={7}>
+                Generate client: <CodeSnippet>npx prisma generate</CodeSnippet>
+              </StepItem>
+            </div>
           </div>
         ) : (
           <div>
             <h3 className="text-lg font-medium text-white mb-4">
               Setup with pg (node-postgres):
             </h3>
-            <ol className="text-lg text-muted space-y-6 list-decimal list-inside">
-              <li className="leading-relaxed">
-                Install pg:{" "}
-                <code className="bg-step px-3 py-2 rounded text-white text-base">
-                  npm install pg @types/pg
-                </code>
-              </li>
-              <li className="leading-relaxed">Create a client connection:</li>
-              <li className="ml-4">
-                <pre className="bg-step p-6 rounded text-white text-base mt-3 overflow-x-auto leading-relaxed">
+            <div className="space-y-6">
+              <StepItem number={1}>
+                Install pg: <CodeSnippet>npm install pg @types/pg</CodeSnippet>
+              </StepItem>
+              <StepItem number={2}>Create a client connection:</StepItem>
+              <div className="ml-12">
+                <pre className="bg-step p-6 rounded text-white text-base overflow-x-auto leading-relaxed">
                   {`import { Client } from 'pg';
 
 const client = new Client({
@@ -211,20 +215,17 @@ const client = new Client({
 
 await client.connect();`}
                 </pre>
-              </li>
-              <li className="leading-relaxed">
+              </div>
+              <StepItem number={3}>
                 Execute queries:{" "}
-                <code className="bg-step px-3 py-2 rounded text-white text-base">
+                <CodeSnippet>
                   const result = await client.query('SELECT * FROM users')
-                </code>
-              </li>
-              <li className="leading-relaxed">
-                Close connection:{" "}
-                <code className="bg-step px-3 py-2 rounded text-white text-base">
-                  await client.end()
-                </code>
-              </li>
-            </ol>
+                </CodeSnippet>
+              </StepItem>
+              <StepItem number={4}>
+                Close connection: <CodeSnippet>await client.end()</CodeSnippet>
+              </StepItem>
+            </div>
           </div>
         )}
       </div>
