@@ -2,8 +2,8 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="w-full px-4 box-border overflow-hidden mt-32 md:mt-auto mb-8 md:px-5 sm:px-4">
-      <div className="w-full mx-auto flex justify-between items-center flex-col text-center gap-6 sm:flex-row sm:gap-0">
+    <footer className="w-full box-border overflow-hidden mt-32 md:mt-auto mb-8">
+      <div className="max-w-7xl w-full mx-auto flex justify-between items-center flex-col text-center gap-6 sm:flex-row sm:gap-0 px-4 md:px-4 sm:px-4">
         <a target="_blank" rel="opener noferrer" href="https://prisma.io">
           <Image
             src="/logo-dark.svg"
@@ -54,7 +54,7 @@ export function Footer() {
           </a>
         </div>
       </div>
-      <div className="max-w-[1240px] w-full mx-auto flex justify-between items-center mt-8 pt-8 border-t border-[#2D3748] flex-col text-center gap-6 sm:flex-row sm:gap-0 sm:mt-6 sm:pt-6">
+      <div className="max-w-7xl w-full mx-auto flex justify-between items-center mt-8 pt-8 border-t border-[#2D3748] flex-col text-center gap-6 sm:flex-row sm:gap-0 sm:mt-6 sm:pt-6 px-4 md:px-4 sm:px-4">
         <span>© 2024 Prisma Data, Inc.</span>
         <div className="flex gap-6 md:gap-8 flex-wrap justify-center sm:gap-14">
           <Image src="/gdpr.svg" alt="GDPR Logo" width="35" height="35" />

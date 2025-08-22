@@ -5,6 +5,7 @@ import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { DropProvider } from "./contexts/DropContext";
 import "@prisma/studio-core/ui/index.css";
+import { Toaster } from "react-hot-toast";
 
 const barlow = Barlow({
   weight: ["400", "500", "700", "800", "900"],
@@ -45,12 +46,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${barlow.className} antialiased bg-custom-gradient backdrop-filter backdrop-blur-md bg-cover font-barlow text-white p-0 flex items-center justify-center flex-col min-h-screen max-w-screen-xl mx-auto`}
+        className={`${barlow.className} antialiased bg-custom-gradient backdrop-filter backdrop-blur-md bg-cover font-barlow text-white p-0 min-h-screen w-full`}
       >
+        <Toaster />
         <DropProvider>
-          <Navbar />
-          {children}
-          <Footer />
+          <div className="flex items-center justify-center flex-col min-h-screen max-w-screen-xl mx-auto w-full">
+            <Navbar />
+            {children}
+            <Footer />
+          </div>
         </DropProvider>
       </body>
     </html>

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import TabContent from "@/components/TabContent";
 import { useDropContext } from "../contexts/DropContext";
+import toast from "react-hot-toast";
+import { customToast } from "@/lib/custom-toast";
 
 const DB_KEY = "temp_db_info";
 
@@ -41,10 +43,11 @@ const WebPage = () => {
       connectionType: "prisma" as "prisma" | "direct",
       copied: false,
       fetchingNewConnections: false,
+      showNewDbConfirm: false,
     };
   });
 
-  const { setTimeRemaining, setProjectId } = useDropContext();
+  const { setTimeRemaining, setProjectId, setIsLoading } = useDropContext();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -70,6 +73,7 @@ const WebPage = () => {
           directConnectionString: "",
         });
         updateState({ loading: false });
+        setIsLoading(false);
         return;
       }
 
@@ -110,6 +114,7 @@ const WebPage = () => {
           dbStorage.save(persistentData);
         }
         updateState({ loading: false });
+        setIsLoading(false);
       } catch (error) {
         router.replace(`/error?title=Error&message=Failed to create database`);
       }
@@ -161,7 +166,7 @@ const WebPage = () => {
     const hasConnectionStrings =
       state.dbData.connectionString && state.dbData.directConnectionString;
     if (!hasConnectionStrings) return;
-
+    customToast("success", "Connection string copied to clipboard");
     try {
       await navigator.clipboard.writeText(getConnectionString());
       updateState({ copied: true });
@@ -197,8 +202,16 @@ const WebPage = () => {
   };
 
   const handleCreateNewDatabase = () => {
+    updateState({ showNewDbConfirm: true });
+  };
+
+  const confirmCreateNewDatabase = () => {
     dbStorage.clear();
     window.location.reload();
+  };
+
+  const cancelCreateNewDatabase = () => {
+    updateState({ showNewDbConfirm: false });
   };
 
   const handleTabChange = (tab: string) => {
@@ -240,30 +253,60 @@ const WebPage = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 pb-16 font-barlow">
-      <div className="flex-1 min-h-[calc(100vh-280px)]">
-        <TabContent
-          activeTab={currentTab}
-          onTabChange={handleTabChange}
-          connectionString={getConnectionString()}
-          connectionType={state.connectionType}
-          setConnectionType={(type) => updateState({ connectionType: type })}
-          getConnectionString={getConnectionString}
-          handleCopyConnectionString={handleCopyConnectionString}
-          copied={state.copied}
-          projectId={state.dbData.projectId}
-          onCreateNewDatabase={handleCreateNewDatabase}
-          connectionStringsVisible={
-            !!(
-              state.dbData.connectionString &&
-              state.dbData.directConnectionString
-            )
-          }
-          onGetNewConnectionStrings={handleGetNewConnectionStrings}
-          fetchingNewConnections={state.fetchingNewConnections}
-        />
+    <>
+      <div className="w-full max-w-7xl mx-auto px-4 pb-16 font-barlow">
+        <div className="flex-1 min-h-[calc(100vh-280px)]">
+          <TabContent
+            activeTab={currentTab}
+            onTabChange={handleTabChange}
+            connectionString={getConnectionString()}
+            connectionType={state.connectionType}
+            setConnectionType={(type) => updateState({ connectionType: type })}
+            getConnectionString={getConnectionString}
+            handleCopyConnectionString={handleCopyConnectionString}
+            copied={state.copied}
+            projectId={state.dbData.projectId}
+            onCreateNewDatabase={handleCreateNewDatabase}
+            connectionStringsVisible={
+              !!(
+                state.dbData.connectionString &&
+                state.dbData.directConnectionString
+              )
+            }
+            onGetNewConnectionStrings={handleGetNewConnectionStrings}
+            fetchingNewConnections={state.fetchingNewConnections}
+          />
+        </div>
       </div>
-    </div>
+
+      {state.showNewDbConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999]">
+          <div className="bg-card border border-subtle rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium text-white mb-4">
+              Create New Database?
+            </h3>
+            <p className="text-muted mb-6">
+              This will delete your current database and create a new one. Your
+              current connection strings and data will be lost.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelCreateNewDatabase}
+                className="px-4 py-2 text-muted hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmCreateNewDatabase}
+                className="px-4 py-2 bg-button hover:bg-button-hover text-white rounded transition-colors"
+              >
+                Create New Database
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

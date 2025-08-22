@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import PrismaSchemaEditor from "./PrismaSchemaEditor";
 import PrismaStudio from "./PrismaStudio";
 import DatabaseConnection from "./DatabaseConnection";
+import { customToast } from "@/lib/custom-toast";
 
 interface TabContentProps {
   activeTab?: string;
@@ -131,6 +132,7 @@ model Post {
               onClick={() => {
                 const claimUrl = `${window.location.origin}/claim?projectID=${projectId}`;
                 navigator.clipboard.writeText(claimUrl);
+                customToast("success", "Claim URL copied to clipboard");
               }}
               className="text-sm text-muted hover:text-white transition-colors"
             >

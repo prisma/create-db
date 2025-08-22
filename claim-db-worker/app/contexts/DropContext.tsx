@@ -9,6 +9,8 @@ interface DropContextType {
   setTimeRemaining: (
     time: number | null | ((prev: number | null) => number | null)
   ) => void;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
   handleClaimDatabase: () => void;
 }
 
@@ -17,6 +19,7 @@ const DropContext = createContext<DropContextType | undefined>(undefined);
 export function DropProvider({ children }: { children: ReactNode }) {
   const [projectId, setProjectId] = useState<string>("");
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const handleClaimDatabase = () => {
     const claimUrl = `${window.location.origin}/claim?projectID=${projectId}&utm_source=create-db-frontend&utm_medium=claim_button`;
@@ -31,6 +34,8 @@ export function DropProvider({ children }: { children: ReactNode }) {
         setProjectId,
         timeRemaining,
         setTimeRemaining,
+        isLoading,
+        setIsLoading,
         handleClaimDatabase,
       }}
     >
