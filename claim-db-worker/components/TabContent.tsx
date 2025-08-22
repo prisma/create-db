@@ -105,7 +105,7 @@ model Post {
       {activeTab === "connection" && (
         <div className="w-full">
           <div className="bg-card rounded-lg border border-subtle p-3 mb-4 w-full">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted">Project ID:</span>
                 <code className="text-sm bg-step px-2 py-1 rounded text-white font-mono">
@@ -117,6 +117,23 @@ model Post {
                 className="text-sm text-muted hover:text-white transition-colors"
               >
                 Create New Database
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted">Claim URL:</span>
+                <code className="text-sm bg-step px-2 py-1 rounded text-white font-mono">
+                  {`${window.location.origin}/claim?projectID=${projectId}`}
+                </code>
+              </div>
+              <button
+                onClick={() => {
+                  const claimUrl = `${window.location.origin}/claim?projectID=${projectId}`;
+                  navigator.clipboard.writeText(claimUrl);
+                }}
+                className="text-sm text-muted hover:text-white transition-colors"
+              >
+                Copy Claim URL
               </button>
             </div>
           </div>

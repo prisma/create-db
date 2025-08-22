@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 interface DropContextType {
+  projectId: string;
+  setProjectId: (projectId: string) => void;
   timeRemaining: number | null;
   setTimeRemaining: (
     time: number | null | ((prev: number | null) => number | null)
@@ -13,18 +15,20 @@ interface DropContextType {
 const DropContext = createContext<DropContextType | undefined>(undefined);
 
 export function DropProvider({ children }: { children: ReactNode }) {
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(
-    24 * 60 * 60
-  );
+  const [projectId, setProjectId] = useState<string>("");
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
   const handleClaimDatabase = () => {
-    alert("Database claimed successfully! It will no longer expire.");
+    const claimUrl = `${window.location.origin}/claim?projectID=${projectId}&utm_source=create-db-frontend&utm_medium=claim_button`;
+    window.open(claimUrl, "_blank");
     setTimeRemaining(null);
   };
 
   return (
     <DropContext.Provider
       value={{
+        projectId,
+        setProjectId,
         timeRemaining,
         setTimeRemaining,
         handleClaimDatabase,

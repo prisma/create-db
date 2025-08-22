@@ -39,7 +39,7 @@ const DropPage = () => {
     "prisma"
   );
   const [copied, setCopied] = useState(false);
-  const { setTimeRemaining } = useDropContext();
+  const { setTimeRemaining, setProjectId } = useDropContext();
   const router = useRouter();
 
   useEffect(() => {
@@ -89,23 +89,32 @@ const DropPage = () => {
   }, [router]);
 
   useEffect(() => {
-    if (loading || !dbData.expirationTime) return;
+    if (dbData.projectId) {
+      setProjectId(dbData.projectId);
+    }
+  }, [dbData.projectId, setProjectId]);
 
-    const updateTimer = () => {
-      const timeRemainingMs = dbData.expirationTime! - Date.now();
+  useEffect(() => {
+    if (!loading && dbData.expirationTime) {
+      const calculateTimeRemaining = () => {
+        const now = new Date().getTime();
+        const timeRemainingMs = dbData.expirationTime! - now;
 
-      if (timeRemainingMs <= 0) {
-        setTimeRemaining(0);
-        dbStorage.clear();
-        return;
-      }
+        if (timeRemainingMs <= 0) {
+          setTimeRemaining(0);
+          dbStorage.clear();
+          return;
+        }
 
-      setTimeRemaining(Math.floor(timeRemainingMs / 1000));
-    };
+        const totalSeconds = Math.floor(timeRemainingMs / 1000);
+        setTimeRemaining(totalSeconds);
+      };
 
-    updateTimer();
-    const timer = setInterval(updateTimer, 1000);
-    return () => clearInterval(timer);
+      calculateTimeRemaining();
+
+      const timer = setInterval(calculateTimeRemaining, 1000);
+      return () => clearInterval(timer);
+    }
   }, [loading, dbData.expirationTime, setTimeRemaining]);
 
   const getConnectionString = () =>

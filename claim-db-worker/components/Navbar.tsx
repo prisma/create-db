@@ -20,7 +20,7 @@ export function Navbar() {
           />
         </a>
 
-        {pathname.startsWith("/drop/") && (
+        {pathname === "/drop" && (
           <div className="flex items-center gap-4">
             {timeRemaining ? (
               <button
@@ -50,38 +50,40 @@ export function Navbar() {
               </div>
             )}
             {timeRemaining !== null && (
-              <div className={`rounded-full px-3 py-1 flex items-center gap-2 font-bold bg-card ${
-                timeRemaining && timeRemaining > 0
-                  ? (() => {
-                      const hours = Math.floor(timeRemaining / 3600);
-                      if (hours < 2) return 'border border-red-400';
-                      if (hours < 10) return 'border border-yellow-400';
-                      return 'border border-button';
-                    })()
-                  : 'border border-red-400'
-              }`}>
-                  <span className={`text-xs font-bold w-40 text-center font-mono ${
+              <div
+                className={`rounded-full px-3 py-1 flex items-center gap-2 font-bold bg-card ${
+                  timeRemaining && timeRemaining > 0
+                    ? (() => {
+                        const hours = Math.floor(timeRemaining / 3600);
+                        if (hours < 2) return "border border-red-400";
+                        if (hours < 10) return "border border-yellow-400";
+                        return "border border-button";
+                      })()
+                    : "border border-red-400"
+                }`}
+              >
+                <span
+                  className={`text-xs font-bold w-40 text-center font-mono ${
                     timeRemaining && timeRemaining > 0
                       ? (() => {
                           const hours = Math.floor(timeRemaining / 3600);
-                          if (hours < 2) return 'text-red-400';
-                          if (hours < 10) return 'text-yellow-400';
-                          return 'text-accent';
+                          if (hours < 2) return "text-red-400";
+                          if (hours < 10) return "text-yellow-400";
+                          return "text-accent";
                         })()
-                      : 'text-accent'
-                  }`}>
-                    {timeRemaining && timeRemaining > 0
-                      ? (() => {
-                          const hours = Math.floor(timeRemaining / 3600);
-                          const minutes = Math.floor(
-                            (timeRemaining % 3600) / 60
-                          );
-                          const seconds = timeRemaining % 60;
-                          return `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s remaining`;
-                        })()
-                      : "Permanent"}
-                  </span>
-                </div>
+                      : "text-accent"
+                  }`}
+                >
+                  {timeRemaining && timeRemaining > 0
+                    ? (() => {
+                        const hours = Math.floor(timeRemaining / 3600);
+                        const minutes = Math.floor((timeRemaining % 3600) / 60);
+                        const seconds = timeRemaining % 60;
+                        return `${hours.toString().padStart(2, "0")}h ${minutes.toString().padStart(2, "0")}m ${seconds.toString().padStart(2, "0")}s remaining`;
+                      })()
+                    : "Permanent"}
+                </span>
+              </div>
             )}
           </div>
         )}
