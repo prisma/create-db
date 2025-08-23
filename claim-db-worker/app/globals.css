@@ -23,8 +23,11 @@
   --gradient-start: #71e8df;
   --gradient-end: #3f827d;
 
-  --button: #16a394;
-  --button-hover: #16a395ba;
+  --button: #2d3138;
+  --button-hover: #2d3748;
+
+  --button-blue: #16a394;
+  --button-blue-hover: #16a395ba;
 }
 
 @theme inline {
@@ -49,6 +52,9 @@
 
   --color-button: var(--button);
   --color-button-hover: var(--button-hover);
+
+  --color-button-blue: var(--button-blue);
+  --color-button-blue-hover: var(--button-blue-hover);
 
   --color-gradient-start: var(--gradient-start);
   --color-gradient-end: var(--gradient-end);
@@ -94,4 +100,8 @@ scrollbar changes disables default styling and rounding so corners appear square
 ::-webkit-scrollbar-thumb {
   background-color: hsla(0, 0%, 46%, 0.5);
   border-radius: 8px;
+}
+
+.monaco-editor {
+  outline: 0;
 }

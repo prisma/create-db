@@ -1,11 +1,9 @@
 import Image from "next/image";
 import { useState } from "react";
 
-export function CodeSnippet({
-}: {
-}) {
+export function CodeSnippet({}: {}) {
   const [isCopied, setIsCopied] = useState(false);
-  
+
   const handleCopy = async () => {
     const command = "npx create-db@latest";
     try {

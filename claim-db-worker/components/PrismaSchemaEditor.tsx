@@ -793,7 +793,7 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
   }
 
   return (
-    <div className="flex h-full bg-code rounded-lg p-1.5">
+    <div className="flex h-full bg-code rounded-lg p-1.5 gap-2">
       <div className="w-16 rounded-lg bg-step flex flex-col justify-between items-center py-2">
         <div className="flex flex-col items-center space-y-3">
           <button
@@ -897,7 +897,7 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
         )}
       </div>
 
-      <div className="flex-1 flex flex-col rounded-lg">
+      <div className="flex-1 p-1 bg-[#181b22] flex flex-col rounded-lg">
         <div className="flex-1">
           <Editor
             height="100%"
