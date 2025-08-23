@@ -56,7 +56,7 @@ export const customToast = (type: ToastType, message: string) => {
     case "error":
       return toast.error(message, options);
     case "loading":
-      return toast.loading(message, { style });
+      return toast.loading(message, { style, duration: Infinity });
     case "info":
     default:
       return toast(message, {

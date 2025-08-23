@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import TabContent from "@/components/TabContent";
 import { useDropContext } from "../contexts/DropContext";
 import { customToast } from "@/lib/custom-toast";
+import Modal from "@/components/Modal";
 import { cookieUtils } from "@/lib/utils";
 
 const DB_KEY = "temp_db_info";
@@ -209,33 +210,30 @@ const WebPageContent = () => {
         </div>
       </div>
 
-      {showNewDbConfirm && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] overflow-hidden">
-          <div className="bg-card border border-subtle rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-medium text-white mb-4">
-              Create New Database?
-            </h3>
-            <p className="text-muted mb-6">
-              This will delete your current database and create a new one. Your
-              current connection strings and data will be lost.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowNewDbConfirm(false)}
-                className="px-4 py-2 text-muted hover:text-white transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmCreateNewDatabase}
-                className="px-4 py-2 bg-button hover:bg-button-hover text-white rounded transition-colors"
-              >
-                Create New Database
-              </button>
-            </div>
-          </div>
+      <Modal
+        isOpen={showNewDbConfirm}
+        onClose={() => setShowNewDbConfirm(false)}
+        title="Create New Database?"
+      >
+        <p className="text-muted mb-6">
+          This will delete your current database and create a new one. Your
+          current connection strings and data will be lost.
+        </p>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={() => setShowNewDbConfirm(false)}
+            className="px-4 py-2 text-muted hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirmCreateNewDatabase}
+            className="px-4 py-2 bg-button-blue hover:bg-button-blue-hover text-white rounded transition-colors"
+          >
+            Create New Database
+          </button>
         </div>
-      )}
+      </Modal>
     </>
   );
 };

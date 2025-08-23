@@ -25,7 +25,7 @@ export function Navbar() {
             {timeRemaining ? (
               <button
                 onClick={handleClaimDatabase}
-                className="inline-flex items-center px-4 py-2 text-sm text-white bg-button-blue rounded-md hover:bg-button-blue-hover font-bold transition-opacity"
+                className="inline-flex items-center transition-all duration-150 ease-in-out px-4 py-2 text-sm text-white bg-button-blue rounded-md hover:bg-button-blue-hover font-bold"
               >
                 <svg
                   width="14"
@@ -107,7 +107,7 @@ export function Navbar() {
               Login
             </a>
             <a
-              className="inline-flex justify-center max-w-full text-left z-10 w-max items-center box-border rounded-md no-underline relative bg-button-blue text-white font-barlow py-[5px] px-3 text-base font-bold leading-5 border-2 border-button-blue transition-all duration-150 ease-in-out hover:bg-button-blue-hover focus-within:after:content-[''] focus-within:after:absolute focus-within:after:rounded-[9px] focus-within:after:box-content focus-within:after:border-2 focus-within:after:border-white focus-within:after:top-[-4px] focus-within:after:w-[calc(100%+6px)] focus-within:after:h-[calc(100%+6px)] focus-within:after:left-[-4px] md:text-base md:py-[5px] md:px-3 sm:text-sm sm:py-1.5 sm:px-3 sm:min-h-[36px] xs:text-[13px] xs:py-[5px] xs:px-2.5 xs:min-h-8 touch-manipulation:min-h-11 touch-manipulation:py-2 touch-manipulation:px-4"
+              className="inline-flex justify-center hover:border-button-blue-hover max-w-full text-left z-10 w-max items-center box-border rounded-md no-underline relative bg-button-blue text-white font-barlow py-[5px] px-3 text-base font-bold leading-5 border-2 border-button-blue transition-all duration-150 ease-in-out hover:bg-button-blue-hover focus-within:after:content-[''] focus-within:after:absolute focus-within:after:rounded-[9px] focus-within:after:box-content focus-within:after:border-2 focus-within:after:border-white focus-within:after:top-[-4px] focus-within:after:w-[calc(100%+6px)] focus-within:after:h-[calc(100%+6px)] focus-within:after:left-[-4px] md:text-base md:py-[5px] md:px-3 sm:text-sm sm:py-1.5 sm:px-3 sm:min-h-[36px] xs:text-[13px] xs:py-[5px] xs:px-2.5 xs:min-h-8 touch-manipulation:min-h-11 touch-manipulation:py-2 touch-manipulation:px-4"
               href="https://console.prisma.io/sign-up?utm_campaign=create_db&utm_source=create_db_web"
               target="_blank"
               rel="opner noferrer"

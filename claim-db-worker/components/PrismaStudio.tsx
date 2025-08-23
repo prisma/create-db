@@ -4,6 +4,7 @@ import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
 import "@prisma/studio-core/ui/index.css";
 import { useMemo } from "react";
 
+// Not working for some reason. https://www.prisma.io/docs/postgres/database/prisma-studio/embedding-studio#custom-styling
 const customTheme = `
 @layer base {
   :root {

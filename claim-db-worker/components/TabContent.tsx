@@ -138,6 +138,7 @@ model Post {
           <PrismaSchemaEditor
             value={schemaContent}
             onChange={setSchemaContent}
+            connectionString={connectionString}
           />
         </div>
       )}

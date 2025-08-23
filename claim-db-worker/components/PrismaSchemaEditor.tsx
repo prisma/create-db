@@ -2,6 +2,9 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { customToast } from "@/lib/custom-toast";
+import { toast } from "react-hot-toast";
+import Modal from "./Modal";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -32,15 +35,24 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
 interface PrismaSchemaEditorProps {
   value: string;
   onChange: (value: string) => void;
+  connectionString?: string;
 }
 
-const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
+const PrismaSchemaEditor = ({
+  value,
+  onChange,
+  connectionString,
+}: PrismaSchemaEditorProps) => {
   const editorRef = useRef<any>(null);
   const [isFormatting, setIsFormatting] = useState(false);
   const [isPushing, setIsPushing] = useState(false);
   const [lastPush, setLastPush] = useState<Date | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [completionDisposable, setCompletionDisposable] = useState<any>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<string>("");
+  const [showForceResetModal, setShowForceResetModal] = useState(false);
+  const [pendingSchema, setPendingSchema] = useState<string>("");
 
   useEffect(() => {
     setIsMounted(true);
@@ -221,7 +233,6 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
 
           let suggestions: any[] = [];
 
-          // Only show suggestions in appropriate contexts
           if (isInDatasource && !isPropertyValue) {
             const datasourceProps = [
               { name: "provider", snippet: 'provider = "${1:postgresql}"' },
@@ -716,19 +727,11 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
         };
         editorRef.current.setValue(formattedSchema);
         onChange(formattedSchema);
-
-        console.log(
-          "Schema formatted successfully using Prisma's official formatter"
-        );
       } else {
         await editorRef.current.trigger(
           "format",
           "editor.action.formatDocument",
           {}
-        );
-
-        console.log(
-          "Used Monaco editor formatting as Prisma formatter was unavailable"
         );
       }
     } catch (error) {
@@ -740,14 +743,8 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
           "editor.action.formatDocument",
           {}
         );
-
-        console.log(
-          "Used Monaco editor formatting due to an error with Prisma formatter"
-        );
       } catch (fallbackError) {
         console.error("Fallback formatting failed:", fallbackError);
-
-        console.error("Unable to format schema. Please check your syntax.");
       }
     } finally {
       setIsFormatting(false);
@@ -755,13 +752,113 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
   };
 
   const handlePushToDb = async () => {
+    if (!connectionString) {
+      customToast("error", "No connection string available");
+      return;
+    }
+
     setIsPushing(true);
+    const loadingToast = customToast(
+      "loading",
+      "Pushing schema to database..."
+    );
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setLastPush(new Date());
-      console.log("Schema pushed to database successfully");
+      const currentValue = editorRef.current?.getValue() || value;
+
+      const response = await fetch("/api/push-schema", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Connection-String": connectionString,
+        },
+        body: JSON.stringify({
+          schema: currentValue,
+        }),
+      });
+
+      const result = (await response.json()) as {
+        message?: string;
+        details?: string;
+        requiresForceReset?: boolean;
+      };
+
+      if (response.ok) {
+        if (result.requiresForceReset) {
+          setPendingSchema(currentValue);
+          setShowForceResetModal(true);
+          toast.dismiss(loadingToast);
+          return;
+        }
+
+        setLastPush(new Date());
+        toast.dismiss(loadingToast);
+        customToast("success", "Schema pushed to database successfully");
+      } else {
+        toast.dismiss(loadingToast);
+        const errorMessage = result.details || "Failed to push schema";
+        setErrorDetails(errorMessage);
+        setShowErrorModal(true);
+      }
     } catch (error) {
       console.error("Error pushing to database:", error);
+      toast.dismiss(loadingToast);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      setErrorDetails(errorMessage);
+      setShowErrorModal(true);
+    } finally {
+      setIsPushing(false);
+    }
+  };
+
+  const handleForceReset = async () => {
+    if (!connectionString || !pendingSchema) return;
+
+    setIsPushing(true);
+    const loadingToast = customToast(
+      "loading",
+      "Pushing schema with force reset..."
+    );
+
+    try {
+      const response = await fetch("/api/push-schema-force", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Connection-String": connectionString,
+        },
+        body: JSON.stringify({
+          schema: pendingSchema,
+        }),
+      });
+
+      const result = (await response.json()) as {
+        message?: string;
+        details?: string;
+      };
+
+      if (response.ok) {
+        setLastPush(new Date());
+        toast.dismiss(loadingToast);
+        customToast("success", "Schema pushed to database successfully");
+        setShowForceResetModal(false);
+        setPendingSchema("");
+      } else {
+        toast.dismiss(loadingToast);
+        const errorMessage = result.details || "Failed to push schema";
+        setErrorDetails(errorMessage);
+        setShowErrorModal(true);
+        setShowForceResetModal(false);
+      }
+    } catch (error) {
+      console.error("Error pushing to database with force reset:", error);
+      toast.dismiss(loadingToast);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      setErrorDetails(errorMessage);
+      setShowErrorModal(true);
+      setShowForceResetModal(false);
     } finally {
       setIsPushing(false);
     }
@@ -793,14 +890,18 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
   }
 
   return (
-    <div className="flex h-full bg-code rounded-lg p-1.5 gap-2">
+    <div className="flex h-full bg-code rounded-lg p-2 gap-2">
       <div className="w-16 rounded-lg bg-step flex flex-col justify-between items-center py-2">
-        <div className="flex flex-col items-center space-y-3">
+        <div className="flex flex-col items-center space-y-1">
           <button
             onClick={handlePushToDb}
-            disabled={isPushing}
-            className="w-12 h-12 p-0 flex flex-col items-center justify-center rounded-md text-muted hover:text-white hover:bg-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Push schema to database (prisma db push)"
+            disabled={isPushing || !connectionString}
+            className="aspect-square p-2  flex flex-col items-center justify-center rounded-md text-muted hover:text-white hover:bg-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={
+              !connectionString
+                ? "No connection string available"
+                : "Push schema to database (prisma db push)"
+            }
           >
             {isPushing ? (
               <svg
@@ -840,7 +941,7 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
           <button
             onClick={handleFormat}
             disabled={isFormatting}
-            className={`w-12 h-12 p-0 flex flex-col items-center justify-center text-muted hover:text-white hover:bg-button rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`aspect-square p-2 flex flex-col items-center justify-center text-muted hover:text-white hover:bg-button rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               isFormatting ? "bg-button text-white" : ""
             }`}
             title={
@@ -981,6 +1082,72 @@ const PrismaSchemaEditor = ({ value, onChange }: PrismaSchemaEditorProps) => {
           />
         </div>
       </div>
+
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Schema Push Failed"
+        maxWidth="max-w-lg"
+      >
+        <div className="text-muted mb-6">
+          Failed to push schema to database. Please check your schema for
+          errors.
+        </div>
+        {errorDetails && (
+          <div className="bg-step p-4 rounded border border-subtle mb-6">
+            <pre className="text-sm text-muted whitespace-pre-wrap break-words">
+              {errorDetails}
+            </pre>
+          </div>
+        )}
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={() => setShowErrorModal(false)}
+            className="px-4 py-2 text-muted hover:text-white transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showForceResetModal}
+        onClose={() => {
+          setShowForceResetModal(false);
+          setPendingSchema("");
+        }}
+        title="Database Reset Required"
+        maxWidth="max-w-lg"
+      >
+        <div className="text-muted mb-6">
+          This operation will reset your database and lose all data. This is
+          required when removing models or making other destructive changes.
+        </div>
+        <div className="bg-step p-4 rounded border border-subtle mb-6">
+          <p className="text-sm text-muted">
+            The database will be completely reset and all existing data will be
+            lost. This action cannot be undone.
+          </p>
+        </div>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={() => {
+              setShowForceResetModal(false);
+              setPendingSchema("");
+            }}
+            className="px-4 py-2 text-muted hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleForceReset}
+            disabled={isPushing}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isPushing ? "Resetting..." : "Reset Database"}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };
