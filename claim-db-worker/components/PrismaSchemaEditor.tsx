@@ -53,10 +53,17 @@ const PrismaSchemaEditor = ({
   const [errorDetails, setErrorDetails] = useState<string>("");
   const [showForceResetModal, setShowForceResetModal] = useState(false);
   const [pendingSchema, setPendingSchema] = useState<string>("");
+  const [isPulling, setIsPulling] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (connectionString && isMounted) {
+      handlePullFromDb();
+    }
+  }, [connectionString, isMounted]);
 
   useEffect(() => {
     return () => {
@@ -812,6 +819,54 @@ const PrismaSchemaEditor = ({
     }
   };
 
+  const handlePullFromDb = async () => {
+    if (!connectionString) return;
+
+    setIsPulling(true);
+    const loadingToast = customToast(
+      "loading",
+      "Pulling schema from database..."
+    );
+
+    try {
+      const response = await fetch("/api/pull-schema", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Connection-String": connectionString,
+        },
+      });
+
+      const result = (await response.json()) as {
+        schema?: string;
+        details?: string;
+      };
+
+      if (response.ok && result.schema) {
+        toast.dismiss(loadingToast);
+        customToast("success", "Schema pulled from database successfully");
+        onChange(result.schema);
+        if (editorRef.current) {
+          editorRef.current.setValue(result.schema);
+        }
+      } else {
+        toast.dismiss(loadingToast);
+        const errorMessage = result.details || "Failed to pull schema";
+        setErrorDetails(errorMessage);
+        setShowErrorModal(true);
+      }
+    } catch (error) {
+      console.error("Error pulling from database:", error);
+      toast.dismiss(loadingToast);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      setErrorDetails(errorMessage);
+      setShowErrorModal(true);
+    } finally {
+      setIsPulling(false);
+    }
+  };
+
   const handleForceReset = async () => {
     if (!connectionString || !pendingSchema) return;
 
@@ -893,6 +948,52 @@ const PrismaSchemaEditor = ({
     <div className="flex h-full bg-code rounded-lg p-2 gap-2">
       <div className="w-16 rounded-lg bg-step flex flex-col justify-between items-center py-2">
         <div className="flex flex-col items-center space-y-1">
+          <button
+            onClick={handlePullFromDb}
+            disabled={isPulling || !connectionString}
+            className="aspect-square p-2 flex flex-col items-center justify-center rounded-md text-muted hover:text-white hover:bg-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={
+              !connectionString
+                ? "No connection string available"
+                : "Pull schema from database (prisma db pull)"
+            }
+          >
+            {isPulling ? (
+              <svg
+                className="h-4 w-4 animate-spin"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+              >
+                <path d="M21 2v6h-6" />
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+                <path d="M3 22v-6h6" />
+                <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+              </svg>
+            )}
+            <span className="text-xs font-bold mt-1">Pull</span>
+          </button>
+
           <button
             onClick={handlePushToDb}
             disabled={isPushing || !connectionString}
@@ -998,90 +1099,115 @@ const PrismaSchemaEditor = ({
         )}
       </div>
 
-      <div className="flex-1 p-1 bg-[#181b22] flex flex-col rounded-lg">
-        <div className="flex-1">
-          <Editor
-            height="100%"
-            language="prisma"
-            value={value}
-            onChange={(newValue) => onChange(newValue || "")}
-            onMount={handleEditorDidMount}
-            theme="prisma-dark"
-            options={{
-              minimap: { enabled: true },
-              fontSize: 14,
-              fontFamily:
-                "'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
-              fontLigatures: true,
-              lineNumbers: "on",
-              wordWrap: "on",
-              automaticLayout: true,
-              scrollBeyondLastLine: false,
-              padding: { top: 16, bottom: 16 },
-              renderWhitespace: "selection",
-              bracketPairColorization: { enabled: true },
-              guides: {
-                bracketPairs: true,
-                indentation: true,
-              },
-              suggest: {
-                showKeywords: true,
-                showSnippets: true,
-                showFunctions: true,
-                showFields: true,
-                showVariables: true,
-                showClasses: true,
-                showModules: true,
-                showProperties: true,
-                showEnums: true,
-                showEnumMembers: true,
-                showTypeParameters: true,
-                snippetsPreventQuickSuggestions: false,
-                filterGraceful: true,
-                localityBonus: true,
-              },
-              quickSuggestions: {
-                other: "inline",
-                comments: false,
-                strings: false,
-              },
-              quickSuggestionsDelay: 300,
-              parameterHints: {
-                enabled: true,
-                cycle: true,
-              },
-              autoClosingBrackets: "always",
-              autoClosingQuotes: "always",
-              autoIndent: "full",
-              acceptSuggestionOnCommitCharacter: true,
-              acceptSuggestionOnEnter: "off",
-              tabCompletion: "on",
-              wordBasedSuggestions: "allDocuments",
-              folding: true,
-              foldingStrategy: "indentation",
-              showFoldingControls: "always",
-              matchBrackets: "always",
-              selectionHighlight: true,
-              occurrencesHighlight: "singleFile",
-              cursorBlinking: "blink",
-              cursorStyle: "line",
-              smoothScrolling: true,
-              tabSize: 2,
-              insertSpaces: true,
-              formatOnPaste: true,
-              formatOnType: true,
-              multiCursorModifier: "ctrlCmd",
-              mouseWheelZoom: true,
-              linkedEditing: true,
-              codeLens: true,
-              inlineSuggest: {
-                enabled: false,
-                showToolbar: "never",
-              },
-            }}
-          />
+      {isPulling ? (
+        <div className="flex-1 p-1 bg-[#181b22] flex flex-col rounded-lg">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <svg
+                className="h-8 w-8 animate-spin mx-auto mb-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              <p className="text-white font-medium">
+                Pulling schema from database...
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex-1 p-1 bg-[#181b22] flex flex-col rounded-lg">
+          <div className="flex-1">
+            <Editor
+              height="100%"
+              language="prisma"
+              value={value}
+              onChange={(newValue) => onChange(newValue || "")}
+              onMount={handleEditorDidMount}
+              theme="prisma-dark"
+              options={{
+                minimap: { enabled: true },
+                fontSize: 14,
+                fontFamily:
+                  "'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+                fontLigatures: true,
+                lineNumbers: "on",
+                wordWrap: "on",
+                automaticLayout: true,
+                scrollBeyondLastLine: false,
+                padding: { top: 16, bottom: 16 },
+                renderWhitespace: "selection",
+                bracketPairColorization: { enabled: true },
+                guides: {
+                  bracketPairs: true,
+                  indentation: true,
+                },
+                suggest: {
+                  showKeywords: true,
+                  showSnippets: true,
+                  showFunctions: true,
+                  showFields: true,
+                  showVariables: true,
+                  showClasses: true,
+                  showModules: true,
+                  showProperties: true,
+                  showEnums: true,
+                  showEnumMembers: true,
+                  showTypeParameters: true,
+                  snippetsPreventQuickSuggestions: false,
+                  filterGraceful: true,
+                  localityBonus: true,
+                },
+                quickSuggestions: {
+                  other: "inline",
+                  comments: false,
+                  strings: false,
+                },
+                quickSuggestionsDelay: 300,
+                parameterHints: {
+                  enabled: true,
+                  cycle: true,
+                },
+                autoClosingBrackets: "always",
+                autoClosingQuotes: "always",
+                autoIndent: "full",
+                acceptSuggestionOnCommitCharacter: true,
+                acceptSuggestionOnEnter: "off",
+                tabCompletion: "on",
+                wordBasedSuggestions: "allDocuments",
+                folding: true,
+                foldingStrategy: "indentation",
+                showFoldingControls: "always",
+                matchBrackets: "always",
+                selectionHighlight: true,
+                occurrencesHighlight: "singleFile",
+                cursorBlinking: "blink",
+                cursorStyle: "line",
+                smoothScrolling: true,
+                tabSize: 2,
+                insertSpaces: true,
+                formatOnPaste: true,
+                formatOnType: true,
+                multiCursorModifier: "ctrlCmd",
+                mouseWheelZoom: true,
+                linkedEditing: true,
+                codeLens: true,
+                inlineSuggest: {
+                  enabled: false,
+                  showToolbar: "never",
+                },
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       <Modal
         isOpen={showErrorModal}
