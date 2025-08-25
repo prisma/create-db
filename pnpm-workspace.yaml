@@ -4,3 +4,4 @@ packages:
   - "claim-db-worker"
   - "create-pg"
   - "create-postgres"
+  - "schema-api-routes"
