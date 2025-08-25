@@ -53,23 +53,10 @@ const PrismaSchemaEditor = ({
   const [showForceResetModal, setShowForceResetModal] = useState(false);
   const [pendingSchema, setPendingSchema] = useState<string>("");
   const [isPulling, setIsPulling] = useState(false);
-  const [hasPulledForConnection, setHasPulledForConnection] =
-    useState<string>("");
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (
-      connectionString &&
-      isMounted &&
-      hasPulledForConnection !== connectionString
-    ) {
-      handlePullFromDb();
-      setHasPulledForConnection(connectionString);
-    }
-  }, [connectionString, isMounted, hasPulledForConnection]);
 
   useEffect(() => {
     return () => {
@@ -996,7 +983,7 @@ const PrismaSchemaEditor = ({
     try {
       const currentValue = editorRef.current.getValue();
 
-      const response = await fetch("/api/schema/format", {
+      const response = await fetch("http://localhost:5173/api/schema/format", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1045,7 +1032,7 @@ const PrismaSchemaEditor = ({
     try {
       const currentValue = editorRef.current?.getValue() || value;
 
-      const response = await fetch("/api/schema/push", {
+      const response = await fetch("http://localhost:5173/api/schema/push", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1093,7 +1080,7 @@ const PrismaSchemaEditor = ({
     setIsPulling(true);
 
     try {
-      const response = await fetch("/api/schema/pull", {
+      const response = await fetch("http://localhost:5173/api/schema/pull", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1138,16 +1125,19 @@ const PrismaSchemaEditor = ({
     setIsPushing(true);
 
     try {
-      const response = await fetch("/api/schema/push-force", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Connection-String": connectionString,
-        },
-        body: JSON.stringify({
-          schema: pendingSchema,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:5173/api/schema/push-force",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Connection-String": connectionString,
+          },
+          body: JSON.stringify({
+            schema: pendingSchema,
+          }),
+        }
+      );
 
       const result = (await response.json()) as {
         message?: string;

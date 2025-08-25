@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { Hono } from "hono";
 
 interface Field {
   line: string;
@@ -301,27 +301,29 @@ function formatPrismaSchema(schema: string): string {
   return cleanWhitespace(result);
 }
 
-export async function POST(request: NextRequest) {
+const app = new Hono();
+
+app.post("/", async (c) => {
   try {
-    const { schema } = (await request.json()) as { schema: string };
+    const body = await c.req.json();
+    const { schema } = body as { schema: string };
 
     if (!schema || typeof schema !== "string") {
-      return NextResponse.json(
-        { error: "Invalid schema provided" },
-        { status: 400 }
-      );
+      return c.json({ error: "Invalid schema provided" }, 400);
     }
 
     const formattedSchema = formatPrismaSchema(schema);
 
-    return NextResponse.json({ formattedSchema });
+    return c.json({ formattedSchema });
   } catch (error) {
-    return NextResponse.json(
+    return c.json(
       {
         error: "Failed to format schema",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      500
     );
   }
-}
+});
+
+export default app;
