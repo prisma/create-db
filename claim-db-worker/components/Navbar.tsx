@@ -3,29 +3,57 @@
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useDropContext } from "../app/contexts/DropContext";
+import { MoveRight } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
   const { timeRemaining, handleClaimDatabase, isLoading } = useDropContext();
 
-  return (
-    <nav className="h-[72px] w-full mb-6 box-border overflow-hidden md:h-[72px] md:mb-6 sm:h-[60px] sm:py-3 sm:mb-10 xs:h-14 xs:py-2 xs:mb-8 flex items-center">
-      <div className="max-w-7xl w-full mx-auto flex justify-between items-center box-border px-4 md:px-4 sm:px-4 xs:px-3">
-        <a target="_blank" rel="opener noferrer" href="https://prisma.io">
-          <Image
-            src="/logo-dark.svg"
-            alt="Prisma logo"
-            width={100}
-            height={100}
-          />
-        </a>
-
-        {pathname === "/web" && !isLoading && (
-          <div className="flex items-center gap-4">
-            {timeRemaining ? (
-              <button
+  if (pathname === "/web") {
+    return (
+      <nav className="h-[72px] w-full mb-6 box-border overflow-hidden md:h-[72px] md:mb-6 sm:h-[60px] sm:py-3 sm:mb-10 xs:h-14 xs:py-2 xs:mb-8 flex items-center">
+        <div className="max-w-7xl w-full mx-auto flex justify-between items-center box-border px-4 md:px-4 sm:px-4 xs:px-3">
+          <div className="w-[1245px] inline-flex justify-between items-center">
+            <div className="inline-flex flex-col justify-start items-start">
+              <a target="_blank" rel="opener noferrer" href="https://prisma.io">
+                <Image
+                  src="/logo-dark.svg"
+                  alt="Prisma logo"
+                  width={100}
+                  height={100}
+                />
+              </a>
+            </div>
+            <div className="text-center inline-flex justify-center">
+              {timeRemaining && timeRemaining > 0 ? (
+                <>
+                  <span className="text-teal-300 text-sm font-bold font-mono leading-none w-48 inline-block whitespace-nowrap">
+                    {(() => {
+                      const hours = Math.floor(timeRemaining / 3600);
+                      const minutes = Math.floor((timeRemaining % 3600) / 60);
+                      const seconds = timeRemaining % 60;
+                      return `${hours.toString().padStart(2, "0")}h ${minutes.toString().padStart(2, "0")}m ${seconds.toString().padStart(2, "0")}s remaining`;
+                    })()}
+                  </span>
+                  <MoveRight className="w-4 h-4 mr-1 text-muted text-sm" />
+                  <span className="text-muted text-sm leading-none">
+                    This database will be automatically deleted after 24 hours
+                    unless claimed.{" "}
+                  </span>
+                  <span className="text-muted text-sm font-bold leading-none">
+                    Do not store sensitive data.
+                  </span>
+                </>
+              ) : (
+                <span className="text-muted text-sm font-bold leading-none">
+                  Database Claimed
+                </span>
+              )}
+            </div>
+            {!isLoading && timeRemaining && timeRemaining > 0 && (
+              <div
+                className="w-40 px-4 py-2 bg-teal-600 rounded-md flex justify-center items-center cursor-pointer hover:bg-teal-700 transition-colors"
                 onClick={handleClaimDatabase}
-                className="inline-flex items-center transition-all duration-150 ease-in-out px-4 py-2 text-sm text-white bg-button-blue rounded-md hover:bg-button-blue-hover font-bold"
               >
                 <svg
                   width="14"
@@ -42,51 +70,28 @@ export function Navbar() {
                     fill="currentColor"
                   />
                 </svg>
-                Claim Database
-              </button>
-            ) : (
-              <div className="inline-flex items-center px-3 py-1 text-sm font-bold bg-accent/20 text-accent rounded-md">
-                Database Claimed
-              </div>
-            )}
-            {timeRemaining !== null && (
-              <div
-                className={`rounded-full px-3 py-1 flex items-center gap-2 font-bold bg-card ${
-                  timeRemaining && timeRemaining > 0
-                    ? (() => {
-                        const hours = Math.floor(timeRemaining / 3600);
-                        if (hours < 2) return "border border-red-400";
-                        if (hours < 10) return "border border-yellow-400";
-                        return "border border-button";
-                      })()
-                    : "border border-red-400"
-                }`}
-              >
-                <span
-                  className={`text-xs font-bold w-40 text-center font-mono ${
-                    timeRemaining && timeRemaining > 0
-                      ? (() => {
-                          const hours = Math.floor(timeRemaining / 3600);
-                          if (hours < 2) return "text-red-400";
-                          if (hours < 10) return "text-yellow-400";
-                          return "text-accent";
-                        })()
-                      : "text-accent"
-                  }`}
-                >
-                  {timeRemaining && timeRemaining > 0
-                    ? (() => {
-                        const hours = Math.floor(timeRemaining / 3600);
-                        const minutes = Math.floor((timeRemaining % 3600) / 60);
-                        const seconds = timeRemaining % 60;
-                        return `${hours.toString().padStart(2, "0")}h ${minutes.toString().padStart(2, "0")}m ${seconds.toString().padStart(2, "0")}s remaining`;
-                      })()
-                    : "Permanent"}
-                </span>
+                <div className="text-center justify-center text-white text-sm font-bold font-['Barlow'] leading-tight">
+                  Claim Database
+                </div>
               </div>
             )}
           </div>
-        )}
+        </div>
+      </nav>
+    );
+  }
+
+  return (
+    <nav className="h-[72px] w-full mb-6 box-border overflow-hidden md:h-[72px] md:mb-6 sm:h-[60px] sm:py-3 sm:mb-10 xs:h-14 xs:py-2 xs:mb-8 flex items-center">
+      <div className="max-w-7xl w-full mx-auto flex justify-between items-center box-border px-4 md:px-4 sm:px-4 xs:px-3">
+        <a target="_blank" rel="opener noferrer" href="https://prisma.io">
+          <Image
+            src="/logo-dark.svg"
+            alt="Prisma logo"
+            width={100}
+            height={100}
+          />
+        </a>
 
         <div className="flex gap-8 md:gap-8 sm:gap-4">
           <a

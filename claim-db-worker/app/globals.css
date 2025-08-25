@@ -11,7 +11,10 @@
   --background-button: #2d3138;
   --background-button-hover: #2d3748;
 
-  --text-white: #ffffff;
+  --brand-surface-main: #161d2b;
+  --brand-surface-accent: #0d3a38;
+  --brand-surface-highlight: #71e8df;
+
   --text-muted: #a0aec0;
   --text-dim: #3f4b5b;
   --text-accent: #71e8df;
@@ -46,6 +49,10 @@
   --color-dim: var(--text-dim);
   --color-accent: var(--text-accent);
   --color-error: var(--text-error);
+
+  --color-brand-surface-main: var(--brand-surface-main);
+  --color-brand-surface-accent: var(--brand-surface-accent);
+  --color-brand-surface-highlight: var(--brand-surface-highlight);
 
   --color-subtle: var(--border-subtle);
   --color-accent: var(--border-accent);

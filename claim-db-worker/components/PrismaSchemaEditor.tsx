@@ -1204,7 +1204,7 @@ const PrismaSchemaEditor = ({
   }
 
   return (
-    <div className="flex h-full bg-code rounded-lg p-2 gap-2">
+    <div className="flex h-full bg-code rounded-lg rounded-tl-none p-2 gap-2">
       <div className="w-16 rounded-lg bg-step flex flex-col justify-between items-center py-2">
         <div className="flex flex-col items-center space-y-1">
           <button

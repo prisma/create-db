@@ -45,23 +45,23 @@ export default function DatabaseConnection({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="bg-card rounded-lg border border-subtle p-6 w-full h-full flex flex-col">
-      <div className="flex bg-step rounded-md p-1 w-full mb-3">
+    <div className="bg-card rounded-lg rounded-tl-none border border-subtle p-6 w-full h-full flex flex-col">
+      <div className="flex bg-step rounded-md p-1 w-full mb-3 gap-2">
         <button
-          className={`flex-1 px-3 py-1 text-sm rounded-md transition-colors font-medium ${
+          className={`flex-1 px-3 py-1 text-sm rounded-md transition-colors font-medium border-2 ${
             connectionType === "prisma"
-              ? "bg-table-header text-white"
-              : "text-muted hover:text-white"
+              ? "bg-table-header text-brand-surface-highlight border-brand-surface-highlight"
+              : "text-muted hover:text-white border-transparent"
           }`}
           onClick={() => setConnectionType("prisma")}
         >
           With Prisma ORM
         </button>
         <button
-          className={`flex-1 px-3 py-1 text-sm rounded-md transition-colors font-medium ${
+          className={`flex-1 px-3 py-1 text-sm rounded-md transition-colors font-medium border-2 ${
             connectionType === "direct"
-              ? "bg-table-header text-white"
-              : "text-muted hover:text-white"
+              ? "bg-table-header text-brand-surface-highlight border-brand-surface-highlight"
+              : "text-muted hover:text-white border-transparent"
           }`}
           onClick={() => setConnectionType("direct")}
         >

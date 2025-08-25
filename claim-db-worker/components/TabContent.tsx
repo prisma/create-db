@@ -3,7 +3,7 @@ import PrismaSchemaEditor from "./PrismaSchemaEditor";
 import PrismaStudio from "./PrismaStudio";
 import DatabaseConnection from "./DatabaseConnection";
 import { customToast } from "@/lib/custom-toast";
-import { Database, Code } from "lucide-react";
+import { Database, Code, Eye, PlusCircle, Copy } from "lucide-react";
 interface TabContentProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
@@ -50,28 +50,50 @@ datasource db {
 
   return (
     <div className="w-full h-full">
-      <div className="flex bg-step rounded-md p-1 mb-4">
-        <TabHeader
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          tabName="connection"
-          buttonText="Connect to your database"
-          icon={<Database className="w-4 h-4" />}
-        />
-        <TabHeader
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          tabName="schema"
-          buttonText="View your schema"
-          icon={<Code className="w-4 h-4" />}
-        />
-        <TabHeader
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          tabName="studio"
-          buttonText="View your database"
-          icon={<Database className="w-4 h-4" />}
-        />
+      <div className="self-stretch w-full inline-flex justify-between items-center">
+        <div className="w-[866px] flex justify-start items-center gap-0.5">
+          <TabHeader
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            tabName="connection"
+            buttonText="Connect to your database"
+            icon="database"
+          />
+          <TabHeader
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            tabName="schema"
+            buttonText="View your schema"
+            icon="code"
+          />
+          <TabHeader
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            tabName="studio"
+            buttonText="View your database"
+            icon="eye"
+          />
+        </div>
+        <div className="p-1 flex justify-end items-center gap-4">
+          <button
+            onClick={onCreateNewDatabase}
+            className="flex justify-center items-center gap-2 text-brand-surface-highlight text-sm font-bold leading-tight hover:text-brand-surface-highlight/80 transition-colors"
+          >
+            <span>Create New Database</span>
+            <PlusCircle className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => {
+              const claimUrl = `${window.location.origin}/claim?projectID=${projectId}`;
+              navigator.clipboard.writeText(claimUrl);
+              customToast("success", "Claim URL copied to clipboard");
+            }}
+            className="flex justify-center items-center gap-2 text-brand-surface-highlight text-sm font-bold leading-tight hover:text-brand-surface-highlight/80 transition-colors"
+          >
+            <span>Copy Claim URL</span>
+            <Copy className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {activeTab === "connection" && (
@@ -83,24 +105,6 @@ datasource db {
             handleCopyConnectionString={handleCopyConnectionString}
             copied={copied}
           />
-          <div className="flex items-center justify-end gap-4 p-1">
-            <button
-              onClick={onCreateNewDatabase}
-              className="text-sm text-muted hover:text-white transition-colors"
-            >
-              Create New Database
-            </button>
-            <button
-              onClick={() => {
-                const claimUrl = `${window.location.origin}/claim?projectID=${projectId}`;
-                navigator.clipboard.writeText(claimUrl);
-                customToast("success", "Claim URL copied to clipboard");
-              }}
-              className="text-sm text-muted hover:text-white transition-colors"
-            >
-              Copy Claim URL
-            </button>
-          </div>
         </div>
       )}
 
@@ -115,7 +119,7 @@ datasource db {
       )}
 
       {activeTab === "studio" && (
-        <div className="w-full h-screen">
+        <div className="w-full h-screen bg-white rounded-lg rounded-tl-none">
           <PrismaStudio connectionString={connectionString} />
         </div>
       )}
@@ -130,7 +134,7 @@ interface TabHeaderProps {
   onTabChange: (tab: string) => void;
   tabName: string;
   buttonText: string;
-  icon: React.ReactNode;
+  icon: string;
 }
 
 const TabHeader = ({
@@ -140,17 +144,36 @@ const TabHeader = ({
   buttonText,
   icon,
 }: TabHeaderProps) => {
+  const isActive = activeTab === tabName;
+
+  const getIcon = () => {
+    switch (icon) {
+      case "database":
+        return <Database className="w-4 h-4" />;
+      case "code":
+        return <Code className="w-4 h-4" />;
+      case "eye":
+        return <Eye className="w-4 h-4" />;
+      default:
+        return <Database className="w-4 h-4" />;
+    }
+  };
+
   return (
     <button
-      className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors font-medium flex justify-center items-center gap-2 w-full h-full ${
-        activeTab === tabName
-          ? "bg-table-header text-white"
-          : "text-muted hover:text-white"
+      className={`flex-1 px-3 py-2 rounded-tl-md border-b border-brand-surface-main rounded-tr-md flex justify-center items-center gap-2 transition-colors ${
+        isActive
+          ? "bg-brand-surface-accent border-brand-surface-highlight text-brand-surface-highlight"
+          : "bg-brand-surface-main text-muted hover:text-brand-surface-highlight"
       }`}
       onClick={() => onTabChange(tabName)}
     >
-      {icon}
-      {buttonText}
+      <div className="text-center justify-center text-sm font-black leading-tight">
+        {getIcon()}
+      </div>
+      <div className="text-center justify-center text-sm font-bold leading-tight">
+        {buttonText}
+      </div>
     </button>
   );
 };

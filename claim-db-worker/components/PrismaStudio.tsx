@@ -27,7 +27,6 @@ const customTheme = `
     --border: #202734;
     --input: #2d3138;
     --ring: #71e8df;
-    --radius: 0.5rem;
   }
 }
 `;
