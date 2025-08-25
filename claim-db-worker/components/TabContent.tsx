@@ -3,7 +3,7 @@ import PrismaSchemaEditor from "./PrismaSchemaEditor";
 import PrismaStudio from "./PrismaStudio";
 import DatabaseConnection from "./DatabaseConnection";
 import { customToast } from "@/lib/custom-toast";
-
+import { Database, Code } from "lucide-react";
 interface TabContentProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
@@ -51,36 +51,27 @@ datasource db {
   return (
     <div className="w-full h-full">
       <div className="flex bg-step rounded-md p-1 mb-4">
-        <button
-          className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors font-medium ${
-            activeTab === "connection"
-              ? "bg-table-header text-white"
-              : "text-muted hover:text-white"
-          }`}
-          onClick={() => handleTabChange("connection")}
-        >
-          Connect to your database
-        </button>
-        <button
-          className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors font-medium ${
-            activeTab === "schema"
-              ? "bg-table-header text-white"
-              : "text-muted hover:text-white"
-          }`}
-          onClick={() => handleTabChange("schema")}
-        >
-          View your schema
-        </button>
-        <button
-          className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors font-medium ${
-            activeTab === "studio"
-              ? "bg-table-header text-white"
-              : "text-muted hover:text-white"
-          }`}
-          onClick={() => handleTabChange("studio")}
-        >
-          View your database
-        </button>
+        <TabHeader
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          tabName="connection"
+          buttonText="Connect to your database"
+          icon={<Database className="w-4 h-4" />}
+        />
+        <TabHeader
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          tabName="schema"
+          buttonText="View your schema"
+          icon={<Code className="w-4 h-4" />}
+        />
+        <TabHeader
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          tabName="studio"
+          buttonText="View your database"
+          icon={<Database className="w-4 h-4" />}
+        />
       </div>
 
       {activeTab === "connection" && (
@@ -133,3 +124,33 @@ datasource db {
 };
 
 export default TabContent;
+
+interface TabHeaderProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  tabName: string;
+  buttonText: string;
+  icon: React.ReactNode;
+}
+
+const TabHeader = ({
+  activeTab,
+  onTabChange,
+  tabName,
+  buttonText,
+  icon,
+}: TabHeaderProps) => {
+  return (
+    <button
+      className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors font-medium flex justify-center items-center gap-2 w-full h-full ${
+        activeTab === tabName
+          ? "bg-table-header text-white"
+          : "text-muted hover:text-white"
+      }`}
+      onClick={() => onTabChange(tabName)}
+    >
+      {icon}
+      {buttonText}
+    </button>
+  );
+};

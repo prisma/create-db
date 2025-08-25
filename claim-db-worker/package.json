@@ -9,6 +9,7 @@
     "lint": "next lint",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "deploy:staging": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env staging",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
@@ -17,6 +18,7 @@
     "@opennextjs/cloudflare": "^1.6.4",
     "@prisma/studio-core": "^0.5.2",
     "@types/pg": "^8.15.5",
+    "lucide-react": "^0.541.0",
     "next": "15.4.6",
     "pg": "^8.16.3",
     "prisma": "^6.14.0",

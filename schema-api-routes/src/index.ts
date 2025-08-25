@@ -1,12 +1,12 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { renderer } from "./renderer";
-import formatRoute from "./routes/schema/format";
-import pullRoute from "./routes/schema/pull";
-import pushRoute from "./routes/schema/push";
-import pushForceRoute from "./routes/schema/push-force";
+import { serve } from "@hono/node-server";
+import formatRoute from "./routes/schema/format.js";
+import pullRoute from "./routes/schema/pull.js";
+import pushRoute from "./routes/schema/push.js";
+import pushForceRoute from "./routes/schema/push-force.js";
 
-const app = new Hono<{ Bindings: CloudflareBindings }>();
+const app = new Hono();
 
 app.use(
   "*",
@@ -18,10 +18,8 @@ app.use(
   })
 );
 
-app.use(renderer);
-
 app.get("/", (c) => {
-  return c.render(<h1>Hello!</h1>);
+  return c.json({ message: "Hello World" });
 });
 
 app.route("/api/schema/format", formatRoute);
@@ -29,4 +27,10 @@ app.route("/api/schema/pull", pullRoute);
 app.route("/api/schema/push", pushRoute);
 app.route("/api/schema/push-force", pushForceRoute);
 
-export default app;
+const port = process.env.PORT || 3001;
+console.log(`Server is running on port ${port}`);
+
+serve({
+  fetch: app.fetch,
+  port: Number(port),
+});

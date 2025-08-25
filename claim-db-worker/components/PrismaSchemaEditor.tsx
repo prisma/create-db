@@ -983,13 +983,16 @@ const PrismaSchemaEditor = ({
     try {
       const currentValue = editorRef.current.getValue();
 
-      const response = await fetch("http://localhost:5173/api/schema/format", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ schema: currentValue }),
-      });
+      const response = await fetch(
+        "https://create-db-schema-api-routes.vercel.app/api/schema/format",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ schema: currentValue }),
+        }
+      );
 
       if (response.ok) {
         const { formattedSchema } = (await response.json()) as {
@@ -1032,16 +1035,19 @@ const PrismaSchemaEditor = ({
     try {
       const currentValue = editorRef.current?.getValue() || value;
 
-      const response = await fetch("http://localhost:5173/api/schema/push", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Connection-String": connectionString,
-        },
-        body: JSON.stringify({
-          schema: currentValue,
-        }),
-      });
+      const response = await fetch(
+        "https://create-db-schema-api-routes.vercel.app/api/schema/push",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Connection-String": connectionString,
+          },
+          body: JSON.stringify({
+            schema: currentValue,
+          }),
+        }
+      );
 
       const result = (await response.json()) as {
         message?: string;
@@ -1080,13 +1086,16 @@ const PrismaSchemaEditor = ({
     setIsPulling(true);
 
     try {
-      const response = await fetch("http://localhost:5173/api/schema/pull", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Connection-String": connectionString,
-        },
-      });
+      const response = await fetch(
+        "https://create-db-schema-api-routes.vercel.app/api/schema/pull",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Connection-String": connectionString,
+          },
+        }
+      );
 
       const result = (await response.json()) as {
         schema?: string;
@@ -1126,7 +1135,7 @@ const PrismaSchemaEditor = ({
 
     try {
       const response = await fetch(
-        "http://localhost:5173/api/schema/push-force",
+        "https://create-db-schema-api-routes.vercel.app/api/schema/push-force",
         {
           method: "POST",
           headers: {
