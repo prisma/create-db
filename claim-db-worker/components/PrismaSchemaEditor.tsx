@@ -3,7 +3,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { customToast } from "@/lib/custom-toast";
-import { toast } from "react-hot-toast";
 import Modal from "./Modal";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -54,16 +53,23 @@ const PrismaSchemaEditor = ({
   const [showForceResetModal, setShowForceResetModal] = useState(false);
   const [pendingSchema, setPendingSchema] = useState<string>("");
   const [isPulling, setIsPulling] = useState(false);
+  const [hasPulledForConnection, setHasPulledForConnection] =
+    useState<string>("");
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    if (connectionString && isMounted) {
+    if (
+      connectionString &&
+      isMounted &&
+      hasPulledForConnection !== connectionString
+    ) {
       handlePullFromDb();
+      setHasPulledForConnection(connectionString);
     }
-  }, [connectionString, isMounted]);
+  }, [connectionString, isMounted, hasPulledForConnection]);
 
   useEffect(() => {
     return () => {
@@ -182,7 +188,7 @@ const PrismaSchemaEditor = ({
         { token: "operator", foreground: "e2e8f0" },
       ],
       colors: {
-        "editor.background": "#181b22",
+        "editor.background": "#181b21",
         "editor.foreground": "#e2e8f0",
         "editorLineNumber.foreground": "#718096",
         "editorLineNumber.activeForeground": "#e2e8f0",
@@ -526,7 +532,6 @@ const PrismaSchemaEditor = ({
                     "generator ${1:client} {",
                     '  provider = "prisma-client"',
                     '  output   = "../generated/prisma/client"',
-                    "  $0",
                     "}",
                   ].join("\n"),
                   insertTextRules:
@@ -544,7 +549,6 @@ const PrismaSchemaEditor = ({
                     "  id    Int     @id @default(autoincrement())",
                     "  email String  @unique",
                     "  name  String?",
-                    "  $0",
                     "}",
                   ].join("\n"),
                   insertTextRules:
@@ -561,7 +565,6 @@ const PrismaSchemaEditor = ({
                     "datasource ${1:db} {",
                     '  provider = "${2:postgresql}"',
                     '  url      = env("${3:DATABASE_URL}")',
-                    "  $0",
                     "}",
                   ].join("\n"),
                   insertTextRules:
@@ -578,7 +581,6 @@ const PrismaSchemaEditor = ({
                     "enum ${1:Role} {",
                     "  ${2:USER}",
                     "  ${3:ADMIN}",
-                    "  $0",
                     "}",
                   ].join("\n"),
                   insertTextRules:
@@ -663,33 +665,307 @@ const PrismaSchemaEditor = ({
     monaco.languages.registerDocumentFormattingEditProvider("prisma", {
       provideDocumentFormattingEdits: (model: any) => {
         const value = model.getValue();
-        const formatted = value
-          .split("\n")
-          .map((line: string) => {
-            line = line.trimEnd();
+
+        const formatPrismaSchema = (schema: string): string => {
+          const lines = schema.split("\n");
+          const formattedLines: string[] = [];
+          let indentLevel = 0;
+
+          for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+
+            if (!line) {
+              formattedLines.push("");
+              continue;
+            }
+
+            if (line === "}") {
+              indentLevel = Math.max(0, indentLevel - 1);
+              formattedLines.push("  ".repeat(indentLevel) + line);
+              continue;
+            }
+
+            if (line.includes("=")) {
+              const parts = line.split("=");
+              if (parts.length === 2) {
+                const fieldName = parts[0].trim();
+                const fieldValue = parts[1].trim();
+                line = `${fieldName} = ${fieldValue}`;
+              }
+            }
+
+            formattedLines.push("  ".repeat(indentLevel) + line);
+
+            if (line.includes("{")) {
+              indentLevel++;
+            }
+          }
+
+          const finalLines: string[] = [];
+          let inBlock = false;
+          let blockLines: string[] = [];
+          let blockType = "";
+
+          for (const line of formattedLines) {
+            const trimmed = line.trim();
 
             if (
-              line
-                .trim()
-                .match(
-                  /^(id|email|name|title|content|published|author|authorId|createdAt|updatedAt|provider|url)\s+/
-                )
+              (trimmed.startsWith("model ") ||
+                trimmed.startsWith("generator ") ||
+                trimmed.startsWith("datasource ")) &&
+              trimmed.includes("{")
             ) {
-              const trimmed = line.trim();
-              return `  ${trimmed}`;
+              inBlock = true;
+              blockType = trimmed.split(" ")[0];
+              blockLines = [line];
+            } else if (inBlock && trimmed === "}") {
+              inBlock = false;
+              const formatted = formatBlockFields(blockLines, blockType);
+              finalLines.push(...formatted);
+              finalLines.push(line);
+              blockLines = [];
+              blockType = "";
+            } else if (inBlock) {
+              blockLines.push(line);
+            } else {
+              finalLines.push(line);
+            }
+          }
+
+          const result = finalLines.join("\n");
+
+          return cleanWhitespace(result);
+        };
+
+        const formatBlockFields = (
+          blockLines: string[],
+          blockType: string
+        ): string[] => {
+          if (blockLines.length <= 1) return blockLines;
+
+          const [header, ...fieldLines] = blockLines;
+
+          if (blockType === "model") {
+            return formatModelFields(blockLines);
+          } else {
+            return formatEqualsAlignment(blockLines);
+          }
+        };
+
+        const formatModelFields = (modelLines: string[]): string[] => {
+          if (modelLines.length <= 1) return modelLines;
+
+          const [header, ...fieldLines] = modelLines;
+          const fields: Array<{
+            line: string;
+            name: string;
+            type: string;
+            attributes: string;
+          }> = [];
+          const nonFields: string[] = [];
+
+          for (const line of fieldLines) {
+            const trimmed = line.trim();
+            if (
+              !trimmed ||
+              trimmed.startsWith("//") ||
+              trimmed.startsWith("@@")
+            ) {
+              nonFields.push(line);
+              continue;
             }
 
-            if (line.trim().match(/^(model|generator|datasource|enum)\s+/)) {
-              return line.trim();
+            const parts = trimmed.split(/\s+/);
+            if (parts.length >= 2) {
+              const name = parts[0];
+              const type = parts[1];
+              const attributes = parts.slice(2).join(" ");
+              fields.push({ line, name, type, attributes });
+            } else {
+              nonFields.push(line);
+            }
+          }
+
+          if (fields.length === 0) {
+            return modelLines;
+          }
+
+          const maxNameWidth = Math.max(...fields.map((f) => f.name.length));
+          const maxTypeWidth = Math.max(...fields.map((f) => f.type.length));
+
+          const formattedFields = fields.map((field) => {
+            const padding = "  ";
+            const name = field.name.padEnd(maxNameWidth);
+            const type = field.type.padEnd(maxTypeWidth);
+            const attributes = field.attributes ? ` ${field.attributes}` : "";
+            return `${padding}${name} ${type}${attributes}`;
+          });
+
+          return [header, ...formattedFields, ...nonFields];
+        };
+
+        const formatEqualsAlignment = (blockLines: string[]): string[] => {
+          if (blockLines.length <= 1) return blockLines;
+
+          const [header, ...fieldLines] = blockLines;
+          const fields: Array<{
+            line: string;
+            name: string;
+            value: string;
+          }> = [];
+          const nonFields: string[] = [];
+
+          for (const line of fieldLines) {
+            const trimmed = line.trim();
+            if (
+              !trimmed ||
+              trimmed.startsWith("//") ||
+              trimmed.startsWith("@@")
+            ) {
+              nonFields.push(line);
+              continue;
             }
 
-            if (line.trim() === "}") {
-              return "}";
+            if (trimmed.includes("=")) {
+              const parts = trimmed.split("=");
+              if (parts.length === 2) {
+                const name = parts[0].trim();
+                const value = parts[1].trim();
+                fields.push({ line, name, value });
+              } else {
+                nonFields.push(line);
+              }
+            } else {
+              nonFields.push(line);
+            }
+          }
+
+          if (fields.length === 0) {
+            return blockLines;
+          }
+
+          const maxNameWidth = Math.max(...fields.map((f) => f.name.length));
+
+          const formattedFields = fields.map((field) => {
+            const padding = "  ";
+            const name = field.name.padEnd(maxNameWidth);
+            return `${padding}${name} = ${field.value}`;
+          });
+
+          return [header, ...formattedFields, ...nonFields];
+        };
+
+        const cleanWhitespace = (schema: string): string => {
+          const lines = schema.split("\n");
+          const cleanedLines: string[] = [];
+          let lastWasEmpty = false;
+          let inBlock = false;
+          let blockStartIndex = -1;
+
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+
+            if (!trimmed) {
+              if (!lastWasEmpty) {
+                cleanedLines.push("");
+                lastWasEmpty = true;
+              }
+              continue;
             }
 
-            return line;
-          })
-          .join("\n");
+            lastWasEmpty = false;
+
+            if (
+              (trimmed.startsWith("model ") ||
+                trimmed.startsWith("generator ") ||
+                trimmed.startsWith("datasource ") ||
+                trimmed.startsWith("enum ") ||
+                trimmed.startsWith("type ") ||
+                trimmed.startsWith("view ")) &&
+              trimmed.includes("{")
+            ) {
+              if (inBlock && blockStartIndex >= 0) {
+                const blockLines = cleanedLines.slice(blockStartIndex);
+                const cleanedBlock = cleanBlockWhitespace(blockLines);
+                cleanedLines.splice(
+                  blockStartIndex,
+                  blockLines.length,
+                  ...cleanedBlock
+                );
+              }
+
+              inBlock = true;
+              blockStartIndex = cleanedLines.length;
+              cleanedLines.push(line);
+            } else if (trimmed === "}" && inBlock) {
+              inBlock = false;
+              cleanedLines.push(line);
+
+              if (blockStartIndex >= 0) {
+                const blockLines = cleanedLines.slice(blockStartIndex);
+                const cleanedBlock = cleanBlockWhitespace(blockLines);
+                cleanedLines.splice(
+                  blockStartIndex,
+                  blockLines.length,
+                  ...cleanedBlock
+                );
+                blockStartIndex = -1;
+              }
+            } else {
+              cleanedLines.push(line);
+            }
+          }
+
+          if (inBlock && blockStartIndex >= 0) {
+            const blockLines = cleanedLines.slice(blockStartIndex);
+            const cleanedBlock = cleanBlockWhitespace(blockLines);
+            cleanedLines.splice(
+              blockStartIndex,
+              blockLines.length,
+              ...cleanedBlock
+            );
+          }
+
+          return cleanedLines.join("\n");
+        };
+
+        const cleanBlockWhitespace = (blockLines: string[]): string[] => {
+          if (blockLines.length <= 2) return blockLines;
+
+          const [header, ...contentLines] = blockLines;
+          const [footer] = contentLines.slice(-1);
+          const fieldLines = contentLines.slice(0, -1);
+
+          const cleanedFields: string[] = [];
+          let consecutiveEmptyLines = 0;
+
+          for (const line of fieldLines) {
+            const trimmed = line.trim();
+
+            if (!trimmed) {
+              consecutiveEmptyLines++;
+              if (consecutiveEmptyLines === 1) {
+                cleanedFields.push("");
+              }
+              continue;
+            }
+
+            consecutiveEmptyLines = 0;
+            cleanedFields.push(line);
+          }
+
+          while (
+            cleanedFields.length > 0 &&
+            cleanedFields[cleanedFields.length - 1] === ""
+          ) {
+            cleanedFields.pop();
+          }
+
+          return [header, ...cleanedFields, footer];
+        };
+
+        const formatted = formatPrismaSchema(value);
 
         return [
           {
@@ -720,7 +996,7 @@ const PrismaSchemaEditor = ({
     try {
       const currentValue = editorRef.current.getValue();
 
-      const response = await fetch("/api/format-schema", {
+      const response = await fetch("/api/schema/format", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -765,15 +1041,11 @@ const PrismaSchemaEditor = ({
     }
 
     setIsPushing(true);
-    const loadingToast = customToast(
-      "loading",
-      "Pushing schema to database..."
-    );
 
     try {
       const currentValue = editorRef.current?.getValue() || value;
 
-      const response = await fetch("/api/push-schema", {
+      const response = await fetch("/api/schema/push", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -794,22 +1066,18 @@ const PrismaSchemaEditor = ({
         if (result.requiresForceReset) {
           setPendingSchema(currentValue);
           setShowForceResetModal(true);
-          toast.dismiss(loadingToast);
           return;
         }
 
         setLastPush(new Date());
-        toast.dismiss(loadingToast);
         customToast("success", "Schema pushed to database successfully");
       } else {
-        toast.dismiss(loadingToast);
         const errorMessage = result.details || "Failed to push schema";
         setErrorDetails(errorMessage);
         setShowErrorModal(true);
       }
     } catch (error) {
       console.error("Error pushing to database:", error);
-      toast.dismiss(loadingToast);
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       setErrorDetails(errorMessage);
@@ -823,13 +1091,9 @@ const PrismaSchemaEditor = ({
     if (!connectionString) return;
 
     setIsPulling(true);
-    const loadingToast = customToast(
-      "loading",
-      "Pulling schema from database..."
-    );
 
     try {
-      const response = await fetch("/api/pull-schema", {
+      const response = await fetch("/api/schema/pull", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -840,24 +1104,25 @@ const PrismaSchemaEditor = ({
       const result = (await response.json()) as {
         schema?: string;
         details?: string;
+        isEmpty?: boolean;
+        message?: string;
       };
 
       if (response.ok && result.schema) {
-        toast.dismiss(loadingToast);
-        customToast("success", "Schema pulled from database successfully");
+        if (!result.isEmpty) {
+          customToast("success", "Schema pulled from database successfully");
+        }
         onChange(result.schema);
         if (editorRef.current) {
           editorRef.current.setValue(result.schema);
         }
       } else {
-        toast.dismiss(loadingToast);
         const errorMessage = result.details || "Failed to pull schema";
         setErrorDetails(errorMessage);
         setShowErrorModal(true);
       }
     } catch (error) {
       console.error("Error pulling from database:", error);
-      toast.dismiss(loadingToast);
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       setErrorDetails(errorMessage);
@@ -871,13 +1136,9 @@ const PrismaSchemaEditor = ({
     if (!connectionString || !pendingSchema) return;
 
     setIsPushing(true);
-    const loadingToast = customToast(
-      "loading",
-      "Pushing schema with force reset..."
-    );
 
     try {
-      const response = await fetch("/api/push-schema-force", {
+      const response = await fetch("/api/schema/push-force", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -895,12 +1156,10 @@ const PrismaSchemaEditor = ({
 
       if (response.ok) {
         setLastPush(new Date());
-        toast.dismiss(loadingToast);
         customToast("success", "Schema pushed to database successfully");
         setShowForceResetModal(false);
         setPendingSchema("");
       } else {
-        toast.dismiss(loadingToast);
         const errorMessage = result.details || "Failed to push schema";
         setErrorDetails(errorMessage);
         setShowErrorModal(true);
@@ -908,7 +1167,6 @@ const PrismaSchemaEditor = ({
       }
     } catch (error) {
       console.error("Error pushing to database with force reset:", error);
-      toast.dismiss(loadingToast);
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       setErrorDetails(errorMessage);
@@ -950,7 +1208,7 @@ const PrismaSchemaEditor = ({
         <div className="flex flex-col items-center space-y-1">
           <button
             onClick={handlePullFromDb}
-            disabled={isPulling || !connectionString}
+            disabled={isPulling || isPushing || !connectionString}
             className="aspect-square p-2 flex flex-col items-center justify-center rounded-md text-muted hover:text-white hover:bg-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title={
               !connectionString
@@ -960,7 +1218,7 @@ const PrismaSchemaEditor = ({
           >
             {isPulling ? (
               <svg
-                className="h-4 w-4 animate-spin"
+                className="h-5 w-5 animate-spin"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -969,26 +1227,25 @@ const PrismaSchemaEditor = ({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  d="M20 4v5h-.582m-15.356 2A8.001 8.001 0 0119.418 9m0 0H15M4 20v-5h.581m0 0a8.003 8.003 0 0015.357-2M4.581 15H9"
                 />
               </svg>
             ) : (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                className="h-5 w-5"
                 viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4"
               >
-                <path d="M21 2v6h-6" />
-                <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-                <path d="M3 22v-6h6" />
-                <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+                <g
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                >
+                  <path d="M19 16v6m0 0l3-3m-3 3l-3-3M4 6v6s0 3 7 3s7-3 7-3V6" />
+                  <path d="M11 3c7 0 7 3 7 3s0 3-7 3s-7-3-7-3s0-3 7-3m0 18c-7 0-7-3-7-3v-6" />
+                </g>
               </svg>
             )}
             <span className="text-xs font-bold mt-1">Pull</span>
@@ -996,7 +1253,7 @@ const PrismaSchemaEditor = ({
 
           <button
             onClick={handlePushToDb}
-            disabled={isPushing || !connectionString}
+            disabled={isPushing || isPulling || !connectionString}
             className="aspect-square p-2  flex flex-col items-center justify-center rounded-md text-muted hover:text-white hover:bg-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title={
               !connectionString
@@ -1006,7 +1263,7 @@ const PrismaSchemaEditor = ({
           >
             {isPushing ? (
               <svg
-                className="h-4 w-4 animate-spin"
+                className="h-5 w-5 animate-spin"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1015,25 +1272,25 @@ const PrismaSchemaEditor = ({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  d="M20 4v5h-.582m-15.356 2A8.001 8.001 0 0119.418 9m0 0H15M4 20v-5h.581m0 0a8.003 8.003 0 0015.357-2M4.581 15H9"
                 />
               </svg>
             ) : (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                className="h-5 w-5"
                 viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4"
               >
-                <ellipse cx="12" cy="5" rx="9" ry="3" />
-                <path d="M3 5V19A9 3 0 0 0 21 19V5" />
-                <path d="M3 12A9 3 0 0 0 21 12" />
+                <g
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                >
+                  <path d="M4 6v6s0 3 7 3s7-3 7-3V6" />
+                  <path d="M11 3c7 0 7 3 7 3s0 3-7 3s-7-3-7-3s0-3 7-3m0 18c-7 0-7-3-7-3v-6m15 10v-6m0 0l3 3m-3-3l-3 3" />
+                </g>
               </svg>
             )}
             <span className="text-xs font-bold mt-1">Push</span>
@@ -1041,7 +1298,7 @@ const PrismaSchemaEditor = ({
 
           <button
             onClick={handleFormat}
-            disabled={isFormatting}
+            disabled={isFormatting || isPulling || isPushing}
             className={`aspect-square p-2 flex flex-col items-center justify-center text-muted hover:text-white hover:bg-button rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               isFormatting ? "bg-button text-white" : ""
             }`}
@@ -1053,7 +1310,7 @@ const PrismaSchemaEditor = ({
           >
             {isFormatting ? (
               <svg
-                className="h-4 w-4 animate-spin"
+                className="h-5 w-5 animate-spin"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1062,26 +1319,23 @@ const PrismaSchemaEditor = ({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  d="M20 4v5h-.582m-15.356 2A8.001 8.001 0 0119.418 9m0 0H15M4 20v-5h.581m0 0a8.003 8.003 0 0015.357-2M4.581 15H9"
                 />
               </svg>
             ) : (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                className="h-5 w-5"
                 viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4"
               >
-                <path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z" />
-                <path d="m5 2 5 5" />
-                <path d="M2 13h15" />
-                <path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z" />
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  d="m14.363 5.652l1.48-1.48a2 2 0 0 1 2.829 0l1.414 1.414a2 2 0 0 1 0 2.828l-1.48 1.48m-4.243-4.242l-9.616 9.615a2 2 0 0 0-.578 1.238l-.242 2.74a1 1 0 0 0 1.084 1.085l2.74-.242a2 2 0 0 0 1.24-.578l9.615-9.616m-4.243-4.242l4.243 4.242"
+                />
               </svg>
             )}
             <span className="text-xs font-bold mt-1">Format</span>
@@ -1100,7 +1354,7 @@ const PrismaSchemaEditor = ({
       </div>
 
       {isPulling ? (
-        <div className="flex-1 p-1 bg-[#181b22] flex flex-col rounded-lg">
+        <div className="flex-1 p-1 bg-[#181b21] flex flex-col rounded-lg">
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <svg
@@ -1113,7 +1367,7 @@ const PrismaSchemaEditor = ({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  d="M20 4v5h-.582m-15.356 2A8.001 8.001 0 0119.418 9m0 0H15M4 20v-5h.581m0 0a8.003 8.003 0 0015.357-2M4.581 15H9"
                 />
               </svg>
               <p className="text-white font-medium">
@@ -1123,7 +1377,7 @@ const PrismaSchemaEditor = ({
           </div>
         </div>
       ) : (
-        <div className="flex-1 p-1 bg-[#181b22] flex flex-col rounded-lg">
+        <div className="flex-1 p-1 bg-[#181b21] flex flex-col rounded-lg">
           <div className="flex-1">
             <Editor
               height="100%"
