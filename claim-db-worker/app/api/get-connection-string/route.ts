@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   const { databaseId } = (await request.json()) as { databaseId: string };
-  console.log("databaseId", databaseId);
+
   const response = await fetch(
     `https://api.prisma.io/v1/databases/${databaseId}/connections`,
     {

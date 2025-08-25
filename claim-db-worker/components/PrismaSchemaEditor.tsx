@@ -1001,24 +1001,17 @@ const PrismaSchemaEditor = ({
         editorRef.current.setValue(formattedSchema);
         onChange(formattedSchema);
       } else {
-        await editorRef.current.trigger(
-          "format",
-          "editor.action.formatDocument",
-          {}
+        const errorText = await response.text();
+        setErrorDetails(
+          `Format failed: ${response.status} ${response.statusText} - ${errorText}`
         );
+        setShowErrorModal(true);
       }
     } catch (error) {
-      console.error("Error formatting:", error);
-
-      try {
-        await editorRef.current.trigger(
-          "format",
-          "editor.action.formatDocument",
-          {}
-        );
-      } catch (fallbackError) {
-        console.error("Fallback formatting failed:", fallbackError);
-      }
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      setErrorDetails(`Network error during format: ${errorMessage}`);
+      setShowErrorModal(true);
     } finally {
       setIsFormatting(false);
     }
@@ -1049,13 +1042,13 @@ const PrismaSchemaEditor = ({
         }
       );
 
-      const result = (await response.json()) as {
-        message?: string;
-        details?: string;
-        requiresForceReset?: boolean;
-      };
-
       if (response.ok) {
+        const result = (await response.json()) as {
+          message?: string;
+          details?: string;
+          requiresForceReset?: boolean;
+        };
+
         if (result.requiresForceReset) {
           setPendingSchema(currentValue);
           setShowForceResetModal(true);
@@ -1065,15 +1058,17 @@ const PrismaSchemaEditor = ({
         setLastPush(new Date());
         customToast("success", "Schema pushed to database successfully");
       } else {
-        const errorMessage = result.details || "Failed to push schema";
-        setErrorDetails(errorMessage);
+        const errorText = await response.text();
+        setErrorDetails(
+          `Push failed: ${response.status} ${response.statusText} - ${errorText}`
+        );
         setShowErrorModal(true);
       }
     } catch (error) {
       console.error("Error pushing to database:", error);
       const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      setErrorDetails(errorMessage);
+        error instanceof Error ? error.message : String(error);
+      setErrorDetails(`Network error during push: ${errorMessage}`);
       setShowErrorModal(true);
     } finally {
       setIsPushing(false);
@@ -1097,31 +1092,37 @@ const PrismaSchemaEditor = ({
         }
       );
 
-      const result = (await response.json()) as {
-        schema?: string;
-        details?: string;
-        isEmpty?: boolean;
-        message?: string;
-      };
+      if (response.ok) {
+        const result = (await response.json()) as {
+          schema?: string;
+          details?: string;
+          isEmpty?: boolean;
+          message?: string;
+        };
 
-      if (response.ok && result.schema) {
-        if (!result.isEmpty) {
-          customToast("success", "Schema pulled from database successfully");
-        }
-        onChange(result.schema);
-        if (editorRef.current) {
-          editorRef.current.setValue(result.schema);
+        if (result.schema) {
+          if (!result.isEmpty) {
+            customToast("success", "Schema pulled from database successfully");
+          }
+          onChange(result.schema);
+          if (editorRef.current) {
+            editorRef.current.setValue(result.schema);
+          }
+        } else {
+          setErrorDetails("Pull succeeded but no schema returned");
+          setShowErrorModal(true);
         }
       } else {
-        const errorMessage = result.details || "Failed to pull schema";
-        setErrorDetails(errorMessage);
+        const errorText = await response.text();
+        setErrorDetails(
+          `Pull failed: ${response.status} ${response.statusText} - ${errorText}`
+        );
         setShowErrorModal(true);
       }
     } catch (error) {
-      console.error("Error pulling from database:", error);
       const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      setErrorDetails(errorMessage);
+        error instanceof Error ? error.message : String(error);
+      setErrorDetails(`Network error during pull: ${errorMessage}`);
       setShowErrorModal(true);
     } finally {
       setIsPulling(false);
@@ -1148,27 +1149,28 @@ const PrismaSchemaEditor = ({
         }
       );
 
-      const result = (await response.json()) as {
-        message?: string;
-        details?: string;
-      };
-
       if (response.ok) {
+        const result = (await response.json()) as {
+          message?: string;
+          details?: string;
+        };
+
         setLastPush(new Date());
         customToast("success", "Schema pushed to database successfully");
         setShowForceResetModal(false);
         setPendingSchema("");
       } else {
-        const errorMessage = result.details || "Failed to push schema";
-        setErrorDetails(errorMessage);
+        const errorText = await response.text();
+        setErrorDetails(
+          `Force reset failed: ${response.status} ${response.statusText} - ${errorText}`
+        );
         setShowErrorModal(true);
         setShowForceResetModal(false);
       }
     } catch (error) {
-      console.error("Error pushing to database with force reset:", error);
       const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      setErrorDetails(errorMessage);
+        error instanceof Error ? error.message : String(error);
+      setErrorDetails(`Network error during force reset: ${errorMessage}`);
       setShowErrorModal(true);
       setShowForceResetModal(false);
     } finally {
@@ -1352,7 +1354,7 @@ const PrismaSchemaEditor = ({
         )}
       </div>
 
-      {isPulling ? (
+      {isPulling || isPushing ? (
         <div className="flex-1 p-1 bg-[#181b21] flex flex-col rounded-lg">
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -1370,7 +1372,9 @@ const PrismaSchemaEditor = ({
                 />
               </svg>
               <p className="text-white font-medium">
-                Pulling schema from database...
+                {isPulling
+                  ? "Pulling schema from database..."
+                  : "Pushing schema to database..."}
               </p>
             </div>
           </div>
