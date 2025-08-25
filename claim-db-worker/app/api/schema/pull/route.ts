@@ -8,6 +8,16 @@ import { tmpdir } from "os";
 const execAsync = promisify(exec);
 
 export async function POST(request: NextRequest) {
+  const minimalSchema = `generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}`;
+
   try {
     const connectionString = request.headers.get("X-Connection-String");
 
@@ -24,17 +34,6 @@ export async function POST(request: NextRequest) {
 
     try {
       await writeFile(envPath, `DATABASE_URL="${connectionString}"`);
-
-      const minimalSchema = `generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/client"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}`;
-
       await writeFile(schemaPath, minimalSchema);
 
       console.log("Executing prisma db pull...");
@@ -86,17 +85,25 @@ datasource db {
         console.log("Prisma stderr:", stderr);
       }
 
+      const schemaContent = await import("fs").then((fs) =>
+        fs.readFileSync(schemaPath, "utf8")
+      );
+
       if (
         stderr &&
         !stderr.includes("warnings") &&
         !stderr.includes("npm warn")
       ) {
+        if (stderr.includes("The introspected database was empty")) {
+          return NextResponse.json({
+            success: true,
+            schema: minimalSchema,
+            message: "Database is empty - showing minimal schema",
+            isEmpty: true,
+          });
+        }
         throw new Error(stderr);
       }
-
-      const schemaContent = await import("fs").then((fs) =>
-        fs.readFileSync(schemaPath, "utf8")
-      );
 
       return NextResponse.json({
         success: true,
@@ -113,10 +120,21 @@ datasource db {
     }
   } catch (error) {
     console.error("Pull schema error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    if (errorMessage.includes("The introspected database was empty")) {
+      return NextResponse.json({
+        success: true,
+        schema: minimalSchema,
+        message: "Database is empty - showing minimal schema",
+        isEmpty: true,
+      });
+    }
+
     return NextResponse.json(
       {
         error: "Failed to pull schema",
-        details: error instanceof Error ? error.message : String(error),
+        details: errorMessage,
       },
       { status: 500 }
     );
