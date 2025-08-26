@@ -5,7 +5,8 @@ import React, { useState } from "react";
 interface DatabaseConnectionProps {
   connectionType: "prisma" | "direct";
   setConnectionType: (type: "prisma" | "direct") => void;
-  getConnectionString: () => string;
+  ormConnectionString: string;
+  directConnectionString: string;
   handleCopyConnectionString: () => void;
   copied: boolean;
 }
@@ -38,11 +39,14 @@ const StepItem = ({
 export default function DatabaseConnection({
   connectionType,
   setConnectionType,
-  getConnectionString,
+  ormConnectionString,
+  directConnectionString,
   handleCopyConnectionString,
   copied,
 }: DatabaseConnectionProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const displayed =
+    connectionType === "prisma" ? ormConnectionString : directConnectionString;
 
   return (
     <div className="bg-card rounded-lg rounded-tl-none border border-subtle p-6 w-full h-full flex flex-col">
@@ -73,7 +77,7 @@ export default function DatabaseConnection({
         <div className="bg-card rounded-md font-mono text-sm flex-1 h-12 border border-subtle min-w-0 flex items-center">
           <input
             type={showPassword ? "text" : "password"}
-            value={getConnectionString()}
+            value={displayed}
             readOnly
             className="bg-transparent p-3 text-white text-sm flex-1 outline-none"
             style={{ fontFamily: "monospace" }}

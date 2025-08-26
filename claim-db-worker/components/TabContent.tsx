@@ -8,9 +8,9 @@ interface TabContentProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
   connectionString: string;
+  directConnectionString?: string;
   connectionType: "prisma" | "direct";
   setConnectionType: (type: "prisma" | "direct") => void;
-  getConnectionString: () => string;
   handleCopyConnectionString: () => void;
   copied: boolean;
   projectId: string;
@@ -21,9 +21,9 @@ const TabContent = ({
   activeTab = "connection",
   onTabChange = () => {},
   connectionString,
+  directConnectionString = "",
   connectionType,
   setConnectionType,
-  getConnectionString,
   handleCopyConnectionString,
   copied,
   projectId,
@@ -101,7 +101,8 @@ datasource db {
           <DatabaseConnection
             connectionType={connectionType}
             setConnectionType={setConnectionType}
-            getConnectionString={getConnectionString}
+            ormConnectionString={connectionString}
+            directConnectionString={directConnectionString}
             handleCopyConnectionString={handleCopyConnectionString}
             copied={copied}
           />

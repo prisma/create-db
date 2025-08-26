@@ -26,6 +26,8 @@ const WebPageContent = () => {
     expirationTime: null as number | null,
   });
 
+  const [directConnectionString, setDirectConnectionString] = useState("");
+
   const { setTimeRemaining, setProjectId, setIsLoading } = useDropContext();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,7 +56,14 @@ const WebPageContent = () => {
       const stored = loadFromCookie();
 
       if (stored) {
-        setDbInfo(stored);
+        setDbInfo({
+          connectionString: stored.connectionString || "",
+          directConnectionString: stored.directConnectionString || "",
+          projectId: stored.projectId || "",
+          databaseId: stored.databaseId || "",
+          expirationTime: stored.expirationTime || null,
+        });
+        setDirectConnectionString(stored.directConnectionString || "");
         setLoading(false);
         setIsLoading(false);
         return;
@@ -72,15 +81,21 @@ const WebPageContent = () => {
           const newDbInfo = {
             projectId: result.projectId,
             connectionString: db.connectionString,
-            directConnectionString: db.directConnection
-              ? `postgresql://${db.directConnection.user}:${db.directConnection.pass}@${db.directConnection.host}`
-              : "",
+            directConnectionString: db.directConnectionString,
             expirationTime: Date.now() + 24 * 60 * 60 * 1000,
             databaseId: result.databaseId,
           };
 
+          const directConnString = db.directConnection
+            ? `postgresql://${db.directConnection.user}:${db.directConnection.pass}@${db.directConnection.host}`
+            : "";
+
           setDbInfo(newDbInfo);
-          saveToCookie(newDbInfo);
+          setDirectConnectionString(directConnString);
+          saveToCookie({
+            ...newDbInfo,
+            directConnectionString: directConnString,
+          });
         }
         setLoading(false);
         setIsLoading(false);
@@ -119,17 +134,17 @@ const WebPageContent = () => {
     }
   }, [loading, dbInfo.expirationTime, setTimeRemaining]);
 
-  const getConnectionString = () => {
+  const getCopyConnectionString = () => {
     const connectionString =
       connectionType === "prisma"
         ? dbInfo.connectionString
-        : dbInfo.directConnectionString;
+        : directConnectionString;
     return connectionString || "Loading connection string...";
   };
 
   const handleCopyConnectionString = async () => {
     try {
-      await navigator.clipboard.writeText(getConnectionString());
+      await navigator.clipboard.writeText(getCopyConnectionString());
       setCopied(true);
       customToast("success", "Connection string copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
@@ -190,10 +205,10 @@ const WebPageContent = () => {
           <TabContent
             activeTab={currentTab}
             onTabChange={handleTabChange}
-            connectionString={getConnectionString()}
             connectionType={connectionType}
             setConnectionType={setConnectionType}
-            getConnectionString={getConnectionString}
+            connectionString={dbInfo.connectionString}
+            directConnectionString={directConnectionString}
             handleCopyConnectionString={handleCopyConnectionString}
             copied={copied}
             projectId={dbInfo.projectId}
