@@ -26,7 +26,7 @@ export function Navbar() {
             </div>
             <div className="text-center inline-flex justify-center">
               {timeRemaining && timeRemaining > 0 ? (
-                <>
+                <div className="flex items-center gap-2">
                   <span className="text-teal-300 text-sm font-bold font-mono leading-none w-48 inline-block whitespace-nowrap">
                     {(() => {
                       const hours = Math.floor(timeRemaining / 3600);
@@ -35,15 +35,13 @@ export function Navbar() {
                       return `${hours.toString().padStart(2, "0")}h ${minutes.toString().padStart(2, "0")}m ${seconds.toString().padStart(2, "0")}s remaining`;
                     })()}
                   </span>
-                  <MoveRight className="w-4 h-4 mr-1 text-muted text-sm" />
-                  <span className="text-muted text-sm leading-none">
+                  <MoveRight className="w-4 h-4 text-muted text-sm flex-shrink-0" />
+                  <p className="text-muted/50 text-sm leading-none">
                     This database will be automatically deleted after 24 hours
                     unless claimed.{" "}
-                  </span>
-                  <span className="text-muted text-sm font-bold leading-none">
-                    Do not store sensitive data.
-                  </span>
-                </>
+                    <strong>Do not store sensitive data.</strong>
+                  </p>
+                </div>
               ) : (
                 <span className="text-muted text-sm font-bold leading-none">
                   Database Claimed
