@@ -315,7 +315,11 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
   const resp = await fetch(`${CREATE_DB_WORKER_URL}/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ region, name, utm_source: userAgent }),
+    body: JSON.stringify({
+      region,
+      name,
+      utm_source: userAgent || CLI_NAME,
+    }),
   });
 
   if (resp.status === 429) {
@@ -571,11 +575,8 @@ async function main() {
           command: CLI_NAME,
           region: region,
           "selection-method": "flag",
+          "user-agent": userAgent,
         };
-
-        if (userAgent) {
-          analyticsProps["user-agent"] = userAgent;
-        }
 
         await analytics.capture("create_db:region_selected", analyticsProps);
       } catch (error) {}
