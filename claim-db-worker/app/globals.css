@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
   --background-dark: #0f1217;
   --background-card: #161a20;
   --background-code: #13161b;
@@ -65,13 +65,6 @@
 
   --color-gradient-start: var(--gradient-start);
   --color-gradient-end: var(--gradient-end);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

@@ -164,7 +164,7 @@ const TabHeader = ({
       className={`flex-1 px-3 py-2 rounded-tl-md border-b border-brand-surface-main rounded-tr-md flex justify-center items-center gap-2 transition-colors ${
         isActive
           ? "bg-brand-surface-accent border-brand-surface-highlight text-brand-surface-highlight"
-          : "bg-brand-surface-main text-muted hover:text-brand-surface-highlight"
+          : "bg-brand-surface-main text-muted hover:text-brand-surface-highlight hover:bg-brand-surface-highlight/5"
       }`}
       onClick={() => onTabChange(tabName)}
     >

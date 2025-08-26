@@ -61,7 +61,7 @@ function HomePageContent() {
   }, [searchParams, router]);
 
   return (
-    <div>
+    <div className="text-foreground">
       <div className="flex flex-col items-center text-center max-w-4xl w-full px-4 sm:px-6">
         <PrismaPostgresLogo />
 
