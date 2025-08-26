@@ -1207,11 +1207,11 @@ const PrismaSchemaEditor = ({
     <div className="flex flex-col lg:flex-row h-full bg-code rounded-lg rounded-tl-none p-2 gap-2">
       {/* Sidebar - responsive layout */}
       <div className="w-full lg:w-16 h-auto lg:h-auto rounded-lg bg-step flex flex-row lg:flex-col justify-between items-center py-2 px-2 lg:px-0 gap-2 lg:gap-0">
-        <div className="flex flex-row lg:flex-col items-center space-y-0 lg:space-y-1 space-x-2 lg:space-x-0">
+        <div className="flex flex-row lg:flex-col items-center space-y-0 lg:space-y-1 space-x-2 lg:space-x-0 w-full lg:w-auto justify-between lg:justify-start">
           <button
             onClick={handlePullFromDb}
             disabled={isPulling || isPushing || !connectionString}
-            className="aspect-square p-2 flex flex-col items-center justify-center rounded-md text-muted hover:text-white hover:bg-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex flex-row lg:flex-col items-center justify-center rounded-md text-muted hover:text-white hover:bg-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed p-2 lg:aspect-square border border-subtle lg:border-0 w-full lg:w-auto"
             title={
               !connectionString
                 ? "No connection string available"
@@ -1250,13 +1250,16 @@ const PrismaSchemaEditor = ({
                 </g>
               </svg>
             )}
+            <span className="text-xs font-bold ml-2 lg:ml-0 lg:mt-1 lg:hidden">
+              Pull
+            </span>
             <span className="text-xs font-bold mt-1 hidden lg:block">Pull</span>
           </button>
 
           <button
             onClick={handlePushToDb}
             disabled={isPushing || isPulling || !connectionString}
-            className="aspect-square p-2  flex flex-col items-center justify-center rounded-md text-muted hover:text-white hover:bg-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex flex-row lg:flex-col items-center justify-center rounded-md text-muted hover:text-white hover:bg-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed p-2 lg:aspect-square border border-subtle lg:border-0 w-full lg:w-auto"
             title={
               !connectionString
                 ? "No connection string available"
@@ -1295,13 +1298,16 @@ const PrismaSchemaEditor = ({
                 </g>
               </svg>
             )}
+            <span className="text-xs font-bold ml-2 lg:ml-0 lg:mt-1 lg:hidden">
+              Push
+            </span>
             <span className="text-xs font-bold mt-1 hidden lg:block">Push</span>
           </button>
 
           <button
             onClick={handleFormat}
             disabled={isFormatting || isPulling || isPushing}
-            className={`aspect-square p-2 flex flex-col items-center justify-center text-muted hover:text-white hover:bg-button rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`flex flex-row lg:flex-col items-center justify-center text-muted hover:text-white hover:bg-button rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed p-2 lg:aspect-square border border-subtle lg:border-0 w-full lg:w-auto ${
               isFormatting ? "bg-button text-white" : ""
             }`}
             title={
@@ -1340,6 +1346,9 @@ const PrismaSchemaEditor = ({
                 />
               </svg>
             )}
+            <span className="text-xs font-bold ml-2 lg:ml-0 lg:mt-1 lg:hidden">
+              Format
+            </span>
             <span className="text-xs font-bold mt-1 hidden lg:block">
               Format
             </span>

@@ -52,7 +52,7 @@ datasource db {
 
   return (
     <div className="w-full h-full">
-      <div className="flex flex-col sm:flex-row-reverse justify-between">
+      <div className="flex flex-col md:flex-row-reverse justify-between">
         <div className="flex lg:hidden flex-row gap-1 mb-4 lg:mb-0 lg:justify-end lg:items-center">
           <div
             className="flex-1 px-4 py-2 bg-teal-600 rounded-md flex justify-center items-center cursor-pointer hover:bg-teal-700 transition-colors"
@@ -79,11 +79,11 @@ datasource db {
           </div>
           <button
             onClick={onCreateNewDatabase}
-            className="flex justify-center items-center gap-2 text-brand-surface-highlight text-sm font-bold leading-tight hover:text-brand-surface-highlight/80 transition-colors px-3 py-2 rounded-md border border-brand-surface-highlight/20 sm:border-0 hover:bg-brand-surface-highlight/5"
+            className="flex justify-center items-center gap-2 text-brand-surface-highlight text-sm font-bold leading-tight hover:text-brand-surface-highlight/80 transition-colors px-3 py-2 rounded-md border border-brand-surface-highlight/20 md:border-0 hover:bg-brand-surface-highlight/5"
           >
             <PlusCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Create New Database</span>
-            <span className="sm:hidden">New DB</span>
+            <span className="hidden md:inline">Create New Database</span>
+            <span className="md:hidden">New DB</span>
           </button>
           <button
             onClick={() => {
@@ -91,10 +91,10 @@ datasource db {
               navigator.clipboard.writeText(claimUrl);
               customToast("success", "Claim URL copied to clipboard");
             }}
-            className="hidden sm:flex justify-center items-center gap-2 text-brand-surface-highlight text-sm font-bold leading-tight hover:text-brand-surface-highlight/80 transition-colors px-3 py-2 rounded-md border border-brand-surface-highlight/20 sm:border-0 hover:bg-brand-surface-highlight/5"
+            className="hidden md:flex justify-center items-center gap-2 text-brand-surface-highlight text-sm font-bold leading-tight hover:text-brand-surface-highlight/80 transition-colors px-3 py-2 rounded-md border border-brand-surface-highlight/20 md:border-0 hover:bg-brand-surface-highlight/5"
           >
             <Copy className="w-4 h-4" />
-            <span className="hidden sm:inline">Copy Claim URL</span>
+            <span className="hidden md:inline">Copy Claim URL</span>
           </button>
         </div>
 
@@ -229,10 +229,10 @@ const TabHeader = ({
       <div className="text-center justify-center text-sm font-black leading-tight flex-shrink-0">
         {getIcon()}
       </div>
-      <div className="text-center justify-center text-sm font-bold leading-tight hidden sm:block">
+      <div className="text-center justify-center text-sm font-bold leading-tight hidden md:block">
         {buttonText}
       </div>
-      <div className="text-center justify-center text-sm font-bold leading-tight sm:hidden">
+      <div className="text-center justify-center text-sm font-bold leading-tight md:hidden">
         {buttonTextMobile}
       </div>
     </button>
