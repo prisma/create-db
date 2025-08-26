@@ -157,7 +157,7 @@ const WebPageContent = () => {
 
   if (loading) {
     return (
-      <div className="w-full max-w-7xl mx-auto px-4 pb-16 font-barlow">
+      <div className="w-full max-w-7xl mx-auto px-4 py-16 font-barlow">
         <div className="flex flex-col items-center bg-code rounded-lg border border-subtle p-4 mb-4 w-full justify-center min-h-[calc(100vh-280px)]">
           <div className="animate-pulse">
             <svg
@@ -185,7 +185,7 @@ const WebPageContent = () => {
 
   return (
     <>
-      <div className="w-full max-w-7xl mx-auto px-4 pb-16 font-barlow">
+      <div className="w-full max-w-7xl mx-auto px-4 py-12 font-barlow">
         <div className="flex-1 min-h-[calc(100vh-280px)]">
           <TabContent
             activeTab={currentTab}
@@ -211,7 +211,7 @@ const WebPageContent = () => {
           This will delete your current database and create a new one. Your
           current connection strings and data will be lost.
         </p>
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-3 justify-end font-barlow">
           <button
             onClick={() => setShowNewDbConfirm(false)}
             className="px-4 py-2 text-muted hover:text-white transition-colors"
@@ -220,7 +220,7 @@ const WebPageContent = () => {
           </button>
           <button
             onClick={confirmCreateNewDatabase}
-            className="px-4 py-2 bg-button-blue hover:bg-button-blue-hover text-white rounded transition-colors"
+            className="px-4 py-2 bg-button-blue font-bold hover:bg-button-blue-hover text-white rounded transition-colors"
           >
             Create New Database
           </button>

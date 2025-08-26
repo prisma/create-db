@@ -103,7 +103,7 @@ function HomePageContent() {
       </div>
 
       <div className="flex flex-col items-center gap-6 py-8 px-4 w-full max-w-2xl mx-auto sm:gap-8 sm:py-10 md:py-16 md:px-5 lg:gap-10 lg:py-32 lg:px-6">
-        <div className="flex flex-col gap-4 w-full sm:gap-5 md:gap-5 lg:gap-6">
+        <div className="flex flex-col gap-4 w-full sm:gap-7 md:gap-7 lg:gap-8">
           {steps.map((step, index) => (
             <Step key={index} step={step} />
           ))}

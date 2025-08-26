@@ -22,7 +22,7 @@ const Modal = ({
       <div
         className={`bg-card border border-subtle rounded-lg p-6 ${maxWidth} w-full mx-4 max-h-[90vh] overflow-y-auto`}
       >
-        <h3 className="text-lg font-medium text-white mb-4">{title}</h3>
+        <h3 className="text-lg font-bold text-white mb-4">{title}</h3>
         {children}
       </div>
     </div>

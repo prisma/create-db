@@ -11,7 +11,7 @@ export function Navbar() {
 
   if (pathname === "/web") {
     return (
-      <nav className="h-[72px] w-full mb-6 box-border overflow-hidden md:h-[72px] md:mb-6 sm:h-[60px] sm:py-3 sm:mb-10 xs:h-14 xs:py-2 xs:mb-8 flex items-center">
+      <nav className="h-[72px] w-full box-border overflow-hidden md:h-[72px] sm:h-[60px] sm:py-3 xs:h-14 xs:py-2 flex items-center">
         <div className="max-w-7xl w-full mx-auto flex justify-between items-center box-border px-4 md:px-4 sm:px-4 xs:px-3">
           <div className="w-[1245px] inline-flex justify-between items-center">
             <div className="inline-flex flex-col justify-start items-start">
