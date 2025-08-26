@@ -3,6 +3,7 @@
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+
 dotenv.config();
 
 import { select, spinner, intro, outro, log, cancel } from "@clack/prompts";
@@ -295,11 +296,8 @@ async function promptForRegion(defaultRegion, userAgent) {
       command: CLI_NAME,
       region: region,
       "selection-method": "interactive",
+      "user-agent": userAgent,
     };
-
-    if (userAgent) {
-      analyticsProps["user-agent"] = userAgent;
-    }
 
     await analytics.capture("create_db:region_selected", analyticsProps);
   } catch (error) {}
@@ -342,11 +340,8 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
         region: region,
         "error-type": "rate_limit",
         "status-code": 429,
+        "user-agent": userAgent,
       };
-
-      if (userAgent) {
-        analyticsProps["user-agent"] = userAgent;
-      }
 
       await analytics.capture(
         "create_db:database_creation_failed",
@@ -380,17 +375,14 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
         region,
         "error-type": "invalid_json",
         "status-code": resp.status,
+        "user-agent": userAgent,
       };
-
-      if (userAgent) {
-        analyticsProps["user-agent"] = userAgent;
-      }
 
       await analytics.capture(
         "create_db:database_creation_failed",
         analyticsProps
       );
-    } catch {}
+    } catch (error) {}
     process.exit(1);
   }
 
@@ -432,7 +424,7 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
     };
 
     if (userAgent) {
-      jsonResponse.source = userAgent;
+      jsonResponse.userAgent = userAgent;
     }
 
     return jsonResponse;
@@ -459,11 +451,8 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
         region: region,
         "error-type": "api_error",
         "error-message": result.error.message,
+        "user-agent": userAgent,
       };
-
-      if (userAgent) {
-        analyticsProps["user-agent"] = userAgent;
-      }
 
       await analytics.capture(
         "create_db:database_creation_failed",
@@ -545,15 +534,12 @@ async function main() {
         "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
         "has-list-regions-flag": rawArgs.includes("--list-regions"),
         "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
-        "has-source-from-env": !!userAgent,
+        "has-user-agent-from-env": !!userAgent,
         "node-version": process.version,
         platform: process.platform,
         arch: process.arch,
+        "user-agent": userAgent,
       };
-
-      if (userAgent) {
-        analyticsProps["user-agent"] = userAgent;
-      }
 
       await analytics.capture("create_db:cli_command_ran", analyticsProps);
     } catch (error) {
