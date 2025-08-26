@@ -363,7 +363,7 @@ async function createDatabase(name, region, returnJson = false) {
   const directDbName = directConnDetails?.database || "postgres";
   const directConn =
     directConnDetails && directHost
-      ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}`
+      ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}?sslmode=require`
       : null;
 
   const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
