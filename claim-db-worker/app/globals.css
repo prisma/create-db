@@ -102,6 +102,16 @@ scrollbar changes disables default styling and rounding so corners appear square
   border-radius: 8px;
 }
 
+/* Utility class to hide scrollbars */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
 .monaco-editor {
   outline: 0;
 }

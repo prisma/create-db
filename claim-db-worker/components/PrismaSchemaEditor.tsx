@@ -1204,9 +1204,10 @@ const PrismaSchemaEditor = ({
   }
 
   return (
-    <div className="flex h-full bg-code rounded-lg rounded-tl-none p-2 gap-2">
-      <div className="w-16 rounded-lg bg-step flex flex-col justify-between items-center py-2">
-        <div className="flex flex-col items-center space-y-1">
+    <div className="flex flex-col lg:flex-row h-full bg-code rounded-lg rounded-tl-none p-2 gap-2">
+      {/* Sidebar - responsive layout */}
+      <div className="w-full lg:w-16 h-auto lg:h-auto rounded-lg bg-step flex flex-row lg:flex-col justify-between items-center py-2 px-2 lg:px-0 gap-2 lg:gap-0">
+        <div className="flex flex-row lg:flex-col items-center space-y-0 lg:space-y-1 space-x-2 lg:space-x-0">
           <button
             onClick={handlePullFromDb}
             disabled={isPulling || isPushing || !connectionString}
@@ -1249,7 +1250,7 @@ const PrismaSchemaEditor = ({
                 </g>
               </svg>
             )}
-            <span className="text-xs font-bold mt-1">Pull</span>
+            <span className="text-xs font-bold mt-1 hidden lg:block">Pull</span>
           </button>
 
           <button
@@ -1294,7 +1295,7 @@ const PrismaSchemaEditor = ({
                 </g>
               </svg>
             )}
-            <span className="text-xs font-bold mt-1">Push</span>
+            <span className="text-xs font-bold mt-1 hidden lg:block">Push</span>
           </button>
 
           <button
@@ -1339,15 +1340,17 @@ const PrismaSchemaEditor = ({
                 />
               </svg>
             )}
-            <span className="text-xs font-bold mt-1">Format</span>
+            <span className="text-xs font-bold mt-1 hidden lg:block">
+              Format
+            </span>
           </button>
         </div>
         {lastPush && (
-          <div className="mb-3 flex flex-col items-center">
+          <div className="mb-0 lg:mb-3 flex flex-row lg:flex-col items-center">
             <div className="text-xs bg-accent/20 text-accent px-1 py-0.5 rounded border border-accent/30 text-center w-12 flex items-center justify-center">
               Last Push
             </div>
-            <span className="text-xs text-muted mt-1 text-center">
+            <span className="text-xs text-muted mt-0 lg:mt-1 text-center ml-2 lg:ml-0">
               {lastPush.toLocaleTimeString().split(" ")[0]}
             </span>
           </div>

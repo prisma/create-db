@@ -28,8 +28,13 @@ const WebPageContent = () => {
 
   const [directConnectionString, setDirectConnectionString] = useState("");
 
-  const { setTimeRemaining, setProjectId, setIsLoading, timeRemaining } =
-    useDropContext();
+  const {
+    setTimeRemaining,
+    setProjectId,
+    setIsLoading,
+    handleClaimDatabase,
+    timeRemaining,
+  } = useDropContext();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -88,7 +93,7 @@ const WebPageContent = () => {
           };
 
           const directConnString = db.directConnection
-            ? `postgresql://${db.directConnection.user}:${db.directConnection.pass}@${db.directConnection.host}`
+            ? `postgresql://${db.directConnection.user}:${db.directConnection.pass}@${db.directConnection.host}?sslmode=require`
             : "";
 
           setDbInfo(newDbInfo);
@@ -172,7 +177,7 @@ const WebPageContent = () => {
 
   if (loading) {
     return (
-      <div className="w-full max-w-7xl mx-auto px-4 py-16 font-barlow">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-8 sm:py-16 font-barlow">
         <div className="flex flex-col items-center bg-code rounded-lg border border-subtle p-4 mb-4 w-full justify-center min-h-[calc(100vh-280px)]">
           <div className="animate-pulse">
             <svg
@@ -190,7 +195,7 @@ const WebPageContent = () => {
               />
             </svg>
           </div>
-          <p className="mt-4 text-lg text-muted">
+          <p className="mt-4 text-lg text-muted text-center px-4">
             Setting up your temporary database...
           </p>
         </div>
@@ -200,7 +205,7 @@ const WebPageContent = () => {
 
   if (timeRemaining === 0 || timeRemaining === null) {
     return (
-      <div className="w-full max-w-7xl mx-auto px-4 py-16 font-barlow">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-8 sm:py-16 font-barlow">
         <div className="flex flex-col items-center bg-code rounded-lg border border-subtle p-4 mb-4 w-full justify-center min-h-[calc(100vh-280px)]">
           <div className="animate-pulse">
             <svg
@@ -218,7 +223,7 @@ const WebPageContent = () => {
               />
             </svg>
           </div>
-          <p className="mt-4 text-lg text-muted">
+          <p className="mt-4 text-lg text-muted text-center px-4">
             Your temporary database has expired or has been claimed. Please
             create a new one.
           </p>
@@ -229,7 +234,7 @@ const WebPageContent = () => {
 
   return (
     <>
-      <div className="w-full max-w-7xl mx-auto px-4 py-12 font-barlow">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-8 sm:py-12 font-barlow">
         <div className="flex-1 min-h-[calc(100vh-280px)]">
           <TabContent
             activeTab={currentTab}
@@ -242,6 +247,7 @@ const WebPageContent = () => {
             copied={copied}
             projectId={dbInfo.projectId}
             onCreateNewDatabase={handleCreateNewDatabase}
+            handleClaimDatabase={handleClaimDatabase}
           />
         </div>
       </div>
@@ -255,7 +261,7 @@ const WebPageContent = () => {
           This will delete your current database and create a new one. Your
           current connection strings and data will be lost.
         </p>
-        <div className="flex gap-3 justify-end font-barlow">
+        <div className="flex flex-col sm:flex-row gap-3 justify-end font-barlow">
           <button
             onClick={() => setShowNewDbConfirm(false)}
             className="px-4 py-2 text-muted hover:text-white transition-colors"
@@ -278,7 +284,7 @@ const WebPage = () => {
   return (
     <Suspense
       fallback={
-        <div className="w-full max-w-7xl mx-auto px-4 pb-16 font-barlow">
+        <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 pb-8 sm:pb-16 font-barlow">
           <div className="flex flex-col items-center bg-code rounded-lg border border-subtle p-4 mb-4 w-full justify-center min-h-[calc(100vh-280px)]">
             <div className="animate-pulse">
               <svg
@@ -296,7 +302,9 @@ const WebPage = () => {
                 />
               </svg>
             </div>
-            <p className="mt-4 text-lg text-muted">Loading...</p>
+            <p className="mt-4 text-lg text-muted text-center px-4">
+              Loading...
+            </p>
           </div>
         </div>
       }

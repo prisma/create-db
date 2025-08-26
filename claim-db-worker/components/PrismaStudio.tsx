@@ -29,6 +29,33 @@ const customTheme = `
     --ring: #71e8df;
   }
 }
+
+/* Mobile responsive styles for Prisma Studio */
+@media (max-width: 768px) {
+  .studio-container {
+    min-height: 100vh;
+    overflow-x: auto;
+  }
+  
+  .studio-container * {
+    font-size: 14px !important;
+  }
+  
+  .studio-container .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .studio-container .sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .studio-container .main-content {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
 `;
 
 export default function PrismaStudio({
@@ -48,6 +75,9 @@ export default function PrismaStudio({
     return adapter;
   }, [connectionString]);
 
-  // return <Studio adapter={adapter} />;
-  return <Studio theme={customTheme} adapter={adapter} />;
+  return (
+    <div className="studio-container w-full h-full overflow-hidden">
+      <Studio theme={customTheme} adapter={adapter} />
+    </div>
+  );
 }

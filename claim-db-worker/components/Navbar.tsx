@@ -35,8 +35,8 @@ export function Navbar() {
                       return `${hours.toString().padStart(2, "0")}h ${minutes.toString().padStart(2, "0")}m ${seconds.toString().padStart(2, "0")}s remaining`;
                     })()}
                   </span>
-                  <MoveRight className="w-4 h-4 text-muted text-sm flex-shrink-0" />
-                  <p className="text-muted/50 text-sm leading-none">
+                  <MoveRight className="w-4 h-4 text-muted text-sm flex-shrink-0 hidden lg:block" />
+                  <p className="text-muted/50 text-sm leading-none hidden lg:block">
                     This database will be automatically deleted after 24 hours
                     unless claimed.{" "}
                     <strong>Do not store sensitive data.</strong>
@@ -50,7 +50,7 @@ export function Navbar() {
             </div>
             {!isLoading && timeRemaining && timeRemaining > 0 && (
               <div
-                className="w-40 px-4 py-2 bg-teal-600 rounded-md flex justify-center items-center cursor-pointer hover:bg-teal-700 transition-colors"
+                className="w-40 px-4 py-2 bg-teal-600 hidden lg:flex rounded-md justify-center items-center cursor-pointer hover:bg-teal-700 transition-colors"
                 onClick={handleClaimDatabase}
               >
                 <svg
