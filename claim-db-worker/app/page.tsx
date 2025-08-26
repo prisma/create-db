@@ -71,14 +71,18 @@ function HomePageContent() {
           Want a free, instant Prisma Postgres database?
         </h1>
 
-        <div className="flex space-x-4 items-center w-full">
-          <div className="w-1/2">
+        <div className="flex w-full flex-col items-center gap-2 sm:flex-row sm:gap-4 sm:max-w-none max-w-xs">
+          <div className="w-full sm:w-1/2 min-w-fit">
             <CodeSnippet />
           </div>
-          <div className="border-l border-white/20 h-20" />
+          <div className="flex items-center justify-center h-fit sm:h-20 flex-row sm:flex-col text-muted text-xs font-medium my-2 sm:my-0">
+            <div className="border-t sm:border-t-0 sm:border-l border-white/20 w-12 sm:w-auto sm:h-full" />
+            <div className="px-2 py-0 sm:py-2 rounded text-white/60">OR</div>
+            <div className="border-t sm:border-t-0 sm:border-l border-white/20 w-12 sm:w-auto sm:h-full" />
+          </div>
           <a
             href="/web"
-            className="flex text-nowrap w-1/2 h-full items-center justify-center gap-3 bg-[#24bfa7] hover:bg-[#16A394] text-white font-bold text-base sm:text-lg lg:text-xl border-none rounded-lg px-5 py-2.5 sm:px-6 sm:py-3 lg:px-8 lg:py-4 cursor-pointer shadow-lg transition-all duration-200 min-h-[44px] sm:min-h-[52px] lg:min-h-[60px]"
+            className="flex text-nowrap w-full sm:w-1/2 h-full items-center justify-center gap-3 bg-[#24bfa7] hover:bg-[#16A394] text-white font-bold text-base sm:text-lg lg:text-xl border-none rounded-lg px-5 py-2.5 sm:px-6 sm:py-3 lg:px-8 lg:py-4 cursor-pointer shadow-lg transition-all duration-200 min-h-[44px] sm:min-h-[52px] lg:min-h-[60px]"
           >
             Try it in the browser
             <svg
@@ -97,8 +101,7 @@ function HomePageContent() {
           </a>
         </div>
         <p className="text-xs text-muted italic mt-3 text-center max-w-2xl px-2 sm:text-xs md:text-xs lg:text-sm">
-          your <b>database will be deleted 24 hours after creation</b> unless
-          you claim it
+          databases will be deleted in 24 hours unless claimed
         </p>
       </div>
 

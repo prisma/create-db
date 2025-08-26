@@ -227,6 +227,12 @@ const WebPageContent = () => {
             Your temporary database has expired or has been claimed. Please
             create a new one.
           </p>
+          <button
+            onClick={confirmCreateNewDatabase}
+            className="px-4 py-2 bg-button-blue font-bold mt-6 hover:bg-button-blue-hover text-white rounded transition-colors"
+          >
+            Create New Database
+          </button>
         </div>
       </div>
     );
