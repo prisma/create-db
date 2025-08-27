@@ -9,27 +9,18 @@ import terminalLink from "terminal-link";
 
 async function sendAnalyticsToWorker(eventName, properties = {}) {
   try {
-    const response = await fetch(`${CREATE_DB_WORKER_URL}/analytics`, {
+    await fetch(`${CREATE_DB_WORKER_URL}/analytics`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ eventName, properties }),
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `Analytics request failed: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const result = await response.json();
-    if (result.status === "success") {
-    } else {
-    }
   } catch (error) {}
 }
 
+// const CREATE_DB_WORKER_URL =
+//   process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
 const CREATE_DB_WORKER_URL =
-  process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
+  "https://2c4f945c-create-db-worker.datacdn.workers.dev";
 const CLAIM_DB_WORKER_URL =
   process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io";
 
