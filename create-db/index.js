@@ -13,6 +13,74 @@ const CREATE_DB_WORKER_URL =
 const CLAIM_DB_WORKER_URL =
   process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io";
 
+async function detectUserLocation() {
+  try {
+    const response = await fetch("https://ipapi.co/json/", {
+      method: "GET",
+      headers: {
+        "User-Agent": "create-db-cli/1.0",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch location data: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      country: data.country_code,
+      continent: data.continent_code,
+      city: data.city,
+      region: data.region,
+      latitude: data.latitude,
+      longitude: data.longitude,
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+// Region coordinates (latitude, longitude)
+const REGION_COORDINATES = {
+  "ap-southeast-1": { lat: 1.3521, lng: 103.8198 }, // Singapore
+  "ap-northeast-1": { lat: 35.6762, lng: 139.6503 }, // Tokyo
+  "eu-central-1": { lat: 50.1109, lng: 8.6821 }, // Frankfurt
+  "eu-west-3": { lat: 48.8566, lng: 2.3522 }, // Paris
+  "us-east-1": { lat: 38.9072, lng: -77.0369 }, // N. Virginia
+  "us-west-1": { lat: 37.7749, lng: -122.4194 }, // N. California
+};
+
+function getRegionClosestToLocation(userLocation) {
+  if (!userLocation) return null;
+
+  const userLat = parseFloat(userLocation.latitude);
+  const userLng = parseFloat(userLocation.longitude);
+
+  let closestRegion = null;
+  let minDistance = Infinity;
+
+  for (const [region, coordinates] of Object.entries(REGION_COORDINATES)) {
+    // Simple distance calculation using Haversine formula
+    const latDiff = ((userLat - coordinates.lat) * Math.PI) / 180;
+    const lngDiff = ((userLng - coordinates.lng) * Math.PI) / 180;
+    const a =
+      Math.sin(latDiff / 2) * Math.sin(latDiff / 2) +
+      Math.cos((userLat * Math.PI) / 180) *
+        Math.cos((coordinates.lat * Math.PI) / 180) *
+        Math.sin(lngDiff / 2) *
+        Math.sin(lngDiff / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = 6371 * c; // Earth radius in km
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestRegion = region;
+    }
+  }
+
+  return closestRegion;
+}
+
 async function listRegions() {
   try {
     const regions = await getRegions();
@@ -483,7 +551,8 @@ async function main() {
     }
 
     let name = new Date().toISOString();
-    let region = "us-east-1";
+    let userLocation = await detectUserLocation();
+    let region = getRegionClosestToLocation(userLocation) || "us-east-1";
     let chooseRegionPrompt = false;
 
     if (flags.help) {
