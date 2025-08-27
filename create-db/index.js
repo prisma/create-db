@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+
 dotenv.config();
 
 import { select, spinner, intro, outro, log, cancel } from "@clack/prompts";
@@ -17,12 +20,78 @@ async function sendAnalyticsToWorker(eventName, properties = {}) {
   } catch (error) {}
 }
 
-// const CREATE_DB_WORKER_URL =
-//   process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
 const CREATE_DB_WORKER_URL =
-  "https://2c4f945c-create-db-worker.datacdn.workers.dev";
+  process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
 const CLAIM_DB_WORKER_URL =
   process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io";
+
+async function detectUserLocation() {
+  try {
+    const response = await fetch("https://ipapi.co/json/", {
+      method: "GET",
+      headers: {
+        "User-Agent": "create-db-cli/1.0",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch location data: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      country: data.country_code,
+      continent: data.continent_code,
+      city: data.city,
+      region: data.region,
+      latitude: data.latitude,
+      longitude: data.longitude,
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+// Region coordinates (latitude, longitude)
+const REGION_COORDINATES = {
+  "ap-southeast-1": { lat: 1.3521, lng: 103.8198 }, // Singapore
+  "ap-northeast-1": { lat: 35.6762, lng: 139.6503 }, // Tokyo
+  "eu-central-1": { lat: 50.1109, lng: 8.6821 }, // Frankfurt
+  "eu-west-3": { lat: 48.8566, lng: 2.3522 }, // Paris
+  "us-east-1": { lat: 38.9072, lng: -77.0369 }, // N. Virginia
+  "us-west-1": { lat: 37.7749, lng: -122.4194 }, // N. California
+};
+
+function getRegionClosestToLocation(userLocation) {
+  if (!userLocation) return null;
+
+  const userLat = parseFloat(userLocation.latitude);
+  const userLng = parseFloat(userLocation.longitude);
+
+  let closestRegion = null;
+  let minDistance = Infinity;
+
+  for (const [region, coordinates] of Object.entries(REGION_COORDINATES)) {
+    // Simple distance calculation using Haversine formula
+    const latDiff = ((userLat - coordinates.lat) * Math.PI) / 180;
+    const lngDiff = ((userLng - coordinates.lng) * Math.PI) / 180;
+    const a =
+      Math.sin(latDiff / 2) * Math.sin(latDiff / 2) +
+      Math.cos((userLat * Math.PI) / 180) *
+        Math.cos((coordinates.lat * Math.PI) / 180) *
+        Math.sin(lngDiff / 2) *
+        Math.sin(lngDiff / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = 6371 * c; // Earth radius in km
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestRegion = region;
+    }
+  }
+
+  return closestRegion;
+}
 
 async function listRegions() {
   try {
@@ -67,6 +136,31 @@ function getCommandName() {
 }
 
 const CLI_NAME = getCommandName();
+
+function readUserEnvFile() {
+  const userCwd = process.cwd();
+  const envPath = path.join(userCwd, ".env");
+
+  if (!fs.existsSync(envPath)) {
+    return {};
+  }
+
+  const envContent = fs.readFileSync(envPath, "utf8");
+  const envVars = {};
+
+  envContent.split("\n").forEach((line) => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith("#")) {
+      const [key, ...valueParts] = trimmed.split("=");
+      if (key && valueParts.length > 0) {
+        const value = valueParts.join("=").replace(/^["']|["']$/g, "");
+        envVars[key.trim()] = value.trim();
+      }
+    }
+  });
+
+  return envVars;
+}
 
 async function showHelp() {
   let regionExamples = "us-east-1, eu-west-1";
@@ -250,7 +344,7 @@ function handleError(message, extra = "") {
   process.exit(1);
 }
 
-async function promptForRegion(defaultRegion) {
+async function promptForRegion(defaultRegion, userAgent) {
   let regions;
   try {
     regions = await getRegions();
@@ -279,13 +373,14 @@ async function promptForRegion(defaultRegion) {
       command: CLI_NAME,
       region: region,
       "selection-method": "interactive",
+      "user-agent": userAgent,
     });
   } catch (error) {}
 
   return region;
 }
 
-async function createDatabase(name, region, returnJson = false) {
+async function createDatabase(name, region, userAgent, returnJson = false) {
   let s;
   if (!returnJson) {
     s = spinner();
@@ -298,15 +393,7 @@ async function createDatabase(name, region, returnJson = false) {
     body: JSON.stringify({
       region,
       name,
-      utm_source: CLI_NAME,
-      analytics: {
-        eventName: "create_db:database_created",
-        properties: {
-          command: CLI_NAME,
-          region: region,
-          utm_source: CLI_NAME,
-        },
-      },
+      utm_source: userAgent || CLI_NAME,
     }),
   });
 
@@ -332,6 +419,7 @@ async function createDatabase(name, region, returnJson = false) {
         region: region,
         "error-type": "rate_limit",
         "status-code": 429,
+        "user-agent": userAgent,
       });
     } catch (error) {}
 
@@ -361,6 +449,7 @@ async function createDatabase(name, region, returnJson = false) {
         region,
         "error-type": "invalid_json",
         "status-code": resp.status,
+        "user-agent": userAgent,
       });
     } catch (error) {}
     process.exit(1);
@@ -386,14 +475,14 @@ async function createDatabase(name, region, returnJson = false) {
   const directDbName = directConnDetails?.database || "postgres";
   const directConn =
     directConnDetails && directHost
-      ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}`
+      ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}?sslmode=require`
       : null;
 
-  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${CLI_NAME}&utm_medium=cli`;
+  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${userAgent}&utm_medium=cli`;
   const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   if (returnJson && !result.error) {
-    return {
+    const jsonResponse = {
       connectionString: prismaConn,
       directConnectionString: directConn,
       claimUrl: claimUrl,
@@ -402,6 +491,12 @@ async function createDatabase(name, region, returnJson = false) {
       name: database?.name,
       projectId: projectId,
     };
+
+    if (userAgent) {
+      jsonResponse.userAgent = userAgent;
+    }
+
+    return jsonResponse;
   }
 
   if (result.error) {
@@ -425,6 +520,7 @@ async function createDatabase(name, region, returnJson = false) {
         region: region,
         "error-type": "api_error",
         "error-message": result.error.message,
+        "user-agent": userAgent,
       });
     } catch (error) {}
     process.exit(1);
@@ -482,6 +578,15 @@ async function createDatabase(name, region, returnJson = false) {
 async function main() {
   try {
     const rawArgs = process.argv.slice(2);
+
+    const { flags } = await parseArgs();
+
+    let userAgent;
+    const userEnvVars = readUserEnvFile();
+    if (userEnvVars.PRISMA_ACTOR_NAME && userEnvVars.PRISMA_ACTOR_PROJECT) {
+      userAgent = `${userEnvVars.PRISMA_ACTOR_NAME}/${userEnvVars.PRISMA_ACTOR_PROJECT}`;
+    }
+
     try {
       await sendAnalyticsToWorker("create_db:cli_command_ran", {
         command: CLI_NAME,
@@ -493,20 +598,23 @@ async function main() {
         "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
         "has-list-regions-flag": rawArgs.includes("--list-regions"),
         "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
+        "has-user-agent-from-env": !!userAgent,
         "node-version": process.version,
         platform: process.platform,
         arch: process.arch,
+        "user-agent": userAgent,
       });
-    } catch (error) {}
-
-    const { flags } = await parseArgs();
+    } catch (error) {
+      console.error("Error:", error.message);
+    }
 
     if (!flags.help && !flags.json) {
       await isOffline();
     }
 
     let name = new Date().toISOString();
-    let region = "us-east-1";
+    let userLocation = await detectUserLocation();
+    let region = getRegionClosestToLocation(userLocation) || "us-east-1";
     let chooseRegionPrompt = false;
 
     if (flags.help) {
@@ -526,6 +634,7 @@ async function main() {
           command: CLI_NAME,
           region: region,
           "selection-method": "flag",
+          "user-agent": userAgent,
         });
       } catch (error) {}
     }
@@ -537,11 +646,11 @@ async function main() {
     if (flags.json) {
       try {
         if (chooseRegionPrompt) {
-          region = await promptForRegion(region);
+          region = await promptForRegion(region, userAgent);
         } else {
           await validateRegion(region, true);
         }
-        const result = await createDatabase(name, region, true);
+        const result = await createDatabase(name, region, userAgent, true);
         console.log(JSON.stringify(result, null, 2));
         process.exit(0);
       } catch (e) {
@@ -566,12 +675,12 @@ async function main() {
       )
     );
     if (chooseRegionPrompt) {
-      region = await promptForRegion(region);
+      region = await promptForRegion(region, userAgent);
     }
 
     region = await validateRegion(region);
 
-    await createDatabase(name, region);
+    await createDatabase(name, region, userAgent);
 
     outro("");
   } catch (error) {
