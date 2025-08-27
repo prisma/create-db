@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 
+import { select, spinner, intro, outro, log, cancel } from "@clack/prompts";
+import { randomUUID } from "crypto";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+import terminalLink from "terminal-link";
+import chalk from "chalk";
 
 dotenv.config();
 
-import { select, spinner, intro, outro, log, cancel } from "@clack/prompts";
-import chalk from "chalk";
-import terminalLink from "terminal-link";
+const CLI_RUN_ID = randomUUID();
 
 const CREATE_DB_WORKER_URL =
   process.env.CREATE_DB_WORKER_URL.replace(/\/+$/, "") ||
@@ -17,14 +19,22 @@ const CLAIM_DB_WORKER_URL =
   process.env.CLAIM_DB_WORKER_URL.replace(/\/+$/, "") ||
   "https://create-db.prisma.io";
 
-async function sendAnalyticsToWorker(eventName, properties) {
+async function sendAnalyticsToWorker(
+  eventName,
+  properties,
+  { timeoutMs = 2000 }
+) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 2000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    const payload = {
+      eventName,
+      properties: { distinct_id: CLI_RUN_ID, ...(properties || {}) },
+    };
     await fetch(`${CREATE_DB_WORKER_URL}/analytics`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ eventName, properties }),
+      body: JSON.stringify(payload),
       signal: controller.signal,
     });
   } catch (error) {
@@ -375,14 +385,12 @@ async function promptForRegion(defaultRegion, userAgent) {
     process.exit(0);
   }
 
-  try {
-    await sendAnalyticsToWorker("create_db:region_selected", {
-      command: CLI_NAME,
-      region: region,
-      "selection-method": "interactive",
-      "user-agent": userAgent,
-    });
-  } catch (error) {}
+  await sendAnalyticsToWorker("create_db:region_selected", {
+    command: CLI_NAME,
+    region: region,
+    "selection-method": "interactive",
+    "user-agent": userAgent,
+  });
 
   return region;
 }
@@ -420,15 +428,13 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
       );
     }
 
-    try {
-      await sendAnalyticsToWorker("create_db:database_creation_failed", {
-        command: CLI_NAME,
-        region: region,
-        "error-type": "rate_limit",
-        "status-code": 429,
-        "user-agent": userAgent,
-      });
-    } catch (error) {}
+    await sendAnalyticsToWorker("create_db:database_creation_failed", {
+      command: CLI_NAME,
+      region: region,
+      "error-type": "rate_limit",
+      "status-code": 429,
+      "user-agent": userAgent,
+    });
 
     process.exit(1);
   }
@@ -450,15 +456,15 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
     if (s) {
       s.stop("Unexpected response from create service.");
     }
-    try {
-      await sendAnalyticsToWorker("create_db:database_creation_failed", {
-        command: CLI_NAME,
-        region,
-        "error-type": "invalid_json",
-        "status-code": resp.status,
-        "user-agent": userAgent,
-      });
-    } catch (error) {}
+
+    await sendAnalyticsToWorker("create_db:database_creation_failed", {
+      command: CLI_NAME,
+      region,
+      "error-type": "invalid_json",
+      "status-code": resp.status,
+      "user-agent": userAgent,
+    });
+
     process.exit(1);
   }
 
@@ -521,15 +527,14 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
       );
     }
 
-    try {
-      await sendAnalyticsToWorker("create_db:database_creation_failed", {
-        command: CLI_NAME,
-        region: region,
-        "error-type": "api_error",
-        "error-message": result.error.message,
-        "user-agent": userAgent,
-      });
-    } catch (error) {}
+    await sendAnalyticsToWorker("create_db:database_creation_failed", {
+      command: CLI_NAME,
+      region: region,
+      "error-type": "api_error",
+      "error-message": result.error.message,
+      "user-agent": userAgent,
+    });
+
     process.exit(1);
   }
 
@@ -581,13 +586,11 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
     )
   );
 
-  try {
-    await sendAnalyticsToWorker("create_db:database_created", {
-      command: CLI_NAME,
-      region,
-      utm_source: CLI_NAME,
-    });
-  } catch {}
+  await sendAnalyticsToWorker("create_db:database_created", {
+    command: CLI_NAME,
+    region,
+    utm_source: CLI_NAME,
+  });
 }
 
 async function main() {
@@ -602,26 +605,21 @@ async function main() {
       userAgent = `${userEnvVars.PRISMA_ACTOR_NAME}/${userEnvVars.PRISMA_ACTOR_PROJECT}`;
     }
 
-    try {
-      await sendAnalyticsToWorker("create_db:cli_command_ran", {
-        command: CLI_NAME,
-        "full-command": `${CLI_NAME} ${rawArgs.join(" ")}`.trim(),
-        "has-region-flag":
-          rawArgs.includes("--region") || rawArgs.includes("-r"),
-        "has-interactive-flag":
-          rawArgs.includes("--interactive") || rawArgs.includes("-i"),
-        "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
-        "has-list-regions-flag": rawArgs.includes("--list-regions"),
-        "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
-        "has-user-agent-from-env": !!userAgent,
-        "node-version": process.version,
-        platform: process.platform,
-        arch: process.arch,
-        "user-agent": userAgent,
-      });
-    } catch (error) {
-      console.error("Error:", error.message);
-    }
+    await sendAnalyticsToWorker("create_db:cli_command_ran", {
+      command: CLI_NAME,
+      "full-command": `${CLI_NAME} ${rawArgs.join(" ")}`.trim(),
+      "has-region-flag": rawArgs.includes("--region") || rawArgs.includes("-r"),
+      "has-interactive-flag":
+        rawArgs.includes("--interactive") || rawArgs.includes("-i"),
+      "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
+      "has-list-regions-flag": rawArgs.includes("--list-regions"),
+      "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
+      "has-user-agent-from-env": !!userAgent,
+      "node-version": process.version,
+      platform: process.platform,
+      arch: process.arch,
+      "user-agent": userAgent,
+    });
 
     if (!flags.help && !flags.json) {
       await isOffline();
@@ -644,14 +642,12 @@ async function main() {
     if (flags.region) {
       region = flags.region;
 
-      try {
-        await sendAnalyticsToWorker("create_db:region_selected", {
-          command: CLI_NAME,
-          region: region,
-          "selection-method": "flag",
-          "user-agent": userAgent,
-        });
-      } catch (error) {}
+      await sendAnalyticsToWorker("create_db:region_selected", {
+        command: CLI_NAME,
+        region: region,
+        "selection-method": "flag",
+        "user-agent": userAgent,
+      });
     }
 
     if (flags.interactive) {

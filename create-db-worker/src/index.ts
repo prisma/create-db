@@ -75,10 +75,7 @@ export default {
 			}
 
 			if (!env.POSTHOG_API_HOST || !env.POSTHOG_API_KEY) {
-				return new Response(JSON.stringify({ status: 'disabled' }), {
-					status: 204,
-					headers: { 'Content-Type': 'application/json' },
-				});
+				return new Response(null, { status: 204 });
 			}
 
 			ctx.waitUntil(analytics.capture(eventName, properties || {}));
