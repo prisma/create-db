@@ -269,7 +269,9 @@ async function promptForRegion(defaultRegion) {
       region: region,
       "selection-method": "interactive",
     });
-  } catch (error) {}
+  } catch (error) {
+    console.error("Failed to send region_selected analytics:", error.message);
+  }
 
   return region;
 }
@@ -310,7 +312,12 @@ async function createDatabase(name, region, returnJson = false) {
         "error-type": "rate_limit",
         "status-code": 429,
       });
-    } catch (error) {}
+    } catch (error) {
+      console.error(
+        "Failed to send database_creation_failed analytics:",
+        error.message
+      );
+    }
 
     process.exit(1);
   }
@@ -339,7 +346,12 @@ async function createDatabase(name, region, returnJson = false) {
         "error-type": "invalid_json",
         "status-code": resp.status,
       });
-    } catch {}
+    } catch (error) {
+      console.error(
+        "Failed to send database_creation_failed analytics:",
+        error.message
+      );
+    }
     process.exit(1);
   }
 
@@ -403,7 +415,12 @@ async function createDatabase(name, region, returnJson = false) {
         "error-type": "api_error",
         "error-message": result.error.message,
       });
-    } catch (error) {}
+    } catch (error) {
+      console.error(
+        "Failed to send database_creation_failed analytics:",
+        error.message
+      );
+    }
     process.exit(1);
   }
 
@@ -474,7 +491,9 @@ async function main() {
         platform: process.platform,
         arch: process.arch,
       });
-    } catch (error) {}
+    } catch (error) {
+      console.error("Failed to send cli_command_ran analytics:", error.message);
+    }
 
     const { flags } = await parseArgs();
 
@@ -504,7 +523,12 @@ async function main() {
           region: region,
           "selection-method": "flag",
         });
-      } catch (error) {}
+      } catch (error) {
+        console.error(
+          "Failed to send region_selected analytics:",
+          error.message
+        );
+      }
     }
 
     if (flags.interactive) {

@@ -8,10 +8,8 @@ class EventCaptureError extends Error {
 
 class PosthogEventCapture {
   async capture(eventName, properties = {}) {
-    const POSTHOG_CAPTURE_URL = process.env.POSTHOG_API_HOST
-      ? process.env.POSTHOG_API_HOST + "/capture"
-      : "https://proxyhog.prisma-data.net/capture";
-    const POSTHOG_KEY = process.env.POSTHOG_API_KEY || "phc_cmc85avbWyuJ2JyKdGPdv7dxXli8xLdWDBPbvIXWJfs";
+    const POSTHOG_CAPTURE_URL = process.env.POSTHOG_API_HOST + "/capture";
+    const POSTHOG_KEY = process.env.POSTHOG_API_KEY;
 
     const payload = {
       api_key: POSTHOG_KEY,
@@ -35,11 +33,15 @@ class PosthogEventCapture {
       if (!response.ok) {
         throw new EventCaptureError(eventName, response.statusText);
       }
+
+      // Log success message
+      console.log(`${eventName}: Success`);
     } catch (error) {
-      // Silently fail analytics to not disrupt user experience
-      if (process.env.NODE_ENV === "development") {
-        console.error("Analytics error:", error.message);
-      }
+      // Log all analytics errors for debugging
+      console.error(`${eventName}: Failed - ${error.message}`);
+
+      // Re-throw the error so calling code can handle it if needed
+      throw error;
     }
   }
 }
