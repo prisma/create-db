@@ -19,13 +19,9 @@ const CLAIM_DB_WORKER_URL =
   process.env.CLAIM_DB_WORKER_URL.replace(/\/+$/, "") ||
   "https://create-db.prisma.io";
 
-async function sendAnalyticsToWorker(
-  eventName,
-  properties,
-  { timeoutMs = 2000 }
-) {
+async function sendAnalyticsToWorker(eventName, properties) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => controller.abort(), 2000);
   try {
     const payload = {
       eventName,
@@ -385,7 +381,7 @@ async function promptForRegion(defaultRegion, userAgent) {
     process.exit(0);
   }
 
-  await sendAnalyticsToWorker("create_db:region_selected", {
+  void sendAnalyticsToWorker("create_db:region_selected", {
     command: CLI_NAME,
     region: region,
     "selection-method": "interactive",
@@ -428,7 +424,7 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
       );
     }
 
-    await sendAnalyticsToWorker("create_db:database_creation_failed", {
+    void sendAnalyticsToWorker("create_db:database_creation_failed", {
       command: CLI_NAME,
       region: region,
       "error-type": "rate_limit",
@@ -457,7 +453,7 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
       s.stop("Unexpected response from create service.");
     }
 
-    await sendAnalyticsToWorker("create_db:database_creation_failed", {
+    void sendAnalyticsToWorker("create_db:database_creation_failed", {
       command: CLI_NAME,
       region,
       "error-type": "invalid_json",
@@ -527,7 +523,7 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
       );
     }
 
-    await sendAnalyticsToWorker("create_db:database_creation_failed", {
+    void sendAnalyticsToWorker("create_db:database_creation_failed", {
       command: CLI_NAME,
       region: region,
       "error-type": "api_error",
@@ -586,7 +582,7 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
     )
   );
 
-  await sendAnalyticsToWorker("create_db:database_created", {
+  void sendAnalyticsToWorker("create_db:database_created", {
     command: CLI_NAME,
     region,
     utm_source: CLI_NAME,
@@ -605,7 +601,7 @@ async function main() {
       userAgent = `${userEnvVars.PRISMA_ACTOR_NAME}/${userEnvVars.PRISMA_ACTOR_PROJECT}`;
     }
 
-    await sendAnalyticsToWorker("create_db:cli_command_ran", {
+    void sendAnalyticsToWorker("create_db:cli_command_ran", {
       command: CLI_NAME,
       "full-command": `${CLI_NAME} ${rawArgs.join(" ")}`.trim(),
       "has-region-flag": rawArgs.includes("--region") || rawArgs.includes("-r"),
@@ -642,7 +638,7 @@ async function main() {
     if (flags.region) {
       region = flags.region;
 
-      await sendAnalyticsToWorker("create_db:region_selected", {
+      void sendAnalyticsToWorker("create_db:region_selected", {
         command: CLI_NAME,
         region: region,
         "selection-method": "flag",

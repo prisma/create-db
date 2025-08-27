@@ -62,7 +62,10 @@ export default {
 
 		// --- Analytics endpoint ---
 		if (url.pathname === '/analytics' && request.method === 'POST') {
-			let body: any = {};
+			type AnalyticsBody = { eventName?: string; properties?: Record<string, unknown> };
+
+			let body: AnalyticsBody = {};
+
 			try {
 				body = await request.json();
 			} catch {
@@ -87,7 +90,14 @@ export default {
 
 		// --- Create new project ---
 		if (url.pathname === '/create' && request.method === 'POST') {
-			let body: { region?: string; name?: string; analytics?: { eventName?: string; properties?: any } } = {};
+			type CreateDbBody = {
+				region?: string;
+				name?: string;
+				analytics?: { eventName?: string; properties?: Record<string, unknown> };
+			};
+
+			let body: CreateDbBody = {};
+
 			try {
 				body = await request.json();
 			} catch {
