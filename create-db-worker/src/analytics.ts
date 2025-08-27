@@ -46,7 +46,7 @@ class PosthogEventCapture {
 			});
 
 			if (!response.ok) {
-				throw new EventCaptureError(eventName, response.statusText);
+				throw new EventCaptureError(eventName, response.status, response.statusText);
 			}
 
 			console.log(`${eventName}: Success`);

@@ -11,17 +11,15 @@ import chalk from "chalk";
 import terminalLink from "terminal-link";
 
 const CREATE_DB_WORKER_URL =
-  process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
+  process.env.CREATE_DB_WORKER_URL.replace(/\/+$/, "") ||
+  "https://create-db-temp.prisma.io";
 const CLAIM_DB_WORKER_URL =
-  process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io";
+  process.env.CLAIM_DB_WORKER_URL.replace(/\/+$/, "") ||
+  "https://create-db.prisma.io";
 
-async function sendAnalyticsToWorker(
-  eventName,
-  properties,
-  { timeoutMs = 2000 }
-) {
+async function sendAnalyticsToWorker(eventName, properties) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => controller.abort(), 2000);
   try {
     await fetch(`${CREATE_DB_WORKER_URL}/analytics`, {
       method: "POST",
