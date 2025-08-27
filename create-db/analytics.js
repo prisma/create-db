@@ -10,7 +10,8 @@ class PosthogEventCapture {
   async capture(eventName, properties = {}) {
     const POSTHOG_CAPTURE_URL = process.env.POSTHOG_API_HOST + "/capture";
     const POSTHOG_KEY = process.env.POSTHOG_API_KEY;
-
+    console.log("POSTHOG_KEY set?", !!POSTHOG_KEY);
+    console.log("POSTHOG_CAPTURE_URL:", POSTHOG_CAPTURE_URL);
     const payload = {
       api_key: POSTHOG_KEY,
       event: eventName,
