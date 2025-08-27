@@ -270,7 +270,7 @@ async function promptForRegion(defaultRegion) {
       "selection-method": "interactive",
     });
   } catch (error) {
-    console.error("Failed to send region_selected analytics:", error.message);
+    console.error("Failed to send region_selected analytics :", error.message);
   }
 
   return region;
