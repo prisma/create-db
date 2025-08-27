@@ -15,6 +15,10 @@ class PosthogEventCapture {
 		const POSTHOG_CAPTURE_URL = this.env.POSTHOG_API_HOST + '/capture';
 		const POSTHOG_KEY = this.env.POSTHOG_API_KEY;
 
+		console.log('Sending analytics to PostHog', eventName, properties);
+		console.log('POSTHOG_CAPTURE_URL', POSTHOG_CAPTURE_URL);
+		console.log('POSTHOG_KEY Set?', !!POSTHOG_KEY);
+
 		const payload = {
 			api_key: POSTHOG_KEY,
 			event: eventName,
