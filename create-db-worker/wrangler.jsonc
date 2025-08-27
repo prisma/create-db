@@ -4,6 +4,7 @@
 	"main": "src/index.ts",
 	"account_id": "16b32bbb36161aca01a6357a37bc453e",
 	"compatibility_date": "2025-06-27",
+	"keep_vars": true,
 	"observability": {
 		"enabled": true,
 	},
