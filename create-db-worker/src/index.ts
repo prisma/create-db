@@ -1,16 +1,20 @@
 import DeleteDbWorkflow from './delete-workflow';
-
+import { PosthogEventCapture } from './analytics';
 interface Env {
 	INTEGRATION_TOKEN: string;
 	DELETE_DB_WORKFLOW: Workflow;
 	CREATE_DB_RATE_LIMITER: RateLimit;
 	CREATE_DB_DATASET: AnalyticsEngineDataset;
+	POSTHOG_API_KEY?: string;
+	POSTHOG_API_HOST?: string;
 }
 
 export { DeleteDbWorkflow };
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		const analytics = new PosthogEventCapture(env);
+
 		// --- Rate limiting ---
 		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: request.url });
 
@@ -56,16 +60,52 @@ export default {
 			});
 		}
 
-		// --- Create new project ---
-		if (url.pathname === '/create' && request.method === 'POST') {
-			let body: { region?: string; name?: string } = {};
+		// --- Analytics endpoint ---
+		if (url.pathname === '/analytics' && request.method === 'POST') {
+			let body: any = {};
 			try {
 				body = await request.json();
 			} catch {
 				return new Response('Invalid JSON body', { status: 400 });
 			}
 
-			const { region, name } = body;
+			const { eventName, properties } = body;
+			if (!eventName) {
+				return new Response('Missing eventName in request body', { status: 400 });
+			}
+
+			try {
+				await analytics.capture(eventName, properties || {});
+				return new Response(JSON.stringify({ status: 'success', event: eventName }), {
+					status: 200,
+					headers: { 'Content-Type': 'application/json' },
+				});
+			} catch (error) {
+				console.error('Analytics error:', error);
+				return new Response(
+					JSON.stringify({
+						status: 'error',
+						event: eventName,
+						error: error instanceof Error ? error.message : String(error),
+					}),
+					{
+						status: 500,
+						headers: { 'Content-Type': 'application/json' },
+					},
+				);
+			}
+		}
+
+		// --- Create new project ---
+		if (url.pathname === '/create' && request.method === 'POST') {
+			let body: { region?: string; name?: string; analytics?: { eventName?: string; properties?: any } } = {};
+			try {
+				body = await request.json();
+			} catch {
+				return new Response('Invalid JSON body', { status: 400 });
+			}
+
+			const { region, name, analytics: analyticsData } = body;
 			if (!region || !name) {
 				return new Response('Missing region or name in request body', { status: 400 });
 			}
@@ -96,7 +136,17 @@ export default {
 						indexes: ['create_db'],
 					});
 
-					await Promise.all([workflowPromise, analyticsPromise]);
+					// Handle PostHog analytics if provided
+					let posthogPromise = Promise.resolve();
+					if (analyticsData && analyticsData.eventName) {
+						try {
+							posthogPromise = analytics.capture(analyticsData.eventName, analyticsData.properties || {});
+						} catch (e) {
+							console.error('Error sending PostHog analytics:', e);
+						}
+					}
+
+					await Promise.all([workflowPromise, analyticsPromise, posthogPromise]);
 				} catch (e) {
 					console.error('Error in background tasks:', e);
 				}

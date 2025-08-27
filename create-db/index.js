@@ -6,7 +6,27 @@ dotenv.config();
 import { select, spinner, intro, outro, log, cancel } from "@clack/prompts";
 import chalk from "chalk";
 import terminalLink from "terminal-link";
-import { analytics } from "./analytics.js";
+
+async function sendAnalyticsToWorker(eventName, properties = {}) {
+  try {
+    const response = await fetch(`${CREATE_DB_WORKER_URL}/analytics`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventName, properties }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Analytics request failed: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const result = await response.json();
+    if (result.status === "success") {
+    } else {
+    }
+  } catch (error) {}
+}
 
 const CREATE_DB_WORKER_URL =
   process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
@@ -264,14 +284,12 @@ async function promptForRegion(defaultRegion) {
   }
 
   try {
-    await analytics.capture("create_db:region_selected", {
+    await sendAnalyticsToWorker("create_db:region_selected", {
       command: CLI_NAME,
       region: region,
       "selection-method": "interactive",
     });
-  } catch (error) {
-    console.error("Failed to send region_selected analytics :", error.message);
-  }
+  } catch (error) {}
 
   return region;
 }
@@ -286,7 +304,19 @@ async function createDatabase(name, region, returnJson = false) {
   const resp = await fetch(`${CREATE_DB_WORKER_URL}/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ region, name, utm_source: CLI_NAME }),
+    body: JSON.stringify({
+      region,
+      name,
+      utm_source: CLI_NAME,
+      analytics: {
+        eventName: "create_db:database_created",
+        properties: {
+          command: CLI_NAME,
+          region: region,
+          utm_source: CLI_NAME,
+        },
+      },
+    }),
   });
 
   if (resp.status === 429) {
@@ -306,18 +336,13 @@ async function createDatabase(name, region, returnJson = false) {
     }
 
     try {
-      await analytics.capture("create_db:database_creation_failed", {
+      await sendAnalyticsToWorker("create_db:database_creation_failed", {
         command: CLI_NAME,
         region: region,
         "error-type": "rate_limit",
         "status-code": 429,
       });
-    } catch (error) {
-      console.error(
-        "Failed to send database_creation_failed analytics:",
-        error.message
-      );
-    }
+    } catch (error) {}
 
     process.exit(1);
   }
@@ -340,18 +365,13 @@ async function createDatabase(name, region, returnJson = false) {
       s.stop("Unexpected response from create service.");
     }
     try {
-      await analytics.capture("create_db:database_creation_failed", {
+      await sendAnalyticsToWorker("create_db:database_creation_failed", {
         command: CLI_NAME,
         region,
         "error-type": "invalid_json",
         "status-code": resp.status,
       });
-    } catch (error) {
-      console.error(
-        "Failed to send database_creation_failed analytics:",
-        error.message
-      );
-    }
+    } catch (error) {}
     process.exit(1);
   }
 
@@ -409,18 +429,13 @@ async function createDatabase(name, region, returnJson = false) {
     }
 
     try {
-      await analytics.capture("create_db:database_creation_failed", {
+      await sendAnalyticsToWorker("create_db:database_creation_failed", {
         command: CLI_NAME,
         region: region,
         "error-type": "api_error",
         "error-message": result.error.message,
       });
-    } catch (error) {
-      console.error(
-        "Failed to send database_creation_failed analytics:",
-        error.message
-      );
-    }
+    } catch (error) {}
     process.exit(1);
   }
 
@@ -477,7 +492,7 @@ async function main() {
   try {
     const rawArgs = process.argv.slice(2);
     try {
-      await analytics.capture("create_db:cli_command_ran", {
+      await sendAnalyticsToWorker("create_db:cli_command_ran", {
         command: CLI_NAME,
         "full-command": `${CLI_NAME} ${rawArgs.join(" ")}`.trim(),
         "has-region-flag":
@@ -491,9 +506,7 @@ async function main() {
         platform: process.platform,
         arch: process.arch,
       });
-    } catch (error) {
-      console.error("Failed to send cli_command_ran analytics:", error.message);
-    }
+    } catch (error) {}
 
     const { flags } = await parseArgs();
 
@@ -518,17 +531,12 @@ async function main() {
       region = flags.region;
 
       try {
-        await analytics.capture("create_db:region_selected", {
+        await sendAnalyticsToWorker("create_db:region_selected", {
           command: CLI_NAME,
           region: region,
           "selection-method": "flag",
         });
-      } catch (error) {
-        console.error(
-          "Failed to send region_selected analytics:",
-          error.message
-        );
-      }
+      } catch (error) {}
     }
 
     if (flags.interactive) {
