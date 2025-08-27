@@ -10,20 +10,30 @@ import { select, spinner, intro, outro, log, cancel } from "@clack/prompts";
 import chalk from "chalk";
 import terminalLink from "terminal-link";
 
-async function sendAnalyticsToWorker(eventName, properties = {}) {
+const CREATE_DB_WORKER_URL =
+  process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
+const CLAIM_DB_WORKER_URL =
+  process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io";
+
+async function sendAnalyticsToWorker(
+  eventName,
+  properties,
+  { timeoutMs = 2000 }
+) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     await fetch(`${CREATE_DB_WORKER_URL}/analytics`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ eventName, properties }),
+      signal: controller.signal,
     });
-  } catch (error) {}
+  } catch (error) {
+  } finally {
+    clearTimeout(timer);
+  }
 }
-
-const CREATE_DB_WORKER_URL =
-  process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
-const CLAIM_DB_WORKER_URL =
-  process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io";
 
 async function detectUserLocation() {
   try {
@@ -52,7 +62,6 @@ async function detectUserLocation() {
   }
 }
 
-// Region coordinates (latitude, longitude)
 const REGION_COORDINATES = {
   "ap-southeast-1": { lat: 1.3521, lng: 103.8198 }, // Singapore
   "ap-northeast-1": { lat: 35.6762, lng: 139.6503 }, // Tokyo
@@ -573,6 +582,14 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
       )
     )
   );
+
+  try {
+    await sendAnalyticsToWorker("create_db:database_created", {
+      command: CLI_NAME,
+      region,
+      utm_source: CLI_NAME,
+    });
+  } catch {}
 }
 
 async function main() {

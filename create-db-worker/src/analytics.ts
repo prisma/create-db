@@ -1,6 +1,10 @@
 class EventCaptureError extends Error {
-	constructor(event: string, status: string) {
-		super(`Failed to submit PostHog event '${event}': ${status}`);
+	constructor(
+		public readonly event: string,
+		public readonly statusCode: number,
+		public readonly statusText: string,
+	) {
+		super(`Failed to submit PostHog event '${event}': ${statusCode} ${statusText}`);
 	}
 }
 
@@ -12,12 +16,15 @@ class PosthogEventCapture {
 	constructor(private env: { POSTHOG_API_HOST?: string; POSTHOG_API_KEY?: string }) {}
 
 	async capture(eventName: string, properties: AnalyticsProperties = {}) {
-		const POSTHOG_CAPTURE_URL = this.env.POSTHOG_API_HOST + '/capture';
-		const POSTHOG_KEY = this.env.POSTHOG_API_KEY;
+		const host = this.env.POSTHOG_API_HOST?.replace(/\/+$/, '');
+		const key = this.env.POSTHOG_API_KEY;
 
-		console.log('Sending analytics to PostHog', eventName, properties);
-		console.log('POSTHOG_CAPTURE_URL', POSTHOG_CAPTURE_URL);
-		console.log('POSTHOG_KEY Set?', !!POSTHOG_KEY);
+		if (!host || !key) {
+			return;
+		}
+
+		const POSTHOG_CAPTURE_URL = `${host}/capture`;
+		const POSTHOG_KEY = key;
 
 		const payload = {
 			api_key: POSTHOG_KEY,

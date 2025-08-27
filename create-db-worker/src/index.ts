@@ -74,26 +74,18 @@ export default {
 				return new Response('Missing eventName in request body', { status: 400 });
 			}
 
-			try {
-				await analytics.capture(eventName, properties || {});
-				return new Response(JSON.stringify({ status: 'success', event: eventName }), {
-					status: 200,
+			if (!env.POSTHOG_API_HOST || !env.POSTHOG_API_KEY) {
+				return new Response(JSON.stringify({ status: 'disabled' }), {
+					status: 204,
 					headers: { 'Content-Type': 'application/json' },
 				});
-			} catch (error) {
-				console.error('Analytics error:', error);
-				return new Response(
-					JSON.stringify({
-						status: 'error',
-						event: eventName,
-						error: error instanceof Error ? error.message : String(error),
-					}),
-					{
-						status: 500,
-						headers: { 'Content-Type': 'application/json' },
-					},
-				);
 			}
+
+			ctx.waitUntil(analytics.capture(eventName, properties || {}));
+			return new Response(JSON.stringify({ status: 'queued', event: eventName }), {
+				status: 202,
+				headers: { 'Content-Type': 'application/json' },
+			});
 		}
 
 		// --- Create new project ---
@@ -136,15 +128,11 @@ export default {
 						indexes: ['create_db'],
 					});
 
-					// Handle PostHog analytics if provided
-					let posthogPromise = Promise.resolve();
-					if (analyticsData && analyticsData.eventName) {
-						try {
-							posthogPromise = analytics.capture(analyticsData.eventName, analyticsData.properties || {});
-						} catch (e) {
-							console.error('Error sending PostHog analytics:', e);
-						}
-					}
+					const posthogPromise = analyticsData?.eventName
+						? analytics
+								.capture(analyticsData.eventName, analyticsData.properties || {})
+								.catch((e) => console.error('Error sending PostHog analytics:', e))
+						: Promise.resolve();
 
 					await Promise.all([workflowPromise, analyticsPromise, posthogPromise]);
 				} catch (e) {
