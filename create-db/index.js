@@ -13,11 +13,9 @@ dotenv.config();
 const CLI_RUN_ID = randomUUID();
 
 const CREATE_DB_WORKER_URL =
-  process.env.CREATE_DB_WORKER_URL.replace(/\/+$/, "") ||
-  "https://create-db-temp.prisma.io";
+  process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
 const CLAIM_DB_WORKER_URL =
-  process.env.CLAIM_DB_WORKER_URL.replace(/\/+$/, "") ||
-  "https://create-db.prisma.io";
+  process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io";
 
 async function sendAnalyticsToWorker(eventName, properties) {
   const controller = new AbortController();
