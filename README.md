@@ -147,7 +147,7 @@ CLAIM_DB_WORKER_URL="http://127.0.0.1:9999"
 
 ### Installation
 
-````bash
+```bash
 # Clone the repository
 git clone https://github.com/prisma/create-db.git
 cd create-db
@@ -159,6 +159,7 @@ pnpm install
 cd create-db-worker && pnpm install
 cd ../claim-db-worker && pnpm install
 cd ../create-db && pnpm install
+```
 
 ### Local Development
 
@@ -168,7 +169,7 @@ cd ../create-db && pnpm install
 
 ```env
 INTEGRATION_TOKEN=your_prisma_integration_token
-````
+```
 
 **Claim DB Worker** (`claim-db-worker/.dev.vars`):
 
