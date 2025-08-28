@@ -303,6 +303,8 @@ function validateFlagCombinations(flags) {
     ["list-regions", "json"],
     ["list-regions", "interactive"],
     ["list-regions", "region"],
+    ["interactive", "env"],
+    ["interactive", "json"],
   ];
 
   for (const [flag1, flag2] of conflictingFlags) {
