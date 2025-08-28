@@ -10,6 +10,41 @@ This monorepo contains tools and services that enable developers to quickly prov
 2. **Cloudflare Workers** - Backend services for database management and OAuth authentication
 3. **Monorepo Infrastructure** - Shared tooling and versioning
 
+## CLI Reference
+
+### Available Flags
+
+| Flag             | Description                         | Example              |
+| ---------------- | ----------------------------------- | -------------------- |
+| `--region`       | Specify database region             | `--region us-east-1` |
+| `--list-regions` | List available regions              | `--list-regions`     |
+| `--interactive`  | Enable interactive region selection | `--interactive`      |
+| `--help`         | Show help information               | `--help`             |
+| `--json`         | Output the info in a JSON format    | `--json`             |
+
+### Examples
+
+```bash
+# Create database with specific region
+npx create-db --region eu-west-1
+
+# List available regions
+npx create-db --list-regions
+
+# Interactive mode
+npx create-db --interactive
+
+# Output in JSON format
+npx create-db --json
+
+# Show help
+npx create-db --help
+
+# Alternative command shorthand names work the same way
+npx create-pg -r us-east-1
+npx create-pg -j
+```
+
 ## Packages
 
 ### CLI Tools
@@ -107,7 +142,7 @@ CLAIM_DB_WORKER_URL="http://127.0.0.1:9999"
 
 ### Installation
 
-```bash
+````bash
 # Clone the repository
 git clone https://github.com/prisma/create-db.git
 cd create-db
@@ -128,7 +163,7 @@ cd ../create-db && pnpm install
 
 ```env
 INTEGRATION_TOKEN=your_prisma_integration_token
-```
+````
 
 **Claim DB Worker** (`claim-db-worker/.dev.vars`):
 
