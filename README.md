@@ -10,6 +10,46 @@ This monorepo contains tools and services that enable developers to quickly prov
 2. **Cloudflare Workers** - Backend services for database management and OAuth authentication
 3. **Monorepo Infrastructure** - Shared tooling and versioning
 
+## CLI Reference
+
+### Available Flags
+
+| Flag             | Description                                       | Example              |
+| ---------------- | ------------------------------------------------- | -------------------- |
+| `--region`       | Specify database region                           | `--region us-east-1` |
+| `--list-regions` | List available regions                            | `--list-regions`     |
+| `--interactive`  | Enable interactive region selection               | `--interactive`      |
+| `--help`         | Show help information                             | `--help`             |
+| `--json`         | Output the info in a JSON format                  | `--json`             |
+| `--env`, `-e`    | Print DATABASE_URL to stdout; claim URL to stderr | `--env`              |
+
+### Examples
+
+```bash
+# Create database with specific region
+npx create-db --region eu-west-1
+
+# List available regions
+npx create-db --list-regions
+
+# Interactive mode
+npx create-db --interactive
+
+# Output in JSON format
+npx create-db --json
+
+# Show help
+npx create-db --help
+
+# Get --env response into .env (Be careful to not use `> .env` as that will overwrite your .env)
+npx create-db --env >> .env # Only DATABASE_URL
+npx create-db --env >> .env 2>&1 # Both DATABASE_URL and Claim URL
+
+# Alternative command shorthand names work the same way
+npx create-pg -r us-east-1
+npx create-pg -j
+```
+
 ## Packages
 
 ### CLI Tools
@@ -119,6 +159,7 @@ pnpm install
 cd create-db-worker && pnpm install
 cd ../claim-db-worker && pnpm install
 cd ../create-db && pnpm install
+```
 
 ### Local Development
 

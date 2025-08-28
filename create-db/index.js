@@ -194,6 +194,7 @@ Options:
   ${chalk.yellow("--json, -j")}                      Output machine-readable JSON and exit
   ${chalk.yellow("--list-regions")}                  List available regions and exit
   ${chalk.yellow("--help, -h")}                      Show this help message
+  ${chalk.yellow("--env, -e")}                       Prints DATABASE_URL to the terminal. ${chalk.gray(`To write to .env, use --env >> .env`)}
 
 Examples:
   ${chalk.gray(`npx ${CLI_NAME} --region us-east-1`)}
@@ -201,6 +202,8 @@ Examples:
   ${chalk.gray(`npx ${CLI_NAME} --interactive`)}
   ${chalk.gray(`npx ${CLI_NAME} -i`)}
   ${chalk.gray(`npx ${CLI_NAME} --json --region us-east-1`)}
+  ${chalk.gray(`npx ${CLI_NAME} --env --region us-east-1`)}
+  ${chalk.gray(`npx ${CLI_NAME} --env >> .env`)}
 `);
   process.exit(0);
 }
@@ -215,12 +218,14 @@ async function parseArgs() {
     "list-regions",
     "interactive",
     "json",
+    "env",
   ];
   const shorthandMap = {
     r: "region",
     i: "interactive",
     h: "help",
     j: "json",
+    e: "env",
   };
 
   const exitWithError = (message) => {
@@ -291,6 +296,30 @@ async function parseArgs() {
   }
 
   return { flags };
+}
+
+function validateFlagCombinations(flags) {
+  const conflictingFlags = [
+    ["env", "json"],
+    ["list-regions", "env"],
+    ["list-regions", "json"],
+    ["list-regions", "interactive"],
+    ["list-regions", "region"],
+    ["interactive", "env"],
+    ["interactive", "json"],
+  ];
+
+  for (const [flag1, flag2] of conflictingFlags) {
+    if (flags[flag1] && flags[flag2]) {
+      console.error(
+        chalk.red.bold(
+          `\n✖ Error: Cannot use --${flag1} and --${flag2} together.\n`
+        )
+      );
+      console.error(chalk.gray("Use --help or -h to see available options.\n"));
+      process.exit(1);
+    }
+  }
 }
 
 export async function getRegions(returnJson = false) {
@@ -389,9 +418,9 @@ async function promptForRegion(defaultRegion, userAgent) {
   return region;
 }
 
-async function createDatabase(name, region, userAgent, returnJson = false) {
+async function createDatabase(name, region, userAgent, silent = false) {
   let s;
-  if (!returnJson) {
+  if (!silent) {
     s = spinner();
     s.start("Creating your database...");
   }
@@ -407,7 +436,7 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
   });
 
   if (resp.status === 429) {
-    if (returnJson) {
+    if (silent) {
       return {
         error: "rate_limit_exceeded",
         message:
@@ -439,7 +468,7 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
     raw = await resp.text();
     result = JSON.parse(raw);
   } catch (e) {
-    if (returnJson) {
+    if (silent) {
       return {
         error: "invalid_json",
         message: "Unexpected response from create service.",
@@ -485,10 +514,10 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
       ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}?sslmode=require`
       : null;
 
-  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${userAgent}&utm_medium=cli`;
+  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${userAgent || CLI_NAME}&utm_medium=cli`;
   const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-  if (returnJson && !result.error) {
+  if (silent && !result.error) {
     const jsonResponse = {
       connectionString: prismaConn,
       directConnectionString: directConn,
@@ -507,11 +536,12 @@ async function createDatabase(name, region, userAgent, returnJson = false) {
   }
 
   if (result.error) {
-    if (returnJson) {
+    if (silent) {
       return {
         error: "api_error",
         message: result.error.message || "Unknown error",
         details: result.error,
+        status: result.error.status ?? resp.status,
       };
     }
 
@@ -593,6 +623,8 @@ async function main() {
 
     const { flags } = await parseArgs();
 
+    validateFlagCombinations(flags);
+
     let userAgent;
     const userEnvVars = readUserEnvFile();
     if (userEnvVars.PRISMA_ACTOR_NAME && userEnvVars.PRISMA_ACTOR_PROJECT) {
@@ -608,6 +640,7 @@ async function main() {
       "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
       "has-list-regions-flag": rawArgs.includes("--list-regions"),
       "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
+      "has-env-flag": rawArgs.includes("--env") || rawArgs.includes("-e"),
       "has-user-agent-from-env": !!userAgent,
       "node-version": process.version,
       platform: process.platform,
@@ -620,8 +653,11 @@ async function main() {
     }
 
     let name = new Date().toISOString();
-    let userLocation = await detectUserLocation();
-    let region = getRegionClosestToLocation(userLocation) || "us-east-1";
+    let region = flags.region || "us-east-1";
+    if (!flags.region || !flags.interactive) {
+      const userLocation = await detectUserLocation();
+      region = getRegionClosestToLocation(userLocation) || region;
+    }
     let chooseRegionPrompt = false;
 
     if (flags.help) {
@@ -666,6 +702,27 @@ async function main() {
             2
           )
         );
+        process.exit(1);
+      }
+    }
+
+    if (flags.env) {
+      try {
+        if (chooseRegionPrompt) {
+          region = await promptForRegion(region, userAgent);
+        } else {
+          await validateRegion(region, true);
+        }
+        const result = await createDatabase(name, region, userAgent, true);
+        if (result.error) {
+          console.error(result.message || "Unknown error");
+          process.exit(1);
+        }
+        console.log(`DATABASE_URL="${result.directConnectionString}"`);
+        console.error("\n# Claim your database at: " + result.claimUrl);
+        process.exit(0);
+      } catch (e) {
+        console.error(e?.message || String(e));
         process.exit(1);
       }
     }
