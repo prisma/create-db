@@ -4,6 +4,7 @@ import PrismaStudio from "./PrismaStudio";
 import DatabaseConnection from "./DatabaseConnection";
 import { customToast } from "@/lib/custom-toast";
 import { Database, Code, Eye, PlusCircle, Copy } from "lucide-react";
+import LoadingScreen from "./LoadingScreen";
 interface TabContentProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
@@ -16,6 +17,7 @@ interface TabContentProps {
   projectId: string;
   onCreateNewDatabase: () => void;
   handleClaimDatabase: () => void;
+  loading: boolean;
 }
 
 const TabContent = ({
@@ -30,6 +32,7 @@ const TabContent = ({
   projectId,
   onCreateNewDatabase,
   handleClaimDatabase,
+  loading,
 }: TabContentProps) => {
   const [schemaContent, setSchemaContent] = useState<string>(
     `// This is your Prisma schema file,
@@ -100,7 +103,7 @@ datasource db {
 
         <div className="flex w-full">
           <div className="flex min-w-full lg:min-w-0 lg:w-full gap-0.5 lg:justify-between lg:items-center">
-            <div className="flex gap-0.5 w-full max-w-[866px] -mb-px">
+            <div className="flex gap-0.5 w-full max-w-[866px]">
               <TabHeader
                 activeTab={activeTab}
                 onTabChange={handleTabChange}
@@ -151,33 +154,41 @@ datasource db {
         </div>
       </div>
 
-      {activeTab === "connection" && (
-        <div className="w-full mb-4">
-          <DatabaseConnection
-            connectionType={connectionType}
-            setConnectionType={setConnectionType}
-            ormConnectionString={connectionString}
-            directConnectionString={directConnectionString}
-            handleCopyConnectionString={handleCopyConnectionString}
-            copied={copied}
-          />
+      {loading ? (
+        <div className="w-full h-[calc(100vh-200px)] mx-auto font-barlow">
+          <LoadingScreen />
         </div>
-      )}
+      ) : (
+        <>
+          {activeTab === "connection" && (
+            <div className="w-full h-[calc(100vh-200px)]">
+              <DatabaseConnection
+                connectionType={connectionType}
+                setConnectionType={setConnectionType}
+                ormConnectionString={connectionString}
+                directConnectionString={directConnectionString}
+                handleCopyConnectionString={handleCopyConnectionString}
+                copied={copied}
+              />
+            </div>
+          )}
 
-      {activeTab === "schema" && (
-        <div className="w-full h-screen">
-          <PrismaSchemaEditor
-            value={schemaContent}
-            onChange={setSchemaContent}
-            connectionString={connectionString}
-          />
-        </div>
-      )}
+          {activeTab === "schema" && (
+            <div className="w-full h-[calc(100vh-200px)]">
+              <PrismaSchemaEditor
+                value={schemaContent}
+                onChange={setSchemaContent}
+                connectionString={connectionString}
+              />
+            </div>
+          )}
 
-      {activeTab === "studio" && (
-        <div className="w-full h-screen bg-white rounded-lg rounded-tl-none">
-          <PrismaStudio connectionString={connectionString} />
-        </div>
+          {activeTab === "studio" && (
+            <div className="w-full h-[calc(100vh-200px)] bg-white rounded-lg rounded-tl-none">
+              <PrismaStudio connectionString={connectionString} />
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -219,7 +230,7 @@ const TabHeader = ({
 
   return (
     <button
-      className={`flex-1 px-3 py-2 rounded-tl-md border-b border-brand-surface-main rounded-tr-md flex justify-center items-center gap-2 transition-colors whitespace-nowrap min-w-0 ${
+      className={`flex-1 px-3 py-2 rounded-tl-md border border-subtle rounded-tr-md flex justify-center items-center gap-2 transition-colors whitespace-nowrap min-w-0 ${
         isActive
           ? "bg-brand-surface-accent border-brand-surface-highlight text-brand-surface-highlight"
           : "bg-brand-surface-main text-muted hover:text-brand-surface-highlight hover:bg-brand-surface-highlight/5"

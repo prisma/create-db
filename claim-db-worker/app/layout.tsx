@@ -43,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
       <body
         className={`${barlow.className} antialiased bg-custom-gradient backdrop-filter backdrop-blur-md bg-cover font-barlow text-white p-0 min-h-screen w-full`}
       >

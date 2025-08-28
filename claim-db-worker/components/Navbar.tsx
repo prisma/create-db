@@ -42,11 +42,11 @@ export function Navbar() {
                     <strong>Do not store sensitive data.</strong>
                   </p>
                 </div>
-              ) : (
+              ) : !isLoading ? (
                 <span className="text-muted text-sm font-bold leading-none">
                   Database Claimed
                 </span>
-              )}
+              ) : null}
             </div>
             {!isLoading && timeRemaining && timeRemaining > 0 && (
               <div

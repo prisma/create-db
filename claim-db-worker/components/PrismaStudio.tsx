@@ -49,7 +49,7 @@ export default function PrismaStudio({
   }, [connectionString]);
 
   return (
-    <div className="w-full h-full overflow-hidden text-black">
+    <div className="w-full bg-black rounded-tl-none rounded-lg h-full">
       <Studio theme={customTheme} adapter={adapter} />
     </div>
   );

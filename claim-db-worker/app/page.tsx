@@ -1,67 +1,86 @@
-"use client";
-
 import Image from "next/image";
-import { useEffect, Suspense } from "react";
 import { PrismaPostgresLogo } from "@/components/PrismaPostgresLogo";
-import { useSearchParams, useRouter } from "next/navigation";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import {
+  Globe,
+  Zap,
+  Shield,
+  ArrowRightLeft,
+  Database,
+  Sparkles,
+  ArrowRight,
+} from "lucide-react";
+import { ClientRedirect } from "../components/ClientRedirect";
+import Link from "next/link";
 
 const steps = [
   {
     number: "1",
-    title: "Provision instantly",
+    title: "Create your database",
     description: (
       <>
-        Run{" "}
-        <span className="text-white font-mono font-bold">
-          npx create-db@latest
-        </span>{" "}
-        in your terminal to get a Prisma Postgres database. No account or other
-        setup needed.
+        Use the{" "}
+        <Link href="/web" className="text-white font-bold hover:underline">
+          web interface
+        </Link>{" "}
+        or run{" "}
+        <span className="text-white font-bold">npx create-db@latest</span> to
+        get a Prisma Postgres database instantly. No account or setup required.
       </>
     ),
   },
   {
     number: "2",
-    title: "Get the connection string",
+    title: "Connect and use",
     description:
-      "Use the connection string for anything you need: testing, AI agents, prototypes.",
+      "Get your connection string and start building. Perfect for development, testing, prototypes, and AI applications.",
   },
   {
     number: "3",
-    title: "Claim it if you want to keep it",
+    title: "Keep it forever",
     description: (
       <>
-        Transfer the database to your Prisma account to make sure it doesn't get
-        deleted. Otherwise,{" "}
-        <span className="italic">it will expire after 24 hours.</span>
+        Claim your database to your Prisma account to keep it permanently.{" "}
+        <span className="italic">
+          Unclaimed databases expire after 24 hours.
+        </span>
       </>
     ),
   },
 ];
 
-const options = [
-  { flag: "--region", description: "Specify the database region" },
-  { flag: "--interactive", description: "Run in interactive mode" },
-  { flag: "--help", description: "Show all available options" },
+const features = [
+  {
+    icon: <Globe className="w-5 h-5" />,
+    title: "Global deployment",
+    description:
+      "Deploy in regions closest to your users for optimal performance",
+  },
+  {
+    icon: <Zap className="w-5 h-5" />,
+    title: "Instant provisioning",
+    description: "Get a fully configured PostgreSQL database in seconds",
+  },
+  {
+    icon: <ArrowRightLeft className="w-5 h-5" />,
+    title: "Seamless migration",
+    description: "One-click transfer to your Prisma account when ready",
+  },
+  {
+    icon: <Sparkles className="w-5 h-5" />,
+    title: "Zero configuration",
+    description: "No setup, no accounts, no credit cards required",
+  },
 ];
 
-function HomePageContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+interface PageProps {
+  searchParams: { [key: string]: string | string[] | undefined };
+}
 
-  useEffect(() => {
-    const projectID = searchParams.get("projectID");
-    if (projectID && projectID !== "undefined") {
-      // Redirect to claim API route
-      router.push(
-        `/api/claim?projectID=${projectID}&utm_source=${searchParams.get("utm_source") || "unknown"}&utm_medium=${searchParams.get("utm_medium") || "unknown"}`
-      );
-    }
-  }, [searchParams, router]);
-
+function HomePageContent({ searchParams }: PageProps) {
   return (
     <div className="text-foreground">
+      <ClientRedirect searchParams={searchParams} />
       <div className="flex flex-col items-center text-center max-w-4xl w-full px-4 sm:px-6">
         <PrismaPostgresLogo />
 
@@ -71,34 +90,22 @@ function HomePageContent() {
           Want a free, instant Prisma Postgres database?
         </h1>
 
-        <div className="flex w-full flex-col items-center gap-2 sm:flex-row sm:gap-4 sm:max-w-none max-w-xs">
-          <div className="w-full sm:w-1/2 min-w-fit">
+        <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:gap-4 sm:max-w-none max-w-xs mt-4 mb-2">
+          <div className="w-full sm:w-1/2">
             <CodeSnippet />
           </div>
-          <div className="flex items-center justify-center h-fit sm:h-20 flex-row sm:flex-col text-muted text-xs font-medium my-2 sm:my-0">
+          <div className="flex items-center justify-center flex-row sm:flex-col text-muted text-xs font-medium">
             <div className="border-t sm:border-t-0 sm:border-l border-white/20 w-12 sm:w-auto sm:h-full" />
-            <div className="px-2 py-0 sm:py-2 rounded text-white/60">OR</div>
+            <div className="px-2 py-2 rounded text-white/60">OR</div>
             <div className="border-t sm:border-t-0 sm:border-l border-white/20 w-12 sm:w-auto sm:h-full" />
           </div>
-          <a
+          <Link
             href="/web"
-            className="flex text-nowrap w-full sm:w-1/2 h-full items-center justify-center gap-3 bg-[#24bfa7] hover:bg-[#16A394] text-white font-bold text-base sm:text-lg lg:text-xl border-none rounded-lg px-5 py-2.5 sm:px-6 sm:py-3 lg:px-8 lg:py-4 cursor-pointer shadow-lg transition-all duration-200 min-h-[44px] sm:min-h-[52px] lg:min-h-[60px]"
+            className="flex text-nowrap w-full sm:w-1/2 items-center justify-center gap-3 bg-[#24bfa7] hover:bg-[#16A394] text-white font-bold text-base sm:text-lg lg:text-xl rounded-lg px-5 py-2.5 sm:px-6 sm:py-3 lg:px-8 lg:py-4 cursor-pointer shadow-lg transition-all duration-200"
           >
-            Try it in the browser
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 12h14M12 5l7 7-7 7"
-              />
-            </svg>
-          </a>
+            Create a Database Online
+            <ArrowRight className="w-5 h-5" />
+          </Link>
         </div>
         <p className="text-xs text-muted italic mt-3 text-center max-w-2xl px-2 sm:text-xs md:text-xs lg:text-sm">
           databases will be deleted in 24 hours unless claimed
@@ -110,7 +117,7 @@ function HomePageContent() {
           {steps.map((step, index) => (
             <Step key={index} step={step} />
           ))}
-          <OptionsTable />
+          <FeaturesTable />
         </div>
       </div>
     </div>
@@ -154,50 +161,31 @@ function Step({ step }: { step: (typeof steps)[0] }) {
   );
 }
 
-function OptionsTable() {
+function FeaturesTable() {
   return (
     <div className="flex flex-col gap-3 text-left">
       <div className="flex items-center gap-3">
         <div className="bg-step rounded text-white font-bold w-7 h-7 flex items-center justify-center sm:w-7 md:w-8 lg:w-9 sm:text-base md:text-lg lg:text-xl">
-          +
+          <Sparkles className="w-4 h-4" />
         </div>
         <div className="text-white uppercase font-bold sm:text-base md:text-lg lg:text-xl">
-          Options
+          Features
         </div>
       </div>
 
-      <div className="rounded-lg border border-subtle flex flex-col ml-8 overflow-hidden sm:ml-10 md:ml-11 lg:ml-12">
-        <div className="bg-table-header flex items-center">
-          <div
-            className="w-2/5 px-2 py-2 bg-table-header text-white text-xs font-bold flex items-center sm:w-1/3 sm:px-3 sm:text-sm"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
-            Flag
-          </div>
-          <div
-            className="flex-1 min-h-10 px-2 py-2 bg-table-header text-white text-xs flex items-center sm:min-h-12 sm:px-3 sm:text-sm"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
-            Description
-          </div>
-        </div>
-
-        {options.map((option, index) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ml-8 sm:ml-10 md:ml-11 lg:ml-12">
+        {features.map((feature, index) => (
           <div
             key={index}
-            className="bg-step min-h-10 flex items-center sm:min-h-12"
+            className="bg-step rounded-lg p-4 border border-subtle hover:border-brand-surface-highlight/30 transition-colors"
           >
-            <div className="bg-step w-2/5 px-2 min-h-10 flex items-center sm:w-1/3 sm:px-3 sm:py-2 sm:min-h-12">
-              <span
-                className="bg-table-header rounded text-error text-xs font-bold px-2 py-1 sm:text-sm sm:px-3 md:px-4 lg:px-6"
-                style={{ fontFamily: "'Roboto Mono', monospace" }}
-              >
-                {option.flag}
-              </span>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="text-brand-surface-highlight">{feature.icon}</div>
+              <span className="text-white font-bold">{feature.title}</span>
             </div>
-            <div className="bg-step flex-1 px-2 min-h-10 flex items-center text-white text-xs sm:px-3 sm:text-sm sm:min-h-12">
-              {option.description}
-            </div>
+            <p className="text-muted text-sm leading-relaxed">
+              {feature.description}
+            </p>
           </div>
         ))}
       </div>
@@ -205,10 +193,10 @@ function OptionsTable() {
   );
 }
 
-export default function HomePage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <HomePageContent />
-    </Suspense>
-  );
+export default function HomePage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  return <HomePageContent searchParams={searchParams} />;
 }

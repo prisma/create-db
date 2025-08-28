@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useState } from "react";
 
 interface DatabaseConnectionProps {
@@ -12,7 +13,7 @@ interface DatabaseConnectionProps {
 }
 
 const InlineCode = ({ children }: { children: React.ReactNode }) => (
-  <code className="bg-step px-2 py-1 sm:px-3 sm:py-2 rounded text-white text-sm sm:text-base">
+  <code className="bg-step px-2 py-1 sm:px-1.5 sm:py-0.5 rounded text-white text-xs sm:text-sm">
     {children}
   </code>
 );
@@ -51,7 +52,7 @@ export default function DatabaseConnection({
     connectionType === "prisma" ? ormConnectionString : directConnectionString;
 
   return (
-    <div className="bg-card rounded-lg rounded-tl-none border border-subtle p-4 sm:p-6 w-full h-full flex flex-col">
+    <div className="bg-code rounded-lg rounded-tl-none p-4 sm:p-6 w-full h-full border-subtle border flex flex-col">
       {/* Connection type toggle - responsive */}
       <div className="flex flex-col sm:flex-row rounded-md p-1 w-full mb-3 gap-2">
         <button
@@ -72,7 +73,7 @@ export default function DatabaseConnection({
           }`}
           onClick={() => setConnectionType("direct")}
         >
-          Direct Connection
+          With Prisma ORM or any other tool
         </button>
       </div>
 
@@ -201,86 +202,98 @@ export default function DatabaseConnection({
 
       <div className="flex-1 space-y-6 bg-dark rounded-lg p-4 sm:p-6">
         {connectionType === "prisma" ? (
-          <div>
-            <h3 className="text-lg font-medium text-white mb-4">
-              Quick Start with Prisma:
-            </h3>
-            <div className="space-y-4 sm:space-y-6">
-              <StepItem number={1}>
-                Install Prisma:{" "}
-                <InlineCode>
-                  npm install prisma --save-dev && npm install @prisma/client
-                </InlineCode>
-              </StepItem>
-              <StepItem number={2}>
-                Add to your <InlineCode>.env</InlineCode> file:
-              </StepItem>
-              <div className="ml-6 sm:ml-8 lg:ml-12">
-                <pre className="bg-step p-3 sm:p-4 rounded text-white text-xs sm:text-sm overflow-x-auto leading-relaxed">
-                  {`DATABASE_URL=<your-connection-string>`}
-                </pre>
-              </div>
-              <StepItem number={3}>
-                Initialize and pull schema:{" "}
-                <InlineCode>npx prisma init && npx prisma db pull</InlineCode>
-              </StepItem>
-              <div className="mt-6 pt-4 border-t border-subtle">
-                <p className="text-xs sm:text-sm text-muted mb-3">
-                  Need more help? Check out{" "}
-                  <a
-                    href="https://www.prisma.io/docs/getting-started"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 underline"
-                  >
-                    Prisma Getting Started
-                  </a>
-                </p>
+          <div className="h-full">
+            <div className="flex flex-col h-full">
+              <h3 className="text-2xl font-bold text-white mb-4">
+                Quick Start with Prisma:
+              </h3>
+              <div className="space-y-4 sm:space-y-10">
+                <StepItem number={1}>
+                  Install Prisma:{" "}
+                  <InlineCode>
+                    npm install prisma --save-dev && npm install @prisma/client
+                  </InlineCode>
+                </StepItem>
+                <StepItem number={2}>
+                  Add to your <InlineCode>.env</InlineCode> file:
+                </StepItem>
+                <div className="ml-6 sm:ml-8 lg:ml-12">
+                  <pre className="bg-step p-3 sm:p-4 rounded text-white text-xs sm:text-sm overflow-x-auto leading-relaxed">
+                    {`DATABASE_URL=<your-connection-string>`}
+                  </pre>
+                </div>
+                <StepItem number={3}>
+                  Initialize and pull schema:{" "}
+                  <InlineCode>npx prisma init && npx prisma db pull</InlineCode>
+                </StepItem>
               </div>
             </div>
           </div>
         ) : (
-          <div>
-            <h3 className="text-lg font-medium text-white mb-4">
-              Quick Start with PostgreSQL:
-            </h3>
-            <div className="space-y-4 sm:space-y-6">
-              <StepItem number={1}>
-                Install PostgreSQL client:{" "}
-                <InlineCode>npm install pg</InlineCode>
-              </StepItem>
-              <StepItem number={2}>Create connection:</StepItem>
-              <div className="ml-6 sm:ml-8 lg:ml-12">
-                <pre className="bg-step p-3 sm:p-4 rounded text-white text-xs sm:text-sm overflow-x-auto leading-relaxed">
-                  {`import { Pool } from 'pg'
+          <div className="h-full">
+            <div className="flex flex-col h-full">
+              <h3 className="text-2xl font-bold text-white mb-4">
+                Quick Start with PostgreSQL:
+              </h3>
+              <div className="space-y-4 sm:space-y-6">
+                <StepItem number={1}>
+                  Install PostgreSQL client:{" "}
+                  <InlineCode>npm install pg</InlineCode>
+                </StepItem>
+                <StepItem number={2}>Create connection:</StepItem>
+                <div className="ml-6 sm:ml-8 lg:ml-12">
+                  <pre className="bg-step p-3 sm:p-4 rounded text-white text-xs sm:text-sm overflow-x-auto leading-relaxed">
+                    {`import { Pool } from 'pg'
 
 const pool = new Pool({
   connectionString: '<your-connection-string>'
 })`}
-                </pre>
-              </div>
-              <StepItem number={3}>
-                Query your database:{" "}
-                <InlineCode>
-                  const result = await pool.query('SELECT NOW()')
-                </InlineCode>
-              </StepItem>
-              <div className="mt-6 pt-4 border-t border-subtle">
-                <p className="text-sm text-muted mb-3">
-                  Need more help? Check out the{" "}
-                  <a
-                    href="https://node-postgres.com/guides/async-express"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 underline"
-                  >
-                    node-postgres Guide
-                  </a>
-                </p>
+                  </pre>
+                </div>
+                <StepItem number={3}>
+                  Query your database:{" "}
+                  <InlineCode>
+                    const result = await pool.query('SELECT NOW()')
+                  </InlineCode>
+                </StepItem>
               </div>
             </div>
           </div>
         )}
+      </div>
+
+      <div className="mt-6 pt-4 border-t border-subtle space-y-4">
+        <div className="p-3 bg-brand-surface-highlight/10 border border-brand-surface-highlight/20 rounded-md">
+          <p className="text-xs sm:text-sm text-brand-surface-highlight">
+            💡 <strong>Tip:</strong> You can also create databases using the CLI
+            with{" "}
+            <Link href="/" className="hover:underline">
+              <InlineCode>npx create-db@latest</InlineCode>
+            </Link>
+          </p>
+        </div>
+        <p className="text-xs sm:text-sm text-muted">
+          Need more help? Check out{" "}
+          {connectionType === "prisma" ? (
+            <a
+              href="https://www.prisma.io/docs/getting-started"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 underline"
+            >
+              Prisma Getting Started
+            </a>
+          ) : (
+            <a
+              href="https://node-postgres.com/guides/async-express"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 underline"
+            >
+              node-postgres Guide
+            </a>
+          )}
+        </p>
       </div>
     </div>
   );
