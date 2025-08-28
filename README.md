@@ -14,13 +14,14 @@ This monorepo contains tools and services that enable developers to quickly prov
 
 ### Available Flags
 
-| Flag             | Description                         | Example              |
-| ---------------- | ----------------------------------- | -------------------- |
-| `--region`       | Specify database region             | `--region us-east-1` |
-| `--list-regions` | List available regions              | `--list-regions`     |
-| `--interactive`  | Enable interactive region selection | `--interactive`      |
-| `--help`         | Show help information               | `--help`             |
-| `--json`         | Output the info in a JSON format    | `--json`             |
+| Flag             | Description                                       | Example              |
+| ---------------- | ------------------------------------------------- | -------------------- |
+| `--region`       | Specify database region                           | `--region us-east-1` |
+| `--list-regions` | List available regions                            | `--list-regions`     |
+| `--interactive`  | Enable interactive region selection               | `--interactive`      |
+| `--help`         | Show help information                             | `--help`             |
+| `--json`         | Output the info in a JSON format                  | `--json`             |
+| `--env`, `-e`    | Print DATABASE_URL to stdout; claim URL to stderr | `--env`              |
 
 ### Examples
 
@@ -39,6 +40,10 @@ npx create-db --json
 
 # Show help
 npx create-db --help
+
+# Get --env response into .env
+npx create-db --env > .env # Only DATABASE_URL
+npx create-db --env > .env 2>&1 # Both DATABASE_URL and Claim URL
 
 # Alternative command shorthand names work the same way
 npx create-pg -r us-east-1
