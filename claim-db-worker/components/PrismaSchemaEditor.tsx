@@ -4,31 +4,11 @@ import React, { useRef, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { customToast } from "@/lib/custom-toast";
 import Modal from "./Modal";
+import { Info } from "lucide-react";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-full bg-code">
-      <div className="text-center">
-        <svg
-          width="48"
-          height="60"
-          viewBox="0 0 58 72"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="mx-auto mb-4 animate-pulse"
-        >
-          <path
-            fillRule="evenodd"
-            clipRule="evenodd"
-            d="M0.522473 45.0933C-0.184191 46.246 -0.173254 47.7004 0.550665 48.8423L13.6534 69.5114C14.5038 70.8529 16.1429 71.4646 17.6642 71.0082L55.4756 59.6648C57.539 59.0457 58.5772 56.7439 57.6753 54.7874L33.3684 2.06007C32.183 -0.511323 28.6095 -0.722394 27.1296 1.69157L0.522473 45.0933ZM32.7225 14.1141C32.2059 12.9187 30.4565 13.1028 30.2001 14.3796L20.842 60.9749C20.6447 61.9574 21.5646 62.7964 22.5248 62.5098L48.6494 54.7114C49.4119 54.4838 49.8047 53.6415 49.4891 52.9111L32.7225 14.1141Z"
-            fill="white"
-          />
-        </svg>
-        <p className="text-sm text-muted">Loading editor...</p>
-      </div>
-    </div>
-  ),
+  loading: () => null,
 });
 
 interface PrismaSchemaEditorProps {
@@ -45,8 +25,8 @@ const PrismaSchemaEditor = ({
   const editorRef = useRef<any>(null);
   const [isFormatting, setIsFormatting] = useState(false);
   const [isPushing, setIsPushing] = useState(false);
-  const [lastPush, setLastPush] = useState<Date | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [isPageRefresh, setIsPageRefresh] = useState(false);
   const [completionDisposable, setCompletionDisposable] = useState<any>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string>("");
@@ -55,6 +35,17 @@ const PrismaSchemaEditor = ({
   const [isPulling, setIsPulling] = useState(false);
 
   useEffect(() => {
+    const isFirstLoad =
+      typeof window !== "undefined" &&
+      !sessionStorage.getItem("editor-initialized");
+
+    if (isFirstLoad) {
+      sessionStorage.setItem("editor-initialized", "true");
+      setIsPageRefresh(true);
+    } else {
+      setIsPageRefresh(false);
+    }
+
     const timer = setTimeout(() => {
       setIsMounted(true);
     }, 1500);
@@ -1059,7 +1050,6 @@ const PrismaSchemaEditor = ({
           return;
         }
 
-        setLastPush(new Date());
         customToast("success", "Schema pushed to database successfully");
       } else {
         const errorText = await response.text();
@@ -1154,12 +1144,6 @@ const PrismaSchemaEditor = ({
       );
 
       if (response.ok) {
-        const result = (await response.json()) as {
-          message?: string;
-          details?: string;
-        };
-
-        setLastPush(new Date());
         customToast("success", "Schema pushed to database successfully");
         setShowForceResetModal(false);
         setPendingSchema("");
@@ -1181,8 +1165,6 @@ const PrismaSchemaEditor = ({
       setIsPushing(false);
     }
   };
-
-  // Remove the early return - let the editor mount in the background
 
   return (
     <div className="flex flex-col lg:flex-row h-full bg-code rounded-lg rounded-tl-none p-2 gap-2">
@@ -1360,114 +1342,124 @@ const PrismaSchemaEditor = ({
           </div>
         </div>
       ) : (
-        <div className="flex-1 p-1 bg-[#181b21] flex flex-col rounded-lg relative">
-          <div className="flex-1">
-            <Editor
-              height="100%"
-              language="prisma"
-              value={value}
-              onChange={(newValue) => onChange(newValue || "")}
-              onMount={handleEditorDidMount}
-              theme="prisma-dark"
-              options={{
-                minimap: { enabled: true },
-                fontSize: 14,
-                fontFamily:
-                  "'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
-                fontLigatures: true,
-                lineNumbers: "on",
-                wordWrap: "on",
-                automaticLayout: true,
-                scrollBeyondLastLine: false,
-                padding: { top: 16, bottom: 16 },
-                renderWhitespace: "selection",
-                bracketPairColorization: { enabled: true },
-                guides: {
-                  bracketPairs: true,
-                  indentation: true,
-                },
-                suggest: {
-                  showKeywords: true,
-                  showSnippets: true,
-                  showFunctions: true,
-                  showFields: true,
-                  showVariables: true,
-                  showClasses: true,
-                  showModules: true,
-                  showProperties: true,
-                  showEnums: true,
-                  showEnumMembers: true,
-                  showTypeParameters: true,
-                  snippetsPreventQuickSuggestions: false,
-                  filterGraceful: true,
-                  localityBonus: true,
-                },
-                quickSuggestions: {
-                  other: "inline",
-                  comments: false,
-                  strings: false,
-                },
-                quickSuggestionsDelay: 300,
-                parameterHints: {
-                  enabled: true,
-                  cycle: true,
-                },
-                autoClosingBrackets: "always",
-                autoClosingQuotes: "always",
-                autoIndent: "full",
-                acceptSuggestionOnCommitCharacter: true,
-                acceptSuggestionOnEnter: "off",
-                tabCompletion: "on",
-                wordBasedSuggestions: "allDocuments",
-                folding: true,
-                foldingStrategy: "indentation",
-                showFoldingControls: "always",
-                matchBrackets: "always",
-                selectionHighlight: true,
-                occurrencesHighlight: "singleFile",
-                cursorBlinking: "blink",
-                cursorStyle: "line",
-                smoothScrolling: true,
-                tabSize: 2,
-                insertSpaces: true,
-                formatOnPaste: true,
-                formatOnType: true,
-                multiCursorModifier: "ctrlCmd",
-                mouseWheelZoom: true,
-                linkedEditing: true,
-                codeLens: true,
-                inlineSuggest: {
-                  enabled: false,
-                  showToolbar: "never",
-                },
-              }}
-            />
-          </div>
-
-          {!isMounted && (
-            <div className="absolute inset-0 bg-[#181b21] flex items-center justify-center rounded-lg z-10">
-              <div className="text-center">
-                <svg
-                  width="48"
-                  height="60"
-                  viewBox="0 0 58 72"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="mx-auto mb-4 animate-pulse"
-                >
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M0.522473 45.0933C-0.184191 46.246 -0.173254 47.7004 0.550665 48.8423L13.6534 69.5114C14.5038 70.8529 16.1429 71.4646 17.6642 71.0082L55.4756 59.6648C57.539 59.0457 58.5772 56.7439 57.6753 54.7874L33.3684 2.06007C32.183 -0.511323 28.6095 -0.722394 27.1296 1.69157L0.522473 45.0933ZM32.7225 14.1141C32.2059 12.9187 30.4565 13.1028 30.2001 14.3796L20.842 60.9749C20.6447 61.9574 21.5646 62.7964 22.5248 62.5098L48.6494 54.7114C49.4119 54.4838 49.8047 53.6415 49.4891 52.9111L32.7225 14.1141Z"
-                    fill="white"
-                  />
-                </svg>
-                <p className="mt-4 text-lg text-muted text-center px-4">
-                  Initializing editor...
-                </p>
-              </div>
+        <div className="flex flex-col w-full">
+          <div className="flex-1 p-1 bg-[#181b21] flex flex-col rounded-lg relative">
+            <div className="flex-1">
+              <Editor
+                height="100%"
+                language="prisma"
+                value={value}
+                onChange={(newValue) => onChange(newValue || "")}
+                onMount={handleEditorDidMount}
+                theme="prisma-dark"
+                options={{
+                  minimap: { enabled: true },
+                  fontSize: 14,
+                  fontFamily:
+                    "'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+                  fontLigatures: true,
+                  lineNumbers: "on",
+                  wordWrap: "on",
+                  automaticLayout: true,
+                  scrollBeyondLastLine: false,
+                  padding: { top: 16, bottom: 16 },
+                  renderWhitespace: "selection",
+                  bracketPairColorization: { enabled: true },
+                  guides: {
+                    bracketPairs: true,
+                    indentation: true,
+                  },
+                  suggest: {
+                    showKeywords: true,
+                    showSnippets: true,
+                    showFunctions: true,
+                    showFields: true,
+                    showVariables: true,
+                    showClasses: true,
+                    showModules: true,
+                    showProperties: true,
+                    showEnums: true,
+                    showEnumMembers: true,
+                    showTypeParameters: true,
+                    snippetsPreventQuickSuggestions: false,
+                    filterGraceful: true,
+                    localityBonus: true,
+                  },
+                  quickSuggestions: {
+                    other: "inline",
+                    comments: false,
+                    strings: false,
+                  },
+                  quickSuggestionsDelay: 300,
+                  parameterHints: {
+                    enabled: true,
+                    cycle: true,
+                  },
+                  autoClosingBrackets: "always",
+                  autoClosingQuotes: "always",
+                  autoIndent: "full",
+                  acceptSuggestionOnCommitCharacter: true,
+                  acceptSuggestionOnEnter: "off",
+                  tabCompletion: "on",
+                  wordBasedSuggestions: "allDocuments",
+                  folding: true,
+                  foldingStrategy: "indentation",
+                  showFoldingControls: "always",
+                  matchBrackets: "always",
+                  selectionHighlight: true,
+                  occurrencesHighlight: "singleFile",
+                  cursorBlinking: "blink",
+                  cursorStyle: "line",
+                  smoothScrolling: true,
+                  tabSize: 2,
+                  insertSpaces: true,
+                  formatOnPaste: true,
+                  formatOnType: true,
+                  multiCursorModifier: "ctrlCmd",
+                  mouseWheelZoom: true,
+                  linkedEditing: true,
+                  codeLens: true,
+                  inlineSuggest: {
+                    enabled: false,
+                    showToolbar: "never",
+                  },
+                  ariaLabel: "Prisma Schema Editor",
+                }}
+              />
             </div>
-          )}
+
+            {!isMounted && isPageRefresh && (
+              <div className="absolute inset-0 bg-[#181b21] flex items-center justify-center rounded-lg z-10">
+                <div className="text-center">
+                  <svg
+                    width="48"
+                    height="60"
+                    viewBox="0 0 58 72"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="mx-auto mb-4 animate-pulse"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M0.522473 45.0933C-0.184191 46.246 -0.173254 47.7004 0.550665 48.8423L13.6534 69.5114C14.5038 70.8529 16.1429 71.4646 17.6642 71.0082L55.4756 59.6648C57.539 59.0457 58.5772 56.7439 57.6753 54.7874L33.3684 2.06007C32.183 -0.511323 28.6095 -0.722394 27.1296 1.69157L0.522473 45.0933ZM32.7225 14.1141C32.2059 12.9187 30.4565 13.1028 30.2001 14.3796L20.842 60.9749C20.6447 61.9574 21.5646 62.7964 22.5248 62.5098L48.6494 54.7114C49.4119 54.4838 49.8047 53.6415 49.4891 52.9111L32.7225 14.1141Z"
+                      fill="white"
+                    />
+                  </svg>
+                  <p className="mt-4 text-lg text-muted text-center px-4">
+                    Initializing editor...
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="mt-2 p-3 bg-brand-surface-highlight/10 border border-brand-surface-highlight/20 rounded-md">
+            <p className="text-xs sm:text-sm text-brand-surface-highlight">
+              <Info className="w-4 h-4 mr-1 inline-block" />{" "}
+              <strong>Note:</strong> If your schema is out of sync with the
+              database, you can reset it with the <strong>Pull</strong> button.
+            </p>
+          </div>
         </div>
       )}
 

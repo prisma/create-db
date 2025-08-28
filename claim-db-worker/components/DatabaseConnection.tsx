@@ -1,5 +1,6 @@
 "use client";
 
+import { Lightbulb } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
 
@@ -12,7 +13,7 @@ interface DatabaseConnectionProps {
   copied: boolean;
 }
 
-const InlineCode = ({ children }: { children: React.ReactNode }) => (
+export const InlineCode = ({ children }: { children: React.ReactNode }) => (
   <code className="bg-step px-2 py-1 sm:px-1.5 sm:py-0.5 rounded text-white text-xs sm:text-sm">
     {children}
   </code>
@@ -73,7 +74,7 @@ export default function DatabaseConnection({
           }`}
           onClick={() => setConnectionType("direct")}
         >
-          With Prisma ORM or any other tool
+          With any other tool
         </button>
       </div>
 
@@ -265,8 +266,8 @@ const pool = new Pool({
       <div className="mt-6 pt-4 border-t border-subtle space-y-4">
         <div className="p-3 bg-brand-surface-highlight/10 border border-brand-surface-highlight/20 rounded-md">
           <p className="text-xs sm:text-sm text-brand-surface-highlight">
-            💡 <strong>Tip:</strong> You can also create databases using the CLI
-            with{" "}
+            <Lightbulb className="w-4 h-4 inline-block" /> <strong>Tip:</strong>{" "}
+            You can also create databases using the CLI with{" "}
             <Link href="/" className="hover:underline">
               <InlineCode>npx create-db@latest</InlineCode>
             </Link>
