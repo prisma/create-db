@@ -513,7 +513,7 @@ async function createDatabase(name, region, userAgent, silent = false) {
       ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}?sslmode=require`
       : null;
 
-  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${userAgent}&utm_medium=cli`;
+  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${userAgent || CLI_NAME}&utm_medium=cli`;
   const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   if (silent && !result.error) {
@@ -717,10 +717,8 @@ async function main() {
           console.error(result.message || "Unknown error");
           process.exit(1);
         }
-        process.stdout.write(`DATABASE_URL="${result.directConnectionString}"`);
-        process.stderr.write(
-          "\n\n# Claim your database at: " + result.claimUrl
-        );
+        console.log(`DATABASE_URL="${result.directConnectionString}"`);
+        console.error("\n# Claim your database at: " + result.claimUrl);
         process.exit(0);
       } catch (e) {
         console.error(e?.message || String(e));
