@@ -194,7 +194,7 @@ Options:
   ${chalk.yellow("--json, -j")}                      Output machine-readable JSON and exit
   ${chalk.yellow("--list-regions")}                  List available regions and exit
   ${chalk.yellow("--help, -h")}                      Show this help message
-  ${chalk.yellow("--env, -e")}                       Outputs DATABASE_URL to the terminal
+  ${chalk.yellow("--env, -e")}                       Prints DATABASE_URL to the terminal
 
 Examples:
   ${chalk.gray(`npx ${CLI_NAME} --region us-east-1`)}
@@ -202,6 +202,7 @@ Examples:
   ${chalk.gray(`npx ${CLI_NAME} --interactive`)}
   ${chalk.gray(`npx ${CLI_NAME} -i`)}
   ${chalk.gray(`npx ${CLI_NAME} --json --region us-east-1`)}
+  ${chalk.gray(`npx ${CLI_NAME} --env --region us-east-1`)}
 `);
   process.exit(0);
 }
@@ -539,6 +540,7 @@ async function createDatabase(name, region, userAgent, silent = false) {
         error: "api_error",
         message: result.error.message || "Unknown error",
         details: result.error,
+        status: result.error.status,
       };
     }
 
@@ -637,6 +639,7 @@ async function main() {
       "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
       "has-list-regions-flag": rawArgs.includes("--list-regions"),
       "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
+      "has-env-flag": rawArgs.includes("--env") || rawArgs.includes("-e"),
       "has-user-agent-from-env": !!userAgent,
       "node-version": process.version,
       platform: process.platform,
