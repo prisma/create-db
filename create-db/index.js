@@ -540,7 +540,7 @@ async function createDatabase(name, region, userAgent, silent = false) {
         error: "api_error",
         message: result.error.message || "Unknown error",
         details: result.error,
-        status: result.error.status,
+        status: result.error.status ?? resp.status,
       };
     }
 
@@ -652,8 +652,11 @@ async function main() {
     }
 
     let name = new Date().toISOString();
-    let userLocation = await detectUserLocation();
-    let region = getRegionClosestToLocation(userLocation) || "us-east-1";
+    let region = flags.region || "us-east-1";
+    if (!flags.region || !flags.interactive) {
+      const userLocation = await detectUserLocation();
+      region = getRegionClosestToLocation(userLocation) || region;
+    }
     let chooseRegionPrompt = false;
 
     if (flags.help) {
