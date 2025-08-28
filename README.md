@@ -41,9 +41,9 @@ npx create-db --json
 # Show help
 npx create-db --help
 
-# Get --env response into .env
-npx create-db --env > .env # Only DATABASE_URL
-npx create-db --env > .env 2>&1 # Both DATABASE_URL and Claim URL
+# Get --env response into .env (Be careful to not use `> .env` as that will overwrite your .env)
+npx create-db --env >> .env # Only DATABASE_URL
+npx create-db --env >> .env 2>&1 # Both DATABASE_URL and Claim URL
 
 # Alternative command shorthand names work the same way
 npx create-pg -r us-east-1

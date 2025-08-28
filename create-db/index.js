@@ -194,7 +194,7 @@ Options:
   ${chalk.yellow("--json, -j")}                      Output machine-readable JSON and exit
   ${chalk.yellow("--list-regions")}                  List available regions and exit
   ${chalk.yellow("--help, -h")}                      Show this help message
-  ${chalk.yellow("--env, -e")}                       Prints DATABASE_URL to the terminal
+  ${chalk.yellow("--env, -e")}                       Prints DATABASE_URL to the terminal. ${chalk.gray(`To write to .env, use --env >> .env`)}
 
 Examples:
   ${chalk.gray(`npx ${CLI_NAME} --region us-east-1`)}
@@ -203,6 +203,7 @@ Examples:
   ${chalk.gray(`npx ${CLI_NAME} -i`)}
   ${chalk.gray(`npx ${CLI_NAME} --json --region us-east-1`)}
   ${chalk.gray(`npx ${CLI_NAME} --env --region us-east-1`)}
+  ${chalk.gray(`npx ${CLI_NAME} --env >> .env`)}
 `);
   process.exit(0);
 }
