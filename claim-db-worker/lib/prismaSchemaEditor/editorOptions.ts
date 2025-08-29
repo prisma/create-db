@@ -44,6 +44,7 @@ export const PRISMA_EDITOR_OPTIONS = {
   autoClosingBrackets: "always",
   autoClosingQuotes: "always",
   autoIndent: "full",
+  iPadShowKeyboard: false,
   acceptSuggestionOnCommitCharacter: true,
   acceptSuggestionOnEnter: "off",
   tabCompletion: "on",

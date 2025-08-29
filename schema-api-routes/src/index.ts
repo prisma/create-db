@@ -10,8 +10,11 @@ const app = new Hono();
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
+  "http://localhost:8787",
   "https://create-db.prisma.io",
   "https://claim-db-worker.raycast-0ef.workers.dev",
+  "https://claim-db-worker-staging.raycast-0ef.workers.dev",
+
   /^https:\/\/claim-db-worker.*\.vercel\.app$/,
   /^https:\/\/.*-claim-db-worker\.raycast-0ef\.workers\.dev$/,
 ];

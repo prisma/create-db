@@ -265,7 +265,6 @@ export default function SchemaPage() {
         isOpen={showErrorModal}
         onClose={() => setShowErrorModal(false)}
         title="Schema Push Failed"
-        maxWidth="max-w-lg"
       >
         <div className="text-muted mb-6">
           Failed to push schema to database. Please check your schema for
@@ -295,7 +294,6 @@ export default function SchemaPage() {
           setPendingSchema("");
         }}
         title="Database Reset Required"
-        maxWidth="max-w-lg"
       >
         <div className="text-muted mb-6">
           This operation will reset your database and lose all data. This is

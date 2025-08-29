@@ -89,23 +89,20 @@ export const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
       const db = result.response?.data?.database;
 
       if (db) {
-        const newDbInfo = {
-          projectId: result.projectId,
-          connectionString: db.connectionString,
-          directConnectionString: db.directConnectionString,
-          expirationTime: Date.now() + 24 * 60 * 60 * 1000,
-          databaseId: result.databaseId,
-        };
-
         const directConnString = db.directConnection
           ? `postgresql://${db.directConnection.user}:${db.directConnection.pass}@${db.directConnection.host}?sslmode=require`
           : "";
 
-        setDbInfo(newDbInfo);
-        saveToCookie({
-          ...newDbInfo,
+        const newDbInfo = {
+          projectId: result.projectId,
+          connectionString: db.connectionString,
           directConnectionString: directConnString,
-        });
+          expirationTime: Date.now() + 24 * 60 * 60 * 1000,
+          databaseId: result.databaseId,
+        };
+
+        setDbInfo(newDbInfo);
+        saveToCookie(newDbInfo);
       }
     } catch (error) {
       router.replace(`/error?title=Error&message=Failed to create database`);

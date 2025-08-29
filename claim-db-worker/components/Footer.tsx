@@ -55,7 +55,7 @@ export function Footer() {
         </div>
       </div>
       <div className="max-w-7xl w-full mx-auto flex justify-between items-center mt-8 pt-8 border-t border-[#2D3748] flex-col text-center gap-6 sm:flex-row sm:gap-0 sm:mt-6 sm:pt-6 px-4 md:px-4 sm:px-4">
-        <span>© 2024 Prisma Data, Inc.</span>
+        <span>© {new Date().getFullYear()} Prisma Data, Inc.</span>
         <div className="flex gap-6 md:gap-8 flex-wrap justify-center sm:gap-14">
           <Image src="/gdpr.svg" alt="GDPR Logo" width="35" height="35" />
           <Image src="/hipaa.svg" alt="HIPAA Logo" width="62" height="30" />

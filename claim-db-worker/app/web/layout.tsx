@@ -168,7 +168,7 @@ const WebLayoutContent = ({ children }: WebLayoutProps) => {
                       activeTab={currentTab}
                       onTabChange={handleTabChange}
                       tabName="schema"
-                      buttonText="View your schema"
+                      buttonText="Modify your schema"
                       icon="code"
                       buttonTextMobile="Schema"
                     />

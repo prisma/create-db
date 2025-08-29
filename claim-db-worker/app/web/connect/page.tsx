@@ -6,7 +6,7 @@ import { useDatabase } from "../DatabaseContext";
 import { customToast } from "@/lib/custom-toast";
 
 const InlineCode = ({ children }: { children: React.ReactNode }) => (
-  <code className="bg-step px-2 py-1 sm:px-1.5 sm:py-0.5 rounded text-white text-xs sm:text-sm">
+  <code className="bg-step px-1 py-0.5 sm:px-1.5 sm:py-0.5 rounded text-white text-xs sm:text-sm">
     {children}
   </code>
 );
@@ -24,9 +24,9 @@ const StepItem = ({
   number: number;
   children: React.ReactNode;
 }) => (
-  <div className="flex items-start gap-2 sm:gap-4">
+  <div className="flex items-start gap-2 sm:gap-4 w-full">
     <StepNumber number={number} />
-    <div className="flex-1 leading-relaxed text-sm sm:text-lg text-muted">
+    <div className="leading-relaxed text-sm sm:text-lg text-muted overflow-x-auto min-h-16">
       {children}
     </div>
   </div>
@@ -95,8 +95,7 @@ export default function ConnectPage() {
             type={showPassword ? "text" : "password"}
             value={displayed}
             readOnly
-            className="bg-transparent p-3 text-white text-sm flex-1 outline-none"
-            style={{ fontFamily: "monospace" }}
+            className="bg-transparent p-3 text-white text-sm flex-1 outline-none font-mono"
           />
         </div>
         <div className="flex gap-2">
@@ -181,15 +180,19 @@ export default function ConnectPage() {
       <div className="flex-1 flex flex-col">
         <div className="space-y-6">
           <h3 className="text-lg font-bold text-white mb-4">
-            {connectionType === 'prisma' ? 'Connect with Prisma ORM' : 'Connect with node-postgres'}
+            {connectionType === "prisma"
+              ? "Connect with Prisma ORM"
+              : "Connect with node-postgres"}
           </h3>
           <div className="space-y-4">
-            {connectionType === 'prisma' ? (
+            {connectionType === "prisma" ? (
               <>
                 <StepItem number={1}>
                   <span className="text-white font-medium">Install Prisma</span>
                   <div className="mt-1">
-                    <code className="text-sm bg-card p-1.5 rounded border border-subtle">npm install prisma @prisma/client</code>
+                    <code className="text-sm bg-card p-1.5 rounded border border-subtle">
+                      npm install prisma @prisma/client
+                    </code>
                   </div>
                 </StepItem>
 
@@ -200,12 +203,17 @@ export default function ConnectPage() {
                   <div className="w-full overflow-x-auto mt-2">
                     <code className="text-sm bg-card p-2 rounded border border-subtle block overflow-x-auto">
                       DATABASE_URL="
-                      <span 
-                        className="whitespace-pre-wrap break-all"
-                        style={{ ['WebkitTextSecurity' as any]: showPassword ? 'none' : 'disc' }}
+                      <span
+                        className="whitespace-nowrap"
+                        style={{
+                          ["WebkitTextSecurity" as any]: showPassword
+                            ? "none"
+                            : "disc",
+                        }}
                       >
                         {displayed}
-                      </span>"
+                      </span>
+                      "
                     </code>
                   </div>
                 </StepItem>
@@ -215,7 +223,9 @@ export default function ConnectPage() {
                     Pull the database schema
                   </span>
                   <div className="mt-1">
-                    <code className="text-sm bg-card p-1.5 rounded border border-subtle">npx prisma db pull</code>
+                    <code className="text-sm bg-card p-1.5 rounded border border-subtle">
+                      npx prisma db pull
+                    </code>
                   </div>
                 </StepItem>
 
@@ -224,29 +234,35 @@ export default function ConnectPage() {
                     Generate Prisma Client
                   </span>
                   <div className="mt-1">
-                    <code className="text-sm bg-card p-1.5 rounded border border-subtle">npx prisma generate</code>
+                    <code className="text-sm bg-card p-1.5 rounded border border-subtle">
+                      npx prisma generate
+                    </code>
                   </div>
                 </StepItem>
 
                 <StepItem number={5}>
                   <span className="text-white font-medium">Start querying</span>
-                  <div className="bg-card p-3 rounded border border-subtle mt-2 overflow-x-auto">
-                    <code className="text-sm whitespace-pre">
-{`import { PrismaClient } from '@prisma/client'
+                  <div className="bg-card p-3 rounded border border-subtle mt-2 overflow-x-scroll">
+                    <code className="text-sm whitespace-pre overflow-x-auto">
+                      {`import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 const users = await prisma.user.findMany()
 console.log(users)`}
-                      </code>
+                    </code>
                   </div>
                 </StepItem>
               </>
             ) : (
               <>
                 <StepItem number={1}>
-                  <span className="text-white font-medium">Install node-postgres</span>
+                  <span className="text-white font-medium">
+                    Install node-postgres
+                  </span>
                   <div className="mt-1">
-                    <code className="text-sm bg-card p-1.5 rounded border border-subtle">npm install pg</code>
+                    <code className="text-sm bg-card p-1.5 rounded border border-subtle">
+                      npm install pg
+                    </code>
                   </div>
                 </StepItem>
 
@@ -254,15 +270,20 @@ console.log(users)`}
                   <span className="text-white font-medium">
                     Set connection string in <InlineCode>.env</InlineCode>
                   </span>
-                  <div className="w-full overflow-x-auto mt-2">
+                  <div className="w-full mt-2">
                     <code className="text-sm bg-card p-2 rounded border border-subtle block overflow-x-auto">
                       DATABASE_URL="
-                      <span 
-                        className="whitespace-pre-wrap break-all"
-                        style={{ ['WebkitTextSecurity' as any]: showPassword ? 'none' : 'disc' }}
+                      <span
+                        className="whitespace-nowrap"
+                        style={{
+                          ["WebkitTextSecurity" as any]: showPassword
+                            ? "none"
+                            : "disc",
+                        }}
                       >
                         {displayed}
-                      </span>"
+                      </span>
+                      "
                     </code>
                   </div>
                 </StepItem>
@@ -271,9 +292,9 @@ console.log(users)`}
                   <span className="text-white font-medium">
                     Set up connection
                   </span>
-                  <div className="bg-card p-3 rounded border border-subtle mt-2 overflow-x-auto">
-                    <code className="text-sm whitespace-pre">
-{`import { Pool } from 'pg'
+                  <div className="w-full mt-2">
+                    <code className="text-sm bg-card p-2 rounded border border-subtle block overflow-x-auto whitespace-pre">
+                      {`import { Pool } from 'pg'
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -284,12 +305,10 @@ const pool = new Pool({
                 </StepItem>
 
                 <StepItem number={4}>
-                  <span className="text-white font-medium">
-                    Basic query
-                  </span>
-                  <div className="bg-card p-3 rounded border border-subtle mt-2 overflow-x-auto">
-                    <code className="text-sm whitespace-pre">
-{`const { rows } = await pool.query('SELECT * FROM users')
+                  <span className="text-white font-medium">Basic query</span>
+                  <div className="w-full mt-2">
+                    <code className="text-sm bg-card p-2 rounded border border-subtle block overflow-x-auto whitespace-pre">
+                      {`const { rows } = await pool.query('SELECT * FROM users')
 console.log(rows)`}
                     </code>
                   </div>
@@ -301,7 +320,7 @@ console.log(rows)`}
                   </span>
                   <div className="bg-card p-3 rounded border border-subtle mt-2 overflow-x-auto">
                     <code className="text-sm whitespace-pre">
-{`const { rows } = await pool.query('SELECT * FROM users WHERE id = $1')
+                      {`const { rows } = await pool.query('SELECT * FROM users WHERE id = $1')
 console.log(rows[0])`}
                     </code>
                   </div>
@@ -314,8 +333,9 @@ console.log(rows[0])`}
         <div className="mt-auto pt-6">
           <div className="p-3 bg-brand-surface-highlight/10 border border-brand-surface-highlight/20 rounded-md">
             <p className="text-xs sm:text-sm text-brand-surface-highlight">
-              <Lightbulb className="w-4 h-4 mr-1 inline-block" /> <strong>Tip:</strong>{" "}
-              To create a DB on the fly from any terminal, use{" "}
+              <Lightbulb className="w-4 h-4 mr-1 inline-block" />{" "}
+              <strong>Tip:</strong> To create a DB on the fly from any terminal,
+              use{" "}
               <InlineCode>
                 npx create-db<span className="text-muted">@latest</span>
               </InlineCode>

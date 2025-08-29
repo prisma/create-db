@@ -22,7 +22,10 @@ const steps = [
     description: (
       <>
         Use the{" "}
-        <Link href="/web" className="text-white font-bold hover:underline">
+        <Link
+          href="/web/connect"
+          className="text-white font-bold hover:underline"
+        >
           web interface
         </Link>{" "}
         or run{" "}
@@ -94,17 +97,14 @@ async function HomePageContent({ searchParams }: PageProps) {
         </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full mt-8 mb-12">
-          <div className="bg-card/60 p-6 rounded-xl border border-subtle relative overflow-hidden">
-            <div className="absolute top-4 right-4 bg-yellow-500/20 text-yellow-400 text-sm font-bold px-2 py-1 rounded">
-              RECOMMENDED
-            </div>
+          <div className="bg-gradient-to-br from-card/80 via-card/70 to-card/90 p-6 rounded-xl border-2 border-accent/80 shadow-[0_0_20px_5px_#71e8df]/20 relative overflow-hidden">
             <div className="flex items-center gap-3 mb-6">
               <Globe className="w-6 h-6 text-brand-surface-highlight" />
               <h2 className="text-2xl font-bold text-white">Web Interface</h2>
             </div>
             <Link
-              href="/web"
-              className="h-16 mb-6 w-full flex items-center justify-center gap-3 bg-[#24bfa7] hover:bg-[#16A394] text-white font-bold text-lg rounded-lg px-6 py-3 cursor-pointer shadow-lg transition-all duration-200"
+              href="/web/connect"
+              className="h-16 mb-6 w-full flex items-center justify-center gap-3 bg-button-blue hover:bg-button-blue-hover text-white font-bold text-lg rounded-lg px-6 py-3 cursor-pointer shadow-lg transition-all duration-200"
             >
               Create with the Web Interface
               <ArrowRight className="w-5 h-5" />
@@ -155,31 +155,31 @@ async function HomePageContent({ searchParams }: PageProps) {
               <div className="flex items-start gap-3">
                 <Terminal className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-white">
-                    Terminal Workflows
-                  </h3>
+                  <h3 className="font-semibold text-white">Instant Database</h3>
                   <p className="text-muted text-sm">
-                    For developers who prefer command-line tools
+                    Get a database with just one command
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Zap className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-white">Quick Start</h3>
+                  <h3 className="font-semibold text-white">
+                    For Quick Testing
+                  </h3>
                   <p className="text-muted text-sm">
-                    Get started with a single command
+                    Perfect for quick experiments and prototypes
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <ArrowRightLeft className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
+                <Sparkles className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
                 <div>
                   <h3 className="font-semibold text-white">
-                    All Web Features Included
+                    No Configuration Needed
                   </h3>
                   <p className="text-muted text-sm">
-                    Access everything via CLI that you can in the web interface
+                    Zero setup required, just run and connect
                   </p>
                 </div>
               </div>

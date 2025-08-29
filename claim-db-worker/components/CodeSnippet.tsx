@@ -15,7 +15,7 @@ export function CodeSnippet() {
   };
 
   return (
-    <div className="bg-code border-2 border-accent shadow-lg shadow-cyan-400/20 flex items-center gap-2 p-3 text-white w-full h-full font-mono rounded-xl font-bold sm:gap-3 sm:p-4">
+    <div className="bg-code border-2 border-accent shadow-[0_0_20px_5px_#71e8df]/10 flex items-center gap-2 p-3 text-white w-full h-full font-mono rounded-xl font-bold sm:gap-3 sm:p-4">
       <span className="text-dim text-sm font-medium sm:text-base">$</span>
       <span className="text-sm sm:text-base flex-1 text-start">
         npx create-db<span className="text-muted">@latest</span>
