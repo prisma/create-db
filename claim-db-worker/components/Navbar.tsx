@@ -4,6 +4,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useDropContext } from "../app/contexts/DropContext";
 import { MoveRight } from "lucide-react";
+import Link from "next/link";
 
 export function Navbar() {
   const pathname = usePathname();

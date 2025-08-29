@@ -198,6 +198,17 @@ export default function ConnectPage() {
 
                 <StepItem number={2}>
                   <span className="text-white font-medium">
+                    Initialize Prisma
+                  </span>
+                  <div className="mt-1">
+                    <code className="text-sm bg-card p-1.5 rounded border border-subtle">
+                      npx prisma init
+                    </code>
+                  </div>
+                </StepItem>
+
+                <StepItem number={3}>
+                  <span className="text-white font-medium">
                     Set connection string in <InlineCode>.env</InlineCode>
                   </span>
                   <div className="w-full overflow-x-auto mt-2">
@@ -218,7 +229,7 @@ export default function ConnectPage() {
                   </div>
                 </StepItem>
 
-                <StepItem number={3}>
+                <StepItem number={4}>
                   <span className="text-white font-medium">
                     Pull the database schema
                   </span>
@@ -229,7 +240,7 @@ export default function ConnectPage() {
                   </div>
                 </StepItem>
 
-                <StepItem number={4}>
+                <StepItem number={5}>
                   <span className="text-white font-medium">
                     Generate Prisma Client
                   </span>
@@ -240,11 +251,11 @@ export default function ConnectPage() {
                   </div>
                 </StepItem>
 
-                <StepItem number={5}>
+                <StepItem number={6}>
                   <span className="text-white font-medium">Start querying</span>
                   <div className="bg-card p-3 rounded border border-subtle mt-2 overflow-x-scroll">
                     <code className="text-sm whitespace-pre overflow-x-auto">
-                      {`import { PrismaClient } from '@prisma/client'
+                      {`import { PrismaClient } from "../app/generated/prisma";
 
 const prisma = new PrismaClient()
 const users = await prisma.user.findMany()
@@ -294,34 +305,22 @@ console.log(users)`}
                   </span>
                   <div className="w-full mt-2">
                     <code className="text-sm bg-card p-2 rounded border border-subtle block overflow-x-auto whitespace-pre">
-                      {`import { Pool } from 'pg'
+                      {`import { Pool } from "pg";
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-})`}
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });`}
                     </code>
                   </div>
                 </StepItem>
 
                 <StepItem number={4}>
-                  <span className="text-white font-medium">Basic query</span>
+                  <span className="text-white font-medium">
+                    Query your database
+                  </span>
                   <div className="w-full mt-2">
                     <code className="text-sm bg-card p-2 rounded border border-subtle block overflow-x-auto whitespace-pre">
-                      {`const { rows } = await pool.query('SELECT * FROM users')
-console.log(rows)`}
-                    </code>
-                  </div>
-                </StepItem>
+                      {`const { rows } = await pool.query('SELECT * FROM "User"');
 
-                <StepItem number={5}>
-                  <span className="text-white font-medium">
-                    Parameterized query
-                  </span>
-                  <div className="bg-card p-3 rounded border border-subtle mt-2 overflow-x-auto">
-                    <code className="text-sm whitespace-pre">
-                      {`const { rows } = await pool.query('SELECT * FROM users WHERE id = $1')
-console.log(rows[0])`}
+console.log(rows);`}
                     </code>
                   </div>
                 </StepItem>
