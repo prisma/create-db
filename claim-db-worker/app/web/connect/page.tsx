@@ -63,7 +63,7 @@ export default function ConnectPage() {
       : dbInfo.directConnectionString;
 
   return (
-    <div className="bg-code rounded-lg rounded-tl-none p-4 sm:p-6 w-full h-full border-subtle border flex flex-col">
+    <div className="bg-code rounded-lg rounded-tl-none p-4 sm:p-6 border border-subtle flex flex-col h-full min-h-[calc(100vh-200px)]">
       {/* Connection type toggle - responsive */}
       <div className="flex flex-col sm:flex-row rounded-md p-1 w-full mb-3 gap-2">
         <button

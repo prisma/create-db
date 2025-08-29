@@ -212,7 +212,7 @@ const WebLayoutContent = ({ children }: WebLayoutProps) => {
               </div>
             ) : (
               <div
-                className={`w-full ${pathname.includes("/connect") ? "min-h-[calc(100vh-200px)]" : "h-[calc(100vh-200px)]"}`}
+                className={`w-full ${pathname.includes("/connect") ? "" : "h-[calc(100vh-200px)]"}`}
               >
                 {children}
               </div>
