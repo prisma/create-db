@@ -7,8 +7,9 @@ Create temporary Prisma Postgres databases that you can claim permanently.
 This monorepo contains tools and services that enable developers to quickly provision temporary Prisma Postgres databases and optionally claim ownership to make them permanent. The system consists of:
 
 1. **CLI Tools** - Command-line interfaces for database creation
-2. **Cloudflare Workers** - Backend services for database management and OAuth authentication
-3. **Monorepo Infrastructure** - Shared tooling and versioning
+2. **Web Interface** - Browser-based database creation at create-db.prisma.io
+3. **Cloudflare Workers** - Backend services for database management and OAuth authentication
+4. **Monorepo Infrastructure** - Shared tooling and versioning
 
 ## CLI Reference
 
@@ -71,6 +72,20 @@ npx create-pg -j
 - **Dependencies**: Workspace dependency on `create-db`
 - **Usage**: Provides `create-pg` and `create-postgres` commands
 
+### Web Interface
+
+#### `claim-db-worker` (Web Application)
+
+- **Purpose**: Browser-based database creation and management
+- **URL**: [create-db.prisma.io](https://create-db.prisma.io)
+- **Features**:
+  - No installation required
+  - Visual database management interface
+  - Connection string display and copying
+  - Schema viewer and editor
+  - Prisma Studio integration
+  - Database claiming workflow
+
 ### Backend Services
 
 #### `create-db-worker` (Cloudflare Worker)
@@ -91,13 +106,14 @@ npx create-pg -j
 
 #### `claim-db-worker` (Cloudflare Worker)
 
-- **Purpose**: Handles OAuth-based database ownership transfer
+- **Purpose**: Handles OAuth-based database ownership transfer and serves the web interface
 - **Features**:
   - Prisma OAuth authentication
   - Rate limiting (100 requests/minute)
   - Secure project transfer
   - User-friendly HTML interfaces
   - Analytics tracking
+  - Web application hosting
 
 **API Endpoints**:
 
@@ -106,7 +122,7 @@ npx create-pg -j
 
 ## Quick Start
 
-### Using the CLI
+### Option 1: Using the CLI
 
 ```bash
 # Create a database with default settings
@@ -122,6 +138,10 @@ npx create-db --interactive
 npx create-pg --region eu-west-1
 npx create-postgres --interactive
 ```
+
+### Option 2: Using the Web Interface
+
+Visit [create-db.prisma.io/web](https://create-db.prisma.io/web) to create databases directly in your browser. No installation required - just click "Create Database Online" to get started.
 
 ### Environment Setup
 
@@ -147,7 +167,7 @@ CLAIM_DB_WORKER_URL="http://127.0.0.1:9999"
 
 ### Installation
 
-```bash
+````bash
 # Clone the repository
 git clone https://github.com/prisma/create-db.git
 cd create-db
@@ -169,7 +189,7 @@ cd ../create-db && pnpm install
 
 ```env
 INTEGRATION_TOKEN=your_prisma_integration_token
-```
+````
 
 **Claim DB Worker** (`claim-db-worker/.dev.vars`):
 
@@ -379,3 +399,7 @@ create-db/
 2. **CLI Testing**: Test changes in the `create-db` package
 3. **Versioning**: Use changesets for version management
 4. **Deployment**: Deploy workers and publish packages as needed
+
+```
+
+```
