@@ -74,13 +74,14 @@ const features = [
 ];
 
 interface PageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-function HomePageContent({ searchParams }: PageProps) {
+async function HomePageContent({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
   return (
     <div className="text-foreground">
-      <ClientRedirect searchParams={searchParams} />
+      <ClientRedirect searchParams={resolvedSearchParams} />
       <div className="flex flex-col items-center text-center max-w-4xl w-full px-4 sm:px-6">
         <PrismaPostgresLogo />
 
@@ -193,10 +194,10 @@ function FeaturesTable() {
   );
 }
 
-export default function HomePage({
+export default async function HomePage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   return <HomePageContent searchParams={searchParams} />;
 }

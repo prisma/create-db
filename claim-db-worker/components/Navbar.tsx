@@ -9,7 +9,7 @@ export function Navbar() {
   const pathname = usePathname();
   const { timeRemaining, handleClaimDatabase, isLoading } = useDropContext();
 
-  if (pathname === "/web") {
+  if (pathname.startsWith("/web")) {
     return (
       <nav className="h-[72px] w-full box-border overflow-hidden md:h-[72px] sm:h-[60px] sm:py-3 xs:h-14 xs:py-2 flex items-center">
         <div className="max-w-7xl w-full mx-auto flex justify-between items-center box-border px-4 md:px-4 sm:px-4 xs:px-3">
