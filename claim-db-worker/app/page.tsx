@@ -4,11 +4,13 @@ import { CodeSnippet } from "@/components/CodeSnippet";
 import {
   Globe,
   Zap,
-  Shield,
   ArrowRightLeft,
   Database,
   Sparkles,
   ArrowRight,
+  Terminal,
+  LayoutDashboard,
+  Laptop,
 } from "lucide-react";
 import { ClientRedirect } from "../components/ClientRedirect";
 import Link from "next/link";
@@ -82,33 +84,112 @@ async function HomePageContent({ searchParams }: PageProps) {
   return (
     <div className="text-foreground">
       <ClientRedirect searchParams={resolvedSearchParams} />
-      <div className="flex flex-col items-center text-center max-w-4xl w-full px-4 sm:px-6">
+      <div className="flex flex-col items-center text-center max-w-6xl w-full px-4 sm:px-6">
         <PrismaPostgresLogo />
 
         <PillBadge />
 
-        <h1 className="text-3xl font-[800] text-white mb-6 tracking-tight sm:text-3xl md:text-4xl lg:text-7xl">
-          Want a free, instant Prisma Postgres database?
+        <h1 className="text-3xl font-[800] text-white mb-6 tracking-tight sm:text-3xl md:text-4xl lg:text-6xl">
+          Get a free, instant Prisma Postgres database
         </h1>
 
-        <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:gap-4 sm:max-w-none max-w-xs mt-4 mb-2">
-          <div className="w-full sm:w-1/2">
-            <CodeSnippet />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full mt-8 mb-12">
+          <div className="bg-card/60 p-6 rounded-xl border border-subtle relative overflow-hidden">
+            <div className="absolute top-4 right-4 bg-yellow-500/20 text-yellow-400 text-sm font-bold px-2 py-1 rounded">
+              RECOMMENDED
+            </div>
+            <div className="flex items-center gap-3 mb-6">
+              <Globe className="w-6 h-6 text-brand-surface-highlight" />
+              <h2 className="text-2xl font-bold text-white">Web Interface</h2>
+            </div>
+            <Link
+              href="/web"
+              className="h-16 mb-6 w-full flex items-center justify-center gap-3 bg-[#24bfa7] hover:bg-[#16A394] text-white font-bold text-lg rounded-lg px-6 py-3 cursor-pointer shadow-lg transition-all duration-200"
+            >
+              Create with the Web Interface
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+            <div className="space-y-4 text-left">
+              <div className="flex items-start gap-3">
+                <Database className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-white">
+                    Visual Schema Editor
+                  </h3>
+                  <p className="text-muted text-sm">
+                    Design your database schema with an intuitive UI
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <LayoutDashboard className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-white">Prisma Studio</h3>
+                  <p className="text-muted text-sm">
+                    Manage your data with the built-in database client
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Laptop className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-white">Interactive</h3>
+                  <p className="text-muted text-sm">
+                    Interact with your database directly from the web interface
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center justify-center flex-row sm:flex-col text-muted text-xs font-medium">
-            <div className="border-t sm:border-t-0 sm:border-l border-white/20 w-12 sm:w-auto sm:h-full" />
-            <div className="px-2 py-2 rounded text-white/60">OR</div>
-            <div className="border-t sm:border-t-0 sm:border-l border-white/20 w-12 sm:w-auto sm:h-full" />
+
+          {/* CLI Column */}
+          <div className="bg-card/60 p-6 rounded-xl border border-subtle relative">
+            <div className="flex items-center gap-3 mb-6">
+              <Terminal className="w-6 h-6 text-brand-surface-highlight" />
+              <h2 className="text-2xl font-bold text-white">Command Line</h2>
+            </div>
+            <div className="h-16 mb-6">
+              <CodeSnippet />
+            </div>
+            <div className="space-y-4 text-left">
+              <div className="flex items-start gap-3">
+                <Terminal className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-white">
+                    Terminal Workflows
+                  </h3>
+                  <p className="text-muted text-sm">
+                    For developers who prefer command-line tools
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Zap className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-white">Quick Start</h3>
+                  <p className="text-muted text-sm">
+                    Get started with a single command
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <ArrowRightLeft className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-white">
+                    All Web Features Included
+                  </h3>
+                  <p className="text-muted text-sm">
+                    Access everything via CLI that you can in the web interface
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <Link
-            href="/web"
-            className="flex text-nowrap w-full sm:w-1/2 items-center justify-center gap-3 bg-[#24bfa7] hover:bg-[#16A394] text-white font-bold text-base sm:text-lg lg:text-xl rounded-lg px-5 py-2.5 sm:px-6 sm:py-3 lg:px-8 lg:py-4 cursor-pointer shadow-lg transition-all duration-200"
-          >
-            Create a Database Online
-            <ArrowRight className="w-5 h-5" />
-          </Link>
+
+          {/* Web Interface Column */}
         </div>
-        <p className="text-xs text-muted italic mt-3 text-center max-w-2xl px-2 sm:text-xs md:text-xs lg:text-sm">
+
+        <p className="text-xs text-muted italic text-center max-w-2xl px-2 sm:text-xs md:text-xs lg:text-sm">
           databases will be deleted in 24 hours unless claimed
         </p>
       </div>
