@@ -143,7 +143,7 @@ async function HomePageContent({ searchParams }: PageProps) {
           </div>
 
           {/* CLI Column */}
-          <div className="bg-card/60 p-6 rounded-xl border border-subtle relative">
+          <div className="bg-card/80 p-6 rounded-xl border border-subtle relative">
             <div className="flex items-center gap-3 mb-6">
               <Terminal className="w-6 h-6 text-brand-surface-highlight" />
               <h2 className="text-2xl font-bold text-white">Command Line</h2>
