@@ -1,16 +1,20 @@
 import DeleteDbWorkflow from './delete-workflow';
-
+import { PosthogEventCapture } from './analytics';
 interface Env {
 	INTEGRATION_TOKEN: string;
 	DELETE_DB_WORKFLOW: Workflow;
 	CREATE_DB_RATE_LIMITER: RateLimit;
 	CREATE_DB_DATASET: AnalyticsEngineDataset;
+	POSTHOG_API_KEY?: string;
+	POSTHOG_API_HOST?: string;
 }
 
 export { DeleteDbWorkflow };
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		const analytics = new PosthogEventCapture(env);
+
 		// --- Rate limiting ---
 		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: request.url });
 
@@ -56,44 +60,94 @@ export default {
 			});
 		}
 
-		// --- Create new project ---
-		if (url.pathname === '/create' && request.method === 'POST') {
-			let body: { region?: string; name?: string } = {};
+		// --- Analytics endpoint ---
+		if (url.pathname === '/analytics' && request.method === 'POST') {
+			type AnalyticsBody = { eventName?: string; properties?: Record<string, unknown> };
+
+			let body: AnalyticsBody = {};
+
 			try {
 				body = await request.json();
 			} catch {
 				return new Response('Invalid JSON body', { status: 400 });
 			}
 
-			const { region, name } = body;
+			const { eventName, properties } = body;
+			if (!eventName) {
+				return new Response('Missing eventName in request body', { status: 400 });
+			}
+
+			if (!env.POSTHOG_API_HOST || !env.POSTHOG_API_KEY) {
+				return new Response(null, { status: 204 });
+			}
+
+			ctx.waitUntil(analytics.capture(eventName, properties || {}));
+			return new Response(JSON.stringify({ status: 'queued', event: eventName }), {
+				status: 202,
+				headers: { 'Content-Type': 'application/json' },
+			});
+		}
+
+		// --- Create new project ---
+		if (url.pathname === '/create' && request.method === 'POST') {
+			type CreateDbBody = {
+				region?: string;
+				name?: string;
+				analytics?: { eventName?: string; properties?: Record<string, unknown> };
+			};
+
+			let body: CreateDbBody = {};
+
+			try {
+				body = await request.json();
+			} catch {
+				return new Response('Invalid JSON body', { status: 400 });
+			}
+
+			const { region, name, analytics: analyticsData } = body;
 			if (!region || !name) {
 				return new Response('Missing region or name in request body', { status: 400 });
 			}
 
-			const payload = JSON.stringify({ region, name });
 			const prismaResponse = await fetch('https://api.prisma.io/v1/projects', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					Authorization: `Bearer ${env.INTEGRATION_TOKEN}`,
 				},
-				body: payload,
+				body: JSON.stringify({
+					region,
+					name,
+				}),
 			});
 
 			const prismaText = await prismaResponse.text();
 
-			// Trigger delete workflow for the new project
-			try {
-				const response = JSON.parse(prismaText);
-				const projectID = response.data ? response.data.id : response.id;
-				await env.DELETE_DB_WORKFLOW.create({ params: { projectID } });
-				env.CREATE_DB_DATASET.writeDataPoint({
-					blobs: ['database_created'],
-					indexes: ['create_db'],
-				});
-			} catch (e) {
-				console.error('Error parsing prismaText or triggering workflow:', e);
-			}
+			const backgroundTasks = async () => {
+				try {
+					const response = JSON.parse(prismaText);
+					const projectID = response.data ? response.data.id : response.id;
+
+					const workflowPromise = env.DELETE_DB_WORKFLOW.create({ params: { projectID } });
+
+					const analyticsPromise = env.CREATE_DB_DATASET.writeDataPoint({
+						blobs: ['database_created'],
+						indexes: ['create_db'],
+					});
+
+					const posthogPromise = analyticsData?.eventName
+						? analytics
+								.capture(analyticsData.eventName, analyticsData.properties || {})
+								.catch((e) => console.error('Error sending PostHog analytics:', e))
+						: Promise.resolve();
+
+					await Promise.all([workflowPromise, analyticsPromise, posthogPromise]);
+				} catch (e) {
+					console.error('Error in background tasks:', e);
+				}
+			};
+
+			ctx.waitUntil(backgroundTasks());
 
 			return new Response(prismaText, {
 				status: prismaResponse.status,
