@@ -11,6 +11,8 @@ import {
   Terminal,
   LayoutDashboard,
   Laptop,
+  Pencil,
+  Puzzle,
 } from "lucide-react";
 import { ClientRedirect } from "../components/ClientRedirect";
 import Link from "next/link";
@@ -54,7 +56,7 @@ const steps = [
   },
 ];
 
-const features = [
+const featuresTable = [
   {
     icon: <Globe className="w-5 h-5" />,
     title: "Global deployment",
@@ -78,6 +80,49 @@ const features = [
   },
 ];
 
+const features = [
+  {
+    icon: <Zap className="w-5 h-5 text-brand-surface-highlight" />,
+    title: "Instant Database",
+    description: "Get a database with just one command",
+    webOnly: false,
+  },
+  {
+    icon: <Terminal className="w-5 h-5 text-brand-surface-highlight" />,
+    title: "Terminal Ready",
+    description: "Perfect for scripts and CI/CD pipelines",
+    webOnly: false,
+  },
+  {
+    icon: <Sparkles className="w-5 h-5 text-brand-surface-highlight" />,
+    title: "No Configuration Needed",
+    description: "Zero setup required, just run and connect",
+    webOnly: false,
+  },
+];
+
+const featuresWebOnly = [
+  {
+    icon: <Laptop className="w-5 h-5 text-brand-surface-highlight" />,
+    title: "Interactive Web Interface",
+    description: "Interact with your database directly in the browser",
+    webOnly: true,
+  },
+
+  {
+    icon: <Database className="w-5 h-5 text-brand-surface-highlight" />,
+    title: "Visual Schema Editor",
+    description: "Design your database schema with the built-in editor",
+    webOnly: true,
+  },
+  {
+    icon: <LayoutDashboard className="w-5 h-5 text-brand-surface-highlight" />,
+    title: "Prisma Studio",
+    description: "Manage your data with the built-in database client",
+    webOnly: true,
+  },
+];
+
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
@@ -96,97 +141,90 @@ async function HomePageContent({ searchParams }: PageProps) {
           Get a free, instant Prisma Postgres database
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full mt-8 mb-12">
-          <div className="bg-gradient-to-br from-card/80 via-card/70 to-card/90 p-6 rounded-xl border-2 border-accent/80 shadow-[0_0_20px_5px_#71e8df]/20 relative overflow-hidden">
-            <div className="flex items-center gap-3 mb-6">
-              <Globe className="w-6 h-6 text-brand-surface-highlight" />
-              <h2 className="text-2xl font-bold text-white">Web Interface</h2>
+        <div className="w-full max-w-4xl mx-auto mt-8 mb-12">
+          <div className="bg-card/80 p-4 sm:p-8 rounded-xl border border-subtle">
+            <div className="grid grid-cols-1 md:grid-cols-2 sm:gap-8">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <Globe className="w-6 h-6 text-brand-surface-highlight" />
+                  <h2 className="text-2xl font-bold text-white">
+                    Web Interface
+                  </h2>
+                </div>
+                <Link
+                  href="/web/connect"
+                  className="h-16 mb-8 w-full flex items-center justify-center gap-3 bg-button-blue hover:bg-button-blue-hover text-white font-bold text-lg rounded-lg px-6 py-3 cursor-pointer transition-all duration-200"
+                >
+                  <span className="sm:hidden">Use the Web Interface</span>
+                  <span className="hidden sm:block">
+                    Create with the Web Interface
+                  </span>
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+              </div>
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <Terminal className="w-6 h-6 text-brand-surface-highlight" />
+                  <h2 className="text-2xl font-bold text-white">
+                    Command Line
+                  </h2>
+                </div>
+                <div className="h-16">
+                  <CodeSnippet />
+                </div>
+              </div>
             </div>
-            <Link
-              href="/web/connect"
-              className="h-16 mb-6 w-full flex items-center justify-center gap-3 bg-button-blue hover:bg-button-blue-hover text-white font-bold text-lg rounded-lg px-6 py-3 cursor-pointer shadow-lg transition-all duration-200"
-            >
-              Create with the Web Interface
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <div className="space-y-4 text-left">
-              <div className="flex items-start gap-3">
-                <Database className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-white">
-                    Visual Schema Editor
-                  </h3>
-                  <p className="text-muted text-sm">
-                    Design your database schema with an intuitive UI
-                  </p>
-                </div>
+
+            <div className="my-6 mt-10 sm:my-6 flex items-center justify-center gap-2 w-full">
+              <Puzzle className="w-5 h-5 text-brand-surface-highlight" />
+              <h1 className="text-white font-bold text-2xl">Features</h1>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                {features.map((feature, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-4 bg-step/30 rounded-lg border border-subtle"
+                  >
+                    <div className="mt-0.5 flex-shrink-0">{feature.icon}</div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-white">
+                          {feature.title}
+                        </h3>
+                      </div>
+                      <p className="text-muted text-sm mt-1">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-start gap-3">
-                <LayoutDashboard className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-white">Prisma Studio</h3>
-                  <p className="text-muted text-sm">
-                    Manage your data with the built-in database client
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Laptop className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-white">Interactive</h3>
-                  <p className="text-muted text-sm">
-                    Interact with your database directly from the web interface
-                  </p>
-                </div>
+              <div className="space-y-4">
+                {featuresWebOnly.map((feature, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-4 bg-step/30 rounded-lg border border-subtle"
+                  >
+                    <div className="mt-0.5 flex-shrink-0">{feature.icon}</div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-white">
+                          {feature.title}
+                        </h3>
+                        <span className="text-xs bg-brand-surface-highlight/20 text-brand-surface-highlight px-2 py-0.5 rounded-full">
+                          Web Only
+                        </span>
+                      </div>
+                      <p className="text-muted text-sm mt-1">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-
-          {/* CLI Column */}
-          <div className="bg-card/80 p-6 rounded-xl border border-subtle relative">
-            <div className="flex items-center gap-3 mb-6">
-              <Terminal className="w-6 h-6 text-brand-surface-highlight" />
-              <h2 className="text-2xl font-bold text-white">Command Line</h2>
-            </div>
-            <div className="h-16 mb-6">
-              <CodeSnippet />
-            </div>
-            <div className="space-y-4 text-left">
-              <div className="flex items-start gap-3">
-                <Terminal className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-white">Instant Database</h3>
-                  <p className="text-muted text-sm">
-                    Get a database with just one command
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Zap className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-white">
-                    For Quick Testing
-                  </h3>
-                  <p className="text-muted text-sm">
-                    Perfect for quick experiments and prototypes
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Sparkles className="w-5 h-5 text-brand-surface-highlight mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-white">
-                    No Configuration Needed
-                  </h3>
-                  <p className="text-muted text-sm">
-                    Zero setup required, just run and connect
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Web Interface Column */}
         </div>
 
         <p className="text-xs text-muted italic text-center max-w-2xl px-2 sm:text-xs md:text-xs lg:text-sm">
@@ -200,6 +238,32 @@ async function HomePageContent({ searchParams }: PageProps) {
             <Step key={index} step={step} />
           ))}
           <FeaturesTable />
+          <div className="flex flex-col gap-3 text-left">
+            <div className="flex items-center gap-3">
+              <div className="bg-step rounded text-white font-bold w-7 h-7 flex items-center justify-center sm:w-7 md:w-8 lg:w-9 sm:text-base md:text-lg lg:text-xl">
+                <Pencil
+                  width={20}
+                  height={20}
+                  className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5"
+                />
+              </div>
+              <div className="text-white uppercase font-bold sm:text-base md:text-lg lg:text-xl">
+                How it's made
+              </div>
+            </div>
+            <div className="text-muted ml-8 sm:ml-10 md:ml-11 lg:ml-12 md:text-base lg:text-lg">
+              create-db utilizes the power of the{" "}
+              <a
+                href="https://www.prisma.io/docs/postgres/introduction/management-api"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-surface-highlight hover:underline"
+              >
+                Prisma Postgres Management API
+              </a>{" "}
+              to create and manage your database.
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -256,7 +320,7 @@ function FeaturesTable() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ml-8 sm:ml-10 md:ml-11 lg:ml-12">
-        {features.map((feature, index) => (
+        {featuresTable.map((feature, index) => (
           <div
             key={index}
             className="bg-step rounded-lg p-4 border border-subtle hover:border-brand-surface-highlight/30 transition-colors"
