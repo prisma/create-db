@@ -16,7 +16,7 @@ export default function DBUnavailablePage() {
 
   return (
     <div className="w-fit min-h-[calc(100vh-200px)] max-w-7xl mx-auto px-2 sm:px-4 py-8 sm:py-16 font-barlow">
-      <div className="bg-code text-center gap-6 h-fit rounded-lg rounded-tl-none p-4 sm:p-6 border border-subtle flex flex-col">
+      <div className="bg-code text-center gap-6 h-fit rounded-lg p-4 sm:p-6 border border-subtle flex flex-col">
         <h1 className="text-2xl gap-2 font-bold flex items-center">
           <Info className="inline text-brand-surface-highlight" /> Database
           already claimed or deleted
