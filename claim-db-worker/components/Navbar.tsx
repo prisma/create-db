@@ -37,7 +37,7 @@ export function Navbar() {
                     })()}
                   </span>
                   <MoveRight className="w-4 h-4 text-muted text-sm flex-shrink-0 hidden lg:block" />
-                  <p className="text-muted/50 text-sm leading-none hidden lg:block">
+                  <p className="text-muted text-sm leading-none hidden lg:block">
                     This database will be automatically deleted after 24 hours
                     unless claimed.{" "}
                     <strong>Do not store sensitive data.</strong>

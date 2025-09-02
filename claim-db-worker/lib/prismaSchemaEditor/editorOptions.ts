@@ -4,6 +4,9 @@ export const PRISMA_EDITOR_OPTIONS = {
   fontFamily:
     "'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
   fontLigatures: true,
+  scrollbar: {
+    alwaysConsumeMouseWheel: false,
+  },
   lineNumbers: "on",
   wordWrap: "on",
   automaticLayout: true,
