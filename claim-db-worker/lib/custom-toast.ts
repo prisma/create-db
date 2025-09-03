@@ -37,7 +37,7 @@ const borders = {
   loading: "1px solid #16a394",
 };
 
-export const customToast = (type: ToastType, message: string) => {
+export const customToast = (type: ToastType, message: string): string => {
   const style = {
     ...toastStyles,
     border: borders[type],
