@@ -8,6 +8,9 @@
   "observability": {
     "enabled": true,
   },
+  "vars": {
+    "NEXT_PUBLIC_CLIENT_ID": "${NEXT_PUBLIC_CLIENT_ID}",
+  },
   "analytics_engine_datasets": [
     {
       "binding": "CREATE_DB_DATASET",
