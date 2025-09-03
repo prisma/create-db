@@ -252,16 +252,18 @@ async function HomePageContent({ searchParams }: PageProps) {
               </div>
             </div>
             <div className="text-muted ml-8 sm:ml-10 md:ml-11 lg:ml-12 md:text-base lg:text-lg">
-              create-db utilizes the power of the{" "}
+              create-db utilizes the power of the Prisma Postgres Management API
+              to create and manage your database. If you'd like to buid
+              something similar, see the{" "}
               <a
-                href="https://www.prisma.io/docs/postgres/introduction/management-api"
+                href="https://www.prisma.io/partners"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-brand-surface-highlight hover:underline"
               >
-                Prisma Postgres Management API
-              </a>{" "}
-              to create and manage your database.
+                Prisma Partners page
+              </a>
+              .
             </div>
           </div>
         </div>

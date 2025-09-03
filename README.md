@@ -74,17 +74,26 @@ npx create-pg -j
 
 ### Web Interface
 
-#### `claim-db-worker` (Web Application)
+### Option 1: Using the web interface (recommended)
 
-- **Purpose**: Browser-based database creation and management
-- **URL**: [create-db.prisma.io](https://create-db.prisma.io)
-- **Features**:
-  - No installation required
-  - Visual database management interface
-  - Connection string display and copying
-  - Schema viewer and editor
-  - Prisma Studio integration
-  - Database claiming workflow
+The create-db web application provides a browser-based interface for creating and managing your databases.
+
+**Key features:**
+
+- No installation required - works directly in your web browser
+- Visual interface for database management
+- Easy connection string display and copying
+- Built-in schema viewer and editor
+- Direct integration with Prisma Studio
+- Simple database claiming workflow
+
+**Getting started:**
+
+1. Visit [create-db.prisma.io](https://create-db.prisma.io) in your web browser
+2. Click "Create with the web interface"
+3. Modify your schema and interact with the Studio
+4. Copy the provided connection strings for your project
+5. Claim your database to make it permanent
 
 ### Backend Services
 
