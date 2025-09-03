@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --background-dark: #0f1217;
+  --background-card: #161a20;
+  --background-code: #13161b;
+  --background-step: #181b21;
+  --background-table-header: #1c1f26;
+  --background-button: #2d3138;
+  --background-button-hover: #2d3748;
+
+  --brand-surface-main: #161d2b;
+  --brand-surface-accent: #0d3a38;
+  --brand-surface-highlight: #71e8df;
+
+  --text-muted: #a0aec0;
+  --text-dim: #3f4b5b;
+  --text-accent: #71e8df;
+  --text-error: #fc8181;
+
+  --border-subtle: #202734;
+  --border-accent: #71e8df;
+
+  --gradient-start: #71e8df;
+  --gradient-end: #3f827d;
+
+  --button: #2d3138;
+  --button-hover: #2d3748;
+
+  --button-blue: #16a394;
+  --button-blue-hover: #16a395ba;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-barlow: var(--font-barlow);
+  --color-dark: var(--background-dark);
+  --color-card: var(--background-card);
+  --color-code: var(--background-code);
+  --color-step: var(--background-step);
+  --color-table-header: var(--background-table-header);
+  --color-button: var(--background-button);
+
+  --color-white: var(--text-white);
+  --color-muted: var(--text-muted);
+  --color-dim: var(--text-dim);
+  --color-accent: var(--text-accent);
+  --color-error: var(--text-error);
+
+  --color-brand-surface-main: var(--brand-surface-main);
+  --color-brand-surface-accent: var(--brand-surface-accent);
+  --color-brand-surface-highlight: var(--brand-surface-highlight);
+
+  --color-subtle: var(--border-subtle);
+  --color-accent: var(--border-accent);
+
+  --color-button: var(--button);
+  --color-button-hover: var(--button-hover);
+
+  --color-button-blue: var(--button-blue);
+  --color-button-blue-hover: var(--button-blue-hover);
+
+  --color-gradient-start: var(--gradient-start);
+  --color-gradient-end: var(--gradient-end);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.bg-custom-gradient {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(0, 128, 128, 0.2), transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(0, 128, 128, 0.2), transparent 50%),
+    var(--color-dark);
+}
+button {
+  cursor: pointer;
+}
+
+html {
+  /* Firefox - Hides track and changes thumb color */
+  scrollbar-color: hsla(0, 0%, 46%, 0.5) transparent;
+}
+
+/* Chrome - Hides track and width/height set for vertical/horizontal scrollbars */
+::-webkit-scrollbar {
+  background-color: transparent;
+  width: 7px;
+  height: 7px;
+}
+
+/* Chrome - Changes thumb color and rounds scrollbar edges, in Chrome any 
+scrollbar changes disables default styling and rounding so corners appear squared */
+::-webkit-scrollbar-thumb {
+  background-color: hsla(0, 0%, 46%, 0.5);
+  border-radius: 8px;
+}
+
+/* Utility class to hide scrollbars */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+.monaco-editor {
+  outline: 0;
+}
