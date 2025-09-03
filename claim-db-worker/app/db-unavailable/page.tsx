@@ -1,17 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { cookieUtils } from "@/lib/utils";
 import { Info } from "lucide-react";
 
 const DB_KEY = "temp_db_info";
 
 export default function DBUnavailablePage() {
-  const router = useRouter();
-
   const handleCreateNew = () => {
     cookieUtils.remove(DB_KEY);
-    router.push("/web/connect");
   };
 
   return (
@@ -22,12 +19,13 @@ export default function DBUnavailablePage() {
           already claimed or deleted
         </h1>
         <p className="text-muted">Please create a new one</p>
-        <button
+        <Link
+          href="/web/connect"
           className="h-16 w-full flex items-center justify-center gap-3 bg-button-blue hover:bg-button-blue-hover text-white font-bold text-lg rounded-lg px-6 py-3 cursor-pointer transition-all duration-200"
           onClick={handleCreateNew}
         >
           Create New Database
-        </button>
+        </Link>
       </div>
     </div>
   );
