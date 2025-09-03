@@ -10,6 +10,7 @@
   },
   "vars": {
     "NEXT_PUBLIC_CLIENT_ID": "${NEXT_PUBLIC_CLIENT_ID}",
+    "CLIENT_ID": "${CLIENT_ID}",
   },
   "analytics_engine_datasets": [
     {
