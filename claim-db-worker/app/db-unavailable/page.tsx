@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { cookieUtils } from "@/lib/utils";
 import { Info } from "lucide-react";
 
@@ -19,13 +18,13 @@ export default function DBUnavailablePage() {
           already claimed or deleted
         </h1>
         <p className="text-muted">Please create a new one</p>
-        <Link
+        <a
           href="/web/connect"
           className="h-16 w-full flex items-center justify-center gap-3 bg-button-blue hover:bg-button-blue-hover text-white font-bold text-lg rounded-lg px-6 py-3 cursor-pointer transition-all duration-200"
           onClick={handleCreateNew}
         >
           Create New Database
-        </Link>
+        </a>
       </div>
     </div>
   );
