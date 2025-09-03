@@ -9,8 +9,8 @@
     "enabled": true,
   },
   "vars": {
-    "NEXT_PUBLIC_CLIENT_ID": "${NEXT_PUBLIC_CLIENT_ID}",
-    "CLIENT_ID": "${CLIENT_ID}",
+    "NEXT_PUBLIC_CLIENT_ID": "cmck0cre900ffxz0vy5deit8y",
+    "CLIENT_ID": "cmck0cre900ffxz0vy5deit8y",
   },
   "analytics_engine_datasets": [
     {
