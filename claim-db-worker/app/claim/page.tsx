@@ -9,11 +9,9 @@ function ClaimContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const projectID = searchParams.get("projectID");
-  const utmSource = searchParams.get("utm_source");
-  const utmMedium = searchParams.get("utm_medium");
   const [isLoading, setIsLoading] = useState(false);
 
-  if (!projectID && !window.location.pathname.includes('/test/')) {
+  if (!projectID && !window.location.pathname.includes("/test/")) {
     router.push("/");
     return null;
   }
@@ -21,30 +19,29 @@ function ClaimContent() {
   const redirectUri = new URL("/api/auth/callback", window.location.origin);
   redirectUri.searchParams.set("projectID", projectID!);
 
-  function generateState(): string {
-    return (
-      Math.random().toString(36).substring(2, 15) +
-      Math.random().toString(36).substring(2, 15)
-    );
-  }
-
-  const authParams = new URLSearchParams({
-    client_id: process.env.NEXT_PUBLIC_CLIENT_ID!,
-    redirect_uri: redirectUri.toString(),
-    response_type: "code",
-    scope: "workspace:admin",
-    state: generateState(),
-    utm_source: utmSource || "unknown",
-    utm_medium: utmMedium || "unknown",
-  });
-
-  const authUrl = `https://auth.prisma.io/authorize?${authParams.toString()}`;
-
-  const handleClaimClick = () => {
-    if (authUrl) {
+  const handleClaimClick = async () => {
+    try {
       setIsLoading(true);
-      window.open(authUrl, "_blank");
-      setTimeout(() => setIsLoading(false), 1000);
+      const response = await fetch("/api/auth/url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ redirectUri: redirectUri.toString() }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get auth URL");
+      }
+
+      const data = (await response.json()) as { authUrl: string };
+      if (data.authUrl) {
+        window.open(data.authUrl, "_blank");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -60,7 +57,7 @@ function ClaimContent() {
 
         <button
           onClick={handleClaimClick}
-          disabled={!authUrl || isLoading}
+          disabled={isLoading}
           className="flex items-center justify-center gap-3 bg-[#24bfa7] hover:bg-[#16A394] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xl sm:text-2xl lg:text-3xl border-none rounded-lg px-8 py-4 sm:px-10 sm:py-5 lg:px-12 lg:py-6 cursor-pointer shadow-lg transition-all duration-200 mb-16 min-h-[44px] sm:min-h-[52px] lg:min-h-[60px] mx-auto"
         >
           <Image
@@ -70,7 +67,7 @@ function ClaimContent() {
             height={24}
             className="w-6 h-6"
           />
-          {isLoading ? "Redirecting..." : "Claim database"}
+          Claim database
           <Image
             src="/arrow-right.svg"
             alt="Arrow Right"
