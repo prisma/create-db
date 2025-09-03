@@ -14,8 +14,10 @@ const allowedOrigins = [
   "https://create-db.prisma.io",
   "https://claim-db-worker.raycast-0ef.workers.dev",
   "https://claim-db-worker-staging.raycast-0ef.workers.dev",
+  "https://f792dc9f-claim-db-worker.datacdn.workers.dev/web/schema",
 
   /^https:\/\/claim-db-worker.*\.vercel\.app$/,
+  /^https:\/\/.*-claim-db-worker\.datacdn\.workers\.dev/,
   /^https:\/\/.*-claim-db-worker\.raycast-0ef\.workers\.dev$/,
 ];
 
