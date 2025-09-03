@@ -514,7 +514,7 @@ async function createDatabase(name, region, userAgent, silent = false) {
       ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}?sslmode=require`
       : null;
 
-  const claimUrl = `${CLAIM_DB_WORKER_URL}?projectID=${projectId}&utm_source=${userAgent || CLI_NAME}&utm_medium=cli`;
+  const claimUrl = `${CLAIM_DB_WORKER_URL}/claim?projectID=${projectId}&utm_source=${userAgent || CLI_NAME}&utm_medium=cli`;
   const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   if (silent && !result.error) {
