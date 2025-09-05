@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getEnv } from "@/lib/env";
 import { exchangeCodeForToken, validateProject } from "@/lib/auth-utils";
-import { trackClaimSuccess, trackClaimFailure } from "@/lib/analytics";
+import { sendAnalyticsEvent } from "@/lib/analytics";
 import {
   redirectToError,
   redirectToSuccess,
@@ -59,7 +59,10 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      await trackClaimFailure(projectID, 0, errorMessage);
+      await sendAnalyticsEvent("create_db:claim_failed", {
+        "project-id": projectID,
+        error: errorMessage,
+      });
       return redirectToError(
         request,
         "Authentication Failed",
@@ -74,6 +77,10 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
+      await sendAnalyticsEvent("create_db:claim_failed", {
+        "project-id": projectID,
+        error: errorMessage,
+      });
       return redirectToError(
         request,
         "Project Not Found",
@@ -89,14 +96,15 @@ export async function GET(request: NextRequest) {
     );
 
     if (transferResult.success) {
-      await trackClaimSuccess(projectID);
+      await sendAnalyticsEvent("create_db:claim_successful", {
+        "project-id": projectID,
+      });
       return redirectToSuccess(request, projectID);
     } else {
-      await trackClaimFailure(
-        projectID,
-        transferResult.status!,
-        transferResult.error!
-      );
+      await sendAnalyticsEvent("create_db:claim_failed", {
+        "project-id": projectID,
+        error: transferResult.error!,
+      });
       return redirectToError(
         request,
         "Transfer Failed",
