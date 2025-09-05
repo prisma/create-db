@@ -431,7 +431,8 @@ async function createDatabase(name, region, userAgent, silent = false) {
     body: JSON.stringify({
       region,
       name,
-      utm_source: userAgent || CLI_NAME,
+      utm_source: CLI_NAME,
+      userAgent,
     }),
   });
 
