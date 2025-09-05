@@ -4,7 +4,7 @@ export const sendAnalyticsEvent = async (
   event: string,
   properties: Record<string, any>
 ) => {
-  const response = await fetch(`/api/analytics`, {
+  const response = await fetch(`${window.location.origin}/api/analytics`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
