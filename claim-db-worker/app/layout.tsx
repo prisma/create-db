@@ -5,6 +5,7 @@ import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { DropProvider } from "./contexts/DropContext";
 import { Toaster } from "react-hot-toast";
+import { PageViewTracker } from "@/components/PageViewTracker";
 
 const barlow = Barlow({
   weight: ["400", "500", "700", "800", "900"],
@@ -47,6 +48,7 @@ export default function RootLayout({
       <body
         className={`${barlow.className} antialiased bg-custom-gradient backdrop-filter backdrop-blur-md bg-cover font-barlow text-white p-0 min-h-screen w-full`}
       >
+        <PageViewTracker />
         <Toaster toastOptions={{ duration: 4000 }} />
         <DropProvider>
           <div className="flex items-center justify-center flex-col min-h-screen max-w-screen-xl mx-auto w-full">

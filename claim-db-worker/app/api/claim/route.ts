@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEnv } from "@/lib/env";
+import { sendAnalyticsEvent } from "@/lib/analytics";
 
 export async function GET(request: NextRequest) {
   const env = getEnv();
@@ -12,38 +13,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
-  async function sendPosthogEvent(
-    event: string,
-    properties: Record<string, any>
-  ) {
-    const POSTHOG_API_KEY = env.POSTHOG_API_KEY;
-    const POSTHOG_PROXY_HOST = env.POSTHOG_API_HOST;
-
-    await fetch(`${POSTHOG_PROXY_HOST}/e`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${POSTHOG_API_KEY}`,
-      },
-      body: JSON.stringify({
-        api_key: POSTHOG_API_KEY,
-        event,
-        properties,
-        distinct_id: "web-claim",
-      }),
-    });
-  }
-
   const projectID = searchParams.get("projectID");
 
   if (!projectID || projectID === "undefined") {
     return NextResponse.json({ error: "Missing project ID" }, { status: 400 });
   }
 
-  await sendPosthogEvent("create_db:claim_page_viewed", {
+  await sendAnalyticsEvent("create_db:claim_viewed", {
     "project-id": projectID,
-    "utm-source": searchParams.get("utm_source") || "unknown",
-    "utm-medium": searchParams.get("utm_medium") || "unknown",
   });
 
   return NextResponse.json({ success: true });
