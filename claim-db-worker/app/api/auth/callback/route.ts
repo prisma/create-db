@@ -32,7 +32,6 @@ async function sendServerAnalyticsEvent(
         properties: {
           ...properties,
           $current_url: request.url,
-          $ip: request.ip || request.headers.get("x-forwarded-for"),
           $user_agent: request.headers.get("user-agent"),
         },
         distinct_id: "server-claim",

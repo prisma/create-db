@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { sendAnalyticsEvent } from "@/lib/analytics";
 
-export function PageViewTracker() {
+function PageViewTrackerContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     if (pathname) {
       const url = window.location.href;
       const search = searchParams?.toString();
@@ -25,4 +27,12 @@ export function PageViewTracker() {
   }, [pathname, searchParams]);
 
   return null;
+}
+
+export function PageViewTracker() {
+  return (
+    <Suspense fallback={null}>
+      <PageViewTrackerContent />
+    </Suspense>
+  );
 }
