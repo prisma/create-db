@@ -11,10 +11,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
-  const POSTHOG_API_KEY = env.POSTHOG_API_KEY;
-  const POSTHOG_PROXY_HOST = env.POSTHOG_API_HOST;
-
-  if (!POSTHOG_API_KEY || !POSTHOG_PROXY_HOST) {
+  if (!env.POSTHOG_API_KEY || !env.POSTHOG_API_HOST) {
     return NextResponse.json({ success: true });
   }
 
@@ -32,14 +29,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await fetch(`${POSTHOG_PROXY_HOST}/e`, {
+    await fetch(`${env.POSTHOG_API_HOST}/e`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${POSTHOG_API_KEY}`,
+        Authorization: `Bearer ${env.POSTHOG_API_KEY}`,
       },
       body: JSON.stringify({
-        api_key: POSTHOG_API_KEY,
+        api_key: env.POSTHOG_API_KEY,
         event,
         properties: properties || {},
         distinct_id: "web-claim",

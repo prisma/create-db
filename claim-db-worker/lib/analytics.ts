@@ -15,4 +15,6 @@ export const sendAnalyticsEvent = async (
   if (!response.ok) {
     console.error("Failed to send analytics event:", response);
   }
+
+  console.log(response);
 };
