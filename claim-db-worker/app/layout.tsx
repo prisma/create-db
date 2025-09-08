@@ -13,7 +13,7 @@ const barlow = Barlow({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("http://localhost:3000"),
+  metadataBase: new URL("https://create-db.prisma.io/"),
   title: "Prisma Postgres Create DB",
   description:
     "Get a temporary Prisma Postgres database instantly. No account or config needed. Just run npx create-db.",
