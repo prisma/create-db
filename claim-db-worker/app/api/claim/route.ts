@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEnv } from "@/lib/env";
 import { sendAnalyticsEvent } from "@/lib/analytics";
-import { getClientIP } from "@/lib/utils";
+import { buildRateLimitKey } from "@/lib/server/ratelimit";
 
 export async function GET(request: NextRequest) {
   const env = getEnv();
+
   const url = new URL(request.url);
-  const key = `${getClientIP(request)}:${request.url}`;
+  const key = buildRateLimitKey(request);
 
   // --- Simple rate limiting ---
   const { success } = await env.CLAIM_DB_RATE_LIMITER.limit({ key });
