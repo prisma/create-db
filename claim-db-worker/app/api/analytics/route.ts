@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEnv } from "@/lib/env";
+import { getClientIP } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
   const env = getEnv();
 
-  const rateLimitResult = await env.CLAIM_DB_RATE_LIMITER.limit({
-    key: request.url,
-  });
-  if (!rateLimitResult.success) {
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  const url = new URL(request.url);
+  const key = `${getClientIP(request)}:${request.url}`;
+
+  // --- Simple rate limiting ---
+  const { success } = await env.CLAIM_DB_RATE_LIMITER.limit({ key });
+  if (!success) {
+    return NextResponse.json(
+      {
+        error: "rate_limited",
+        message: "Rate limit exceeded. Please try again later.",
+        path: url.pathname,
+      },
+      { status: 429 }
+    );
   }
 
   if (!env.POSTHOG_API_KEY || !env.POSTHOG_API_HOST) {

@@ -1,3 +1,5 @@
+import { NextRequest } from "next/server";
+
 export const cookieUtils = {
   set: (name: string, value: string, days: number = 1) => {
     const expires = new Date();
@@ -22,3 +24,13 @@ export const cookieUtils = {
     document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
   },
 };
+
+export function getClientIP(req: NextRequest): string {
+  // OpenNext on CF Workers exposes the Request headers directly
+  return (
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown-ip"
+  );
+}
