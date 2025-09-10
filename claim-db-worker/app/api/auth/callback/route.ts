@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getEnv } from "@/lib/env";
 import { exchangeCodeForToken, validateProject } from "@/lib/auth-utils";
 import {
@@ -7,6 +7,7 @@ import {
   getBaseUrl,
 } from "@/lib/response-utils";
 import { transferProject } from "@/lib/project-transfer";
+import { buildRateLimitKey } from "@/lib/server/ratelimit";
 
 async function sendServerAnalyticsEvent(
   event: string,
@@ -46,21 +47,25 @@ async function sendServerAnalyticsEvent(
 export async function GET(request: NextRequest) {
   try {
     const env = getEnv();
-    const { searchParams } = new URL(request.url);
+    const url = new URL(request.url);
+    const { searchParams } = url;
 
     const code = searchParams.get("code");
     const state = searchParams.get("state");
     const projectID = searchParams.get("projectID");
 
-    // Rate limiting
-    const rateLimitResult = await env.CLAIM_DB_RATE_LIMITER.limit({
-      key: request.url,
-    });
-    if (!rateLimitResult.success) {
-      return redirectToError(
-        request,
-        "Rate Limited",
-        "We're experiencing high demand. Please try again later."
+    const key = buildRateLimitKey(request);
+
+    // --- Simple rate limiting ---
+    const { success } = await env.CLAIM_DB_RATE_LIMITER.limit({ key });
+    if (!success) {
+      return NextResponse.json(
+        {
+          error: "rate_limited",
+          message: "Rate limit exceeded. Please try again later.",
+          path: url.pathname,
+        },
+        { status: 429 }
       );
     }
 

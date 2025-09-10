@@ -15,14 +15,47 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const analytics = new PosthogEventCapture(env);
 
-		// --- Rate limiting ---
-		const { success } = await env.CREATE_DB_RATE_LIMITER.limit({ key: request.url });
+		// --- Rate limiting
+		const url = new URL(request.url);
 
-		if (!success) {
-			return new Response(`429 Failure - rate limit exceeded for ${request.url}`, { status: 429 });
+		// Prefer Cloudflare IP, then common proxy headers; fallback keeps key stable
+		const clientIP =
+			request.headers.get('cf-connecting-ip') ||
+			request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+			request.headers.get('x-real-ip') ||
+			'unknown-ip';
+
+		// Key by IP + route so /health doesn't burn the same budget as /create
+		let success = true;
+
+		try {
+			const res = await env.CREATE_DB_RATE_LIMITER.limit({
+				key: `${request.method}:${clientIP}:${url.pathname}`,
+			});
+			success = res.success;
+		} catch (e) {
+			// Keep it simple: don't block users if the limiter is unavailable.
+			// Flip to `success = false` if you prefer fail-closed.
+			console.error('Rate limiter error:', e);
+			success = true;
 		}
 
-		const url = new URL(request.url);
+		if (!success) {
+			return new Response(
+				JSON.stringify({
+					error: 'rate_limited',
+					message: 'Rate limit exceeded. Please try again later.',
+					path: url.pathname,
+					ip: clientIP,
+				}),
+				{
+					status: 429,
+					headers: {
+						'Content-Type': 'application/json',
+					},
+				},
+			);
+		}
 
 		// --- Test endpoint for rate limit testing ---
 		if (url.pathname === '/test' && request.method === 'GET') {
