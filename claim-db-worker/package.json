@@ -15,7 +15,7 @@
     "test": "vitest run --reporter=verbose",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
-    "test:clean": "vitest run --reporter=verbose"
+    "test:clean": "vitest run"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
