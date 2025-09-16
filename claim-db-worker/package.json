@@ -11,7 +11,11 @@
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "deploy:staging": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env staging",
     "upload": "opennextjs-cloudflare build && wrangler versions upload",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "test": "vitest run --reporter=verbose",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "test:clean": "vitest run"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -28,11 +32,19 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^20.19.10",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.0.2",
+    "@vitest/ui": "^3.2.4",
+    "jsdom": "^27.0.0",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4",
     "wrangler": "^4.29.1"
   }
 }
