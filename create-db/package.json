@@ -26,6 +26,12 @@
     "create-postgres": "./index.js",
     "create-pg": "./index.js"
   },
+  "scripts": {
+    "test": "vitest run --reporter=verbose",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "test:clean": "vitest run --reporter=verbose"
+  },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
     "chalk": "^4.1.2",
@@ -40,5 +46,8 @@
     "index.js",
     "README.md",
     "analytics.js"
-  ]
+  ],
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
 }

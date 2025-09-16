@@ -73,7 +73,7 @@ const REGION_COORDINATES = {
   "us-west-1": { lat: 37.7749, lng: -122.4194 }, // N. California
 };
 
-function getRegionClosestToLocation(userLocation) {
+export function getRegionClosestToLocation(userLocation) {
   if (!userLocation) return null;
 
   const userLat = parseFloat(userLocation.latitude);
@@ -139,7 +139,7 @@ async function isOffline() {
   }
 }
 
-function getCommandName() {
+export function getCommandName() {
   const executable = process.argv[1] || "create-db";
   if (executable.includes("create-pg")) return "create-pg";
   if (executable.includes("create-postgres")) return "create-postgres";
