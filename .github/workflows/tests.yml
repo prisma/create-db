@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "pnpm"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8.x
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./claim-db-worker
+
+      - name: Run claim-db-worker tests
+        run: pnpm test
+        working-directory: ./claim-db-worker
+        env:
+          NODE_ENV: test
+
+      - name: Install create-db dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./create-db
+
+      - name: Run create-db tests
+        run: pnpm test
+        working-directory: ./create-db
+        env:
+          NODE_ENV: test
