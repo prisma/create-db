@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getCommandName, isOffline } from "../index.js";
+import { getCommandName } from "../index.js";
 
 describe("utils", () => {
   describe("getCommandName()", () => {

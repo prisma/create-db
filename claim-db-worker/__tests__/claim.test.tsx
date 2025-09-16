@@ -6,7 +6,7 @@ import ClaimPage from "../app/claim/page";
 
 // This test does not check the actual claim flow, but rather the claim page functionality and claim flow logic.
 // It mocks the fetch API and window.open to simulate the claim flow,
-// so long as the Management API is funtioning properly, this should be as well.
+// so long as the Management API is functioning properly, this should be as well.
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
