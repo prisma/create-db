@@ -14,6 +14,7 @@ const allowedOrigins = [
   "https://create-db.prisma.io",
   "https://claim-db-worker.raycast-0ef.workers.dev",
   "https://claim-db-worker-staging.raycast-0ef.workers.dev",
+  "https://cloudflare-booth-git-feat-create-main-page-prisma.vercel.app",
   /^https:\/\/claim-db-worker.*\.vercel\.app$/,
   /^https:\/\/create-db-schema-api-routes(-\w+)?\.vercel\.app$/,
   /^https:\/\/.*-claim-db-worker\.datacdn\.workers\.dev/,
