@@ -127,6 +127,7 @@ export default {
 				region?: string;
 				name?: string;
 				analytics?: { eventName?: string; properties?: Record<string, unknown> };
+				userAgent?: string;
 			};
 
 			let body: CreateDbBody = {};
@@ -137,16 +138,17 @@ export default {
 				return new Response('Invalid JSON body', { status: 400 });
 			}
 
-			const { region, name, analytics: analyticsData } = body;
+			const { region, name, analytics: analyticsData, userAgent } = body;
 			if (!region || !name) {
 				return new Response('Missing region or name in request body', { status: 400 });
 			}
-
+			console.log('userAgent:', userAgent);
 			const prismaResponse = await fetch('https://api.prisma.io/v1/projects', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					Authorization: `Bearer ${env.INTEGRATION_TOKEN}`,
+					'User-Agent': userAgent || '',
 				},
 				body: JSON.stringify({
 					region,
