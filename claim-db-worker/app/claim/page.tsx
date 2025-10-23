@@ -78,7 +78,7 @@ function ClaimContent() {
         </button>
 
         <p className="text-muted text-sm sm:text-base lg:text-lg italic">
-          your <b>database will be deleted 24 hours after creation</b> unless
+          *your <b>database will be deleted 24 hours after creation</b> unless
           you claim it
         </p>
       </div>
