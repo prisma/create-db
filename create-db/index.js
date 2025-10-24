@@ -17,24 +17,44 @@ const CREATE_DB_WORKER_URL =
 const CLAIM_DB_WORKER_URL =
   process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io";
 
+// Track pending analytics promises to ensure they complete before exit
+const pendingAnalytics = [];
+
 async function sendAnalyticsToWorker(eventName, properties) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 2000);
-  try {
-    const payload = {
-      eventName,
-      properties: { distinct_id: CLI_RUN_ID, ...(properties || {}) },
-    };
-    await fetch(`${CREATE_DB_WORKER_URL}/analytics`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-  } catch (error) {
-  } finally {
-    clearTimeout(timer);
-  }
+  const timer = setTimeout(() => controller.abort(), 5000);
+
+  const analyticsPromise = (async () => {
+    try {
+      const payload = {
+        eventName,
+        properties: { distinct_id: CLI_RUN_ID, ...(properties || {}) },
+      };
+      await fetch(`${CREATE_DB_WORKER_URL}/analytics`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      // Silently fail - analytics shouldn't block CLI
+    } finally {
+      clearTimeout(timer);
+    }
+  })();
+
+  pendingAnalytics.push(analyticsPromise);
+  return analyticsPromise;
+}
+
+// Wait for all pending analytics with a timeout
+async function flushAnalytics(maxWaitMs = 500) {
+  if (pendingAnalytics.length === 0) return;
+
+  const timeout = new Promise((resolve) => setTimeout(resolve, maxWaitMs));
+  const allAnalytics = Promise.all(pendingAnalytics);
+
+  await Promise.race([allAnalytics, timeout]);
 }
 
 async function detectUserLocation() {
@@ -135,6 +155,7 @@ async function isOffline() {
         `Check your internet connection or visit ${chalk.green("https://www.prisma-status.com/\n")}`
       )
     );
+    await flushAnalytics();
     process.exit(1);
   }
 }
@@ -205,6 +226,7 @@ Examples:
   ${chalk.gray(`npx ${CLI_NAME} --env --region us-east-1`)}
   ${chalk.gray(`npx ${CLI_NAME} --env >> .env`)}
 `);
+  await flushAnalytics();
   process.exit(0);
 }
 
@@ -405,6 +427,7 @@ async function promptForRegion(defaultRegion, userAgent) {
 
   if (region === null) {
     cancel(chalk.red("Operation cancelled."));
+    await flushAnalytics();
     process.exit(0);
   }
 
@@ -460,6 +483,7 @@ async function createDatabase(name, region, userAgent, silent = false) {
       "user-agent": userAgent,
     });
 
+    await flushAnalytics();
     process.exit(1);
   }
 
@@ -489,6 +513,7 @@ async function createDatabase(name, region, userAgent, silent = false) {
       "user-agent": userAgent,
     });
 
+    await flushAnalytics();
     process.exit(1);
   }
 
@@ -560,6 +585,7 @@ async function createDatabase(name, region, userAgent, silent = false) {
       "user-agent": userAgent,
     });
 
+    await flushAnalytics();
     process.exit(1);
   }
 
@@ -667,6 +693,7 @@ export async function main() {
 
     if (flags["list-regions"]) {
       await listRegions();
+      await flushAnalytics();
       process.exit(0);
     }
 
@@ -694,6 +721,7 @@ export async function main() {
         }
         const result = await createDatabase(name, region, userAgent, true);
         console.log(JSON.stringify(result, null, 2));
+        await flushAnalytics();
         process.exit(0);
       } catch (e) {
         console.log(
@@ -703,6 +731,7 @@ export async function main() {
             2
           )
         );
+        await flushAnalytics();
         process.exit(1);
       }
     }
@@ -717,13 +746,16 @@ export async function main() {
         const result = await createDatabase(name, region, userAgent, true);
         if (result.error) {
           console.error(result.message || "Unknown error");
+          await flushAnalytics();
           process.exit(1);
         }
         console.log(`DATABASE_URL="${result.directConnectionString}"`);
         console.error("\n# Claim your database at: " + result.claimUrl);
+        await flushAnalytics();
         process.exit(0);
       } catch (e) {
         console.error(e?.message || String(e));
+        await flushAnalytics();
         process.exit(1);
       }
     }
@@ -746,8 +778,10 @@ export async function main() {
     await createDatabase(name, region, userAgent);
 
     outro("");
+    await flushAnalytics();
   } catch (error) {
     console.error("Error:", error.message);
+    await flushAnalytics();
     process.exit(1);
   }
 }
