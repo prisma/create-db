@@ -752,4 +752,7 @@ export async function main() {
   }
 }
 
-main();
+// Only run main() if this file is being executed directly, not when imported
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}
