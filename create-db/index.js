@@ -10,31 +10,49 @@ import chalk from "chalk";
 
 dotenv.config();
 
-const CLI_RUN_ID = randomUUID();
-
 const CREATE_DB_WORKER_URL =
   process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
 const CLAIM_DB_WORKER_URL =
   process.env.CLAIM_DB_WORKER_URL || "https://create-db.prisma.io";
 
-async function sendAnalyticsToWorker(eventName, properties) {
+// Track pending analytics promises to ensure they complete before exit
+const pendingAnalytics = [];
+
+async function sendAnalyticsToWorker(eventName, properties, cliRunId) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 2000);
-  try {
-    const payload = {
-      eventName,
-      properties: { distinct_id: CLI_RUN_ID, ...(properties || {}) },
-    };
-    await fetch(`${CREATE_DB_WORKER_URL}/analytics`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-  } catch (error) {
-  } finally {
-    clearTimeout(timer);
-  }
+  const timer = setTimeout(() => controller.abort(), 5000);
+
+  const analyticsPromise = (async () => {
+    try {
+      const payload = {
+        eventName,
+        properties: { distinct_id: cliRunId, ...(properties || {}) },
+      };
+      await fetch(`${CREATE_DB_WORKER_URL}/analytics`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      // Silently fail - analytics shouldn't block CLI
+    } finally {
+      clearTimeout(timer);
+    }
+  })();
+
+  pendingAnalytics.push(analyticsPromise);
+  return analyticsPromise;
+}
+
+// Wait for all pending analytics with a timeout
+async function flushAnalytics(maxWaitMs = 500) {
+  if (pendingAnalytics.length === 0) return;
+
+  const timeout = new Promise((resolve) => setTimeout(resolve, maxWaitMs));
+  const allAnalytics = Promise.all(pendingAnalytics);
+
+  await Promise.race([allAnalytics, timeout]);
 }
 
 async function detectUserLocation() {
@@ -135,6 +153,7 @@ async function isOffline() {
         `Check your internet connection or visit ${chalk.green("https://www.prisma-status.com/\n")}`
       )
     );
+    await flushAnalytics();
     process.exit(1);
   }
 }
@@ -205,6 +224,7 @@ Examples:
   ${chalk.gray(`npx ${CLI_NAME} --env --region us-east-1`)}
   ${chalk.gray(`npx ${CLI_NAME} --env >> .env`)}
 `);
+  await flushAnalytics();
   process.exit(0);
 }
 
@@ -384,7 +404,7 @@ function handleError(message, extra = "") {
   process.exit(1);
 }
 
-async function promptForRegion(defaultRegion, userAgent) {
+async function promptForRegion(defaultRegion, userAgent, cliRunId) {
   let regions;
   try {
     regions = await getRegions();
@@ -405,6 +425,7 @@ async function promptForRegion(defaultRegion, userAgent) {
 
   if (region === null) {
     cancel(chalk.red("Operation cancelled."));
+    await flushAnalytics();
     process.exit(0);
   }
 
@@ -413,12 +434,12 @@ async function promptForRegion(defaultRegion, userAgent) {
     region: region,
     "selection-method": "interactive",
     "user-agent": userAgent,
-  });
+  }, cliRunId);
 
   return region;
 }
 
-async function createDatabase(name, region, userAgent, silent = false) {
+async function createDatabase(name, region, userAgent, cliRunId, silent = false) {
   let s;
   if (!silent) {
     s = spinner();
@@ -458,8 +479,9 @@ async function createDatabase(name, region, userAgent, silent = false) {
       "error-type": "rate_limit",
       "status-code": 429,
       "user-agent": userAgent,
-    });
+    }, cliRunId);
 
+    await flushAnalytics();
     process.exit(1);
   }
 
@@ -487,8 +509,9 @@ async function createDatabase(name, region, userAgent, silent = false) {
       "error-type": "invalid_json",
       "status-code": resp.status,
       "user-agent": userAgent,
-    });
+    }, cliRunId);
 
+    await flushAnalytics();
     process.exit(1);
   }
 
@@ -558,8 +581,9 @@ async function createDatabase(name, region, userAgent, silent = false) {
       "error-type": "api_error",
       "error-message": result.error.message,
       "user-agent": userAgent,
-    });
+    }, cliRunId);
 
+    await flushAnalytics();
     process.exit(1);
   }
 
@@ -615,11 +639,14 @@ async function createDatabase(name, region, userAgent, silent = false) {
     command: CLI_NAME,
     region,
     utm_source: CLI_NAME,
-  });
+  }, cliRunId);
 }
 
-async function main() {
+export async function main() {
   try {
+    // Generate unique ID for this CLI run
+    const cliRunId = randomUUID();
+
     const rawArgs = process.argv.slice(2);
 
     const { flags } = await parseArgs();
@@ -647,7 +674,7 @@ async function main() {
       platform: process.platform,
       arch: process.arch,
       "user-agent": userAgent,
-    });
+    }, cliRunId);
 
     if (!flags.help && !flags.json) {
       await isOffline();
@@ -667,6 +694,7 @@ async function main() {
 
     if (flags["list-regions"]) {
       await listRegions();
+      await flushAnalytics();
       process.exit(0);
     }
 
@@ -678,7 +706,7 @@ async function main() {
         region: region,
         "selection-method": "flag",
         "user-agent": userAgent,
-      });
+      }, cliRunId);
     }
 
     if (flags.interactive) {
@@ -688,12 +716,13 @@ async function main() {
     if (flags.json) {
       try {
         if (chooseRegionPrompt) {
-          region = await promptForRegion(region, userAgent);
+          region = await promptForRegion(region, userAgent, cliRunId);
         } else {
           await validateRegion(region, true);
         }
-        const result = await createDatabase(name, region, userAgent, true);
+        const result = await createDatabase(name, region, userAgent, cliRunId, true);
         console.log(JSON.stringify(result, null, 2));
+        await flushAnalytics();
         process.exit(0);
       } catch (e) {
         console.log(
@@ -703,6 +732,7 @@ async function main() {
             2
           )
         );
+        await flushAnalytics();
         process.exit(1);
       }
     }
@@ -710,20 +740,23 @@ async function main() {
     if (flags.env) {
       try {
         if (chooseRegionPrompt) {
-          region = await promptForRegion(region, userAgent);
+          region = await promptForRegion(region, userAgent, cliRunId);
         } else {
           await validateRegion(region, true);
         }
-        const result = await createDatabase(name, region, userAgent, true);
+        const result = await createDatabase(name, region, userAgent, cliRunId, true);
         if (result.error) {
           console.error(result.message || "Unknown error");
+          await flushAnalytics();
           process.exit(1);
         }
         console.log(`DATABASE_URL="${result.directConnectionString}"`);
         console.error("\n# Claim your database at: " + result.claimUrl);
+        await flushAnalytics();
         process.exit(0);
       } catch (e) {
         console.error(e?.message || String(e));
+        await flushAnalytics();
         process.exit(1);
       }
     }
@@ -738,18 +771,23 @@ async function main() {
       )
     );
     if (chooseRegionPrompt) {
-      region = await promptForRegion(region, userAgent);
+      region = await promptForRegion(region, userAgent, cliRunId);
     }
 
     region = await validateRegion(region);
 
-    await createDatabase(name, region, userAgent);
+    await createDatabase(name, region, userAgent, cliRunId);
 
     outro("");
+    await flushAnalytics();
   } catch (error) {
     console.error("Error:", error.message);
+    await flushAnalytics();
     process.exit(1);
   }
 }
 
-main();
+// Only run main() if this file is being executed directly, not when imported
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}
