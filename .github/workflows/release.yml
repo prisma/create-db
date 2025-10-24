@@ -48,34 +48,17 @@ jobs:
           echo "Using CLAIM_DB_WORKER_URL=${CLAIM_DB_WORKER_URL}"
           echo "Using POSTHOG_API_HOST=${POSTHOG_API_HOST}"
 
-          # First, publish create-db
-          echo "Publishing create-db to npm..."
-          cd create-db
-          export POSTHOG_API_HOST="${{ secrets.POSTHOG_API_HOST }}"
-          export POSTHOG_API_KEY="${{ secrets.POSTHOG_API_KEY }}"
-          CREATE_DB_VERSION=$(node -p "require('./package.json').version")
-          if ! pnpm publish --access public --no-git-checks; then
-            echo "Publish failed, trying to bump version and retry..."
-            npm version patch --no-git-tag-version
-            CREATE_DB_VERSION=$(node -p "require('./package.json').version")
-            pnpm publish --access public --no-git-checks || echo "Publish failed again for create-db"
-          fi
-          cd ..
-          
-          # Then publish create-pg and create-postgres with resolved dependencies
-          for pkg in create-pg create-postgres; do
+          for pkg in $WORKSPACES; do
             echo "Publishing $pkg to npm..."
             cd "$pkg"
             export POSTHOG_API_HOST="${{ secrets.POSTHOG_API_HOST }}"
             export POSTHOG_API_KEY="${{ secrets.POSTHOG_API_KEY }}"
-            
-            # Update dependency to use the published version instead of workspace:*
-            npm pkg set dependencies.create-db="$CREATE_DB_VERSION"
-            
-            if ! pnpm publish --access public --no-git-checks; then
+            # pnpm publish --access public || echo "Publish failed for $pkg"
+            # First try to publish
+            if ! pnpm publish --access public; then
               echo "Publish failed, trying to bump version and retry..."
               npm version patch --no-git-tag-version
-              pnpm publish --access public --no-git-checks || echo "Publish failed again for $pkg"
+              pnpm publish --access public || echo "Publish failed again for $pkg"
             fi
             cd - >/dev/null
           done
