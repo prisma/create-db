@@ -96,17 +96,28 @@ jobs:
           echo "Using CLAIM_DB_WORKER_URL=$CLAIM_DB_WORKER_URL"
           echo "Using POSTHOG_API_HOST=${POSTHOG_API_HOST}"
 
-          for pkg in $WORKSPACES; do
+          # First, update create-db version and publish it
+          cd create-db
+          npm version prerelease --preid "$PRE_TAG" --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          pnpm publish --access public --tag pr${{ github.event.number }} --no-git-checks
+          cd ..
+          
+          # Then update create-pg and create-postgres to use the new create-db version
+          for pkg in create-pg create-postgres; do
             cd "$pkg"
             export CREATE_DB_WORKER_URL
             export CLAIM_DB_WORKER_URL
             export POSTHOG_API_HOST="${POSTHOG_API_HOST}"
             export POSTHOG_API_KEY="${POSTHOG_API_KEY}"
-
+            
+            # Update dependency to use the published version instead of workspace:*
+            npm pkg set dependencies.create-db="$NEW_VERSION"
+            
             npm version prerelease \
               --preid "$PRE_TAG" \
               --no-git-tag-version
-            pnpm publish --access public --tag pr${{ github.event.number }}
+            pnpm publish --access public --tag pr${{ github.event.number }} --no-git-checks
             cd - >/dev/null
           done
 
