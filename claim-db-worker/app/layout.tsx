@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Barlow } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
@@ -48,6 +49,11 @@ export default function RootLayout({
       <body
         className={`${barlow.className} antialiased bg-custom-gradient backdrop-filter backdrop-blur-md bg-cover font-barlow text-white p-0 min-h-screen w-full`}
       >
+        <Script
+          async
+          src="https://cdn.tolt.io/tolt.js"
+          data-tolt="fda67739-7ed0-42d2-b716-6da0edbec191"
+        />
         <PageViewTracker />
         <Toaster toastOptions={{ duration: 4000 }} />
         <DropProvider>
