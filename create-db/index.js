@@ -10,8 +10,6 @@ import chalk from "chalk";
 
 dotenv.config();
 
-const CLI_RUN_ID = randomUUID();
-
 const CREATE_DB_WORKER_URL =
   process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
 const CLAIM_DB_WORKER_URL =
@@ -20,7 +18,7 @@ const CLAIM_DB_WORKER_URL =
 // Track pending analytics promises to ensure they complete before exit
 const pendingAnalytics = [];
 
-async function sendAnalyticsToWorker(eventName, properties) {
+async function sendAnalyticsToWorker(eventName, properties, cliRunId) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
 
@@ -28,7 +26,7 @@ async function sendAnalyticsToWorker(eventName, properties) {
     try {
       const payload = {
         eventName,
-        properties: { distinct_id: CLI_RUN_ID, ...(properties || {}) },
+        properties: { distinct_id: cliRunId, ...(properties || {}) },
       };
       await fetch(`${CREATE_DB_WORKER_URL}/analytics`, {
         method: "POST",
@@ -406,7 +404,7 @@ function handleError(message, extra = "") {
   process.exit(1);
 }
 
-async function promptForRegion(defaultRegion, userAgent) {
+async function promptForRegion(defaultRegion, userAgent, cliRunId) {
   let regions;
   try {
     regions = await getRegions();
@@ -436,12 +434,12 @@ async function promptForRegion(defaultRegion, userAgent) {
     region: region,
     "selection-method": "interactive",
     "user-agent": userAgent,
-  });
+  }, cliRunId);
 
   return region;
 }
 
-async function createDatabase(name, region, userAgent, silent = false) {
+async function createDatabase(name, region, userAgent, cliRunId, silent = false) {
   let s;
   if (!silent) {
     s = spinner();
@@ -481,7 +479,7 @@ async function createDatabase(name, region, userAgent, silent = false) {
       "error-type": "rate_limit",
       "status-code": 429,
       "user-agent": userAgent,
-    });
+    }, cliRunId);
 
     await flushAnalytics();
     process.exit(1);
@@ -511,7 +509,7 @@ async function createDatabase(name, region, userAgent, silent = false) {
       "error-type": "invalid_json",
       "status-code": resp.status,
       "user-agent": userAgent,
-    });
+    }, cliRunId);
 
     await flushAnalytics();
     process.exit(1);
@@ -583,7 +581,7 @@ async function createDatabase(name, region, userAgent, silent = false) {
       "error-type": "api_error",
       "error-message": result.error.message,
       "user-agent": userAgent,
-    });
+    }, cliRunId);
 
     await flushAnalytics();
     process.exit(1);
@@ -641,11 +639,14 @@ async function createDatabase(name, region, userAgent, silent = false) {
     command: CLI_NAME,
     region,
     utm_source: CLI_NAME,
-  });
+  }, cliRunId);
 }
 
 export async function main() {
   try {
+    // Generate unique ID for this CLI run
+    const cliRunId = randomUUID();
+
     const rawArgs = process.argv.slice(2);
 
     const { flags } = await parseArgs();
@@ -673,7 +674,7 @@ export async function main() {
       platform: process.platform,
       arch: process.arch,
       "user-agent": userAgent,
-    });
+    }, cliRunId);
 
     if (!flags.help && !flags.json) {
       await isOffline();
@@ -705,7 +706,7 @@ export async function main() {
         region: region,
         "selection-method": "flag",
         "user-agent": userAgent,
-      });
+      }, cliRunId);
     }
 
     if (flags.interactive) {
@@ -715,11 +716,11 @@ export async function main() {
     if (flags.json) {
       try {
         if (chooseRegionPrompt) {
-          region = await promptForRegion(region, userAgent);
+          region = await promptForRegion(region, userAgent, cliRunId);
         } else {
           await validateRegion(region, true);
         }
-        const result = await createDatabase(name, region, userAgent, true);
+        const result = await createDatabase(name, region, userAgent, cliRunId, true);
         console.log(JSON.stringify(result, null, 2));
         await flushAnalytics();
         process.exit(0);
@@ -739,11 +740,11 @@ export async function main() {
     if (flags.env) {
       try {
         if (chooseRegionPrompt) {
-          region = await promptForRegion(region, userAgent);
+          region = await promptForRegion(region, userAgent, cliRunId);
         } else {
           await validateRegion(region, true);
         }
-        const result = await createDatabase(name, region, userAgent, true);
+        const result = await createDatabase(name, region, userAgent, cliRunId, true);
         if (result.error) {
           console.error(result.message || "Unknown error");
           await flushAnalytics();
@@ -770,12 +771,12 @@ export async function main() {
       )
     );
     if (chooseRegionPrompt) {
-      region = await promptForRegion(region, userAgent);
+      region = await promptForRegion(region, userAgent, cliRunId);
     }
 
     region = await validateRegion(region);
 
-    await createDatabase(name, region, userAgent);
+    await createDatabase(name, region, userAgent, cliRunId);
 
     outro("");
     await flushAnalytics();
