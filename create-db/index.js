@@ -618,7 +618,7 @@ async function createDatabase(name, region, userAgent, silent = false) {
   });
 }
 
-async function main() {
+export async function main() {
   try {
     const rawArgs = process.argv.slice(2);
 
