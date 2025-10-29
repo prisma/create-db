@@ -6,7 +6,7 @@ import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { DropProvider } from "./contexts/DropContext";
 import { Toaster } from "react-hot-toast";
-import { PageViewTracker } from "@/components/PageViewTracker";
+import { PostHogProvider } from "@/components/PostHogProvider";
 
 const barlow = Barlow({
   weight: ["400", "500", "700", "800", "900"],
@@ -54,15 +54,16 @@ export default function RootLayout({
           src="https://cdn.tolt.io/tolt.js"
           data-tolt="fda67739-7ed0-42d2-b716-6da0edbec191"
         />
-        <PageViewTracker />
         <Toaster toastOptions={{ duration: 4000 }} />
-        <DropProvider>
-          <div className="flex items-center justify-center flex-col min-h-screen max-w-screen-xl mx-auto w-full">
-            <Navbar />
-            {children}
-            <Footer />
-          </div>
-        </DropProvider>
+        <PostHogProvider>
+          <DropProvider>
+            <div className="flex items-center justify-center flex-col min-h-screen max-w-screen-xl mx-auto w-full">
+              <Navbar />
+              {children}
+              <Footer />
+            </div>
+          </DropProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
