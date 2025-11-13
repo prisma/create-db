@@ -821,6 +821,14 @@ export async function main() {
 }
 
 // Run main() if this file is being executed directly
-if (import.meta.url.endsWith('/index.js') || process.argv[1] === import.meta.url.replace('file://', '')) {
+const isDirectExecution =
+  import.meta.url.endsWith("/index.js") ||
+  process.argv[1] === import.meta.url.replace("file://", "") ||
+  process.argv[1].includes("create-db") ||
+  process.argv[1].includes("create-pg") ||
+  process.argv[1].includes("create-postgres");
+
+if (isDirectExecution && !process.env.__CREATE_DB_EXECUTING) {
+  process.env.__CREATE_DB_EXECUTING = "true";
   main().catch(console.error);
 }
