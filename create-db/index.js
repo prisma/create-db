@@ -535,7 +535,6 @@ async function createDatabase(
 
   const database = result.data ? result.data.database : result.databases?.[0];
   const projectId = result.data ? result.data.id : result.id;
-  const prismaConn = database?.connectionString;
 
   const directConnDetails = result.data
     ? database?.apiKeys?.[0]?.directConnection
@@ -628,7 +627,6 @@ async function createDatabase(
     log.message("");
   }
 
-  // prismaConn is still available as a variable but not displayed
 
   // Claim database section
   const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false });
@@ -832,3 +830,7 @@ if (isDirectExecution && !process.env.__CREATE_DB_EXECUTING) {
   process.env.__CREATE_DB_EXECUTING = "true";
   main().catch(console.error);
 }
+
+// if (import.meta.url.endsWith('/index.js') || process.argv[1] === import.meta.url.replace('file://', '')) {
+//   main().catch(console.error);
+// }
