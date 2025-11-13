@@ -820,7 +820,7 @@ export async function main() {
   }
 }
 
-// Only run main() if this file is being executed directly, not when imported
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+// Run main() if this file is being executed directly
+if (import.meta.url.endsWith('/index.js') || process.argv[1] === import.meta.url.replace('file://', '')) {
+  main().catch(console.error);
 }
