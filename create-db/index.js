@@ -429,17 +429,27 @@ async function promptForRegion(defaultRegion, userAgent, cliRunId) {
     process.exit(0);
   }
 
-  void sendAnalyticsToWorker("create_db:region_selected", {
-    command: CLI_NAME,
-    region: region,
-    "selection-method": "interactive",
-    "user-agent": userAgent,
-  }, cliRunId);
+  void sendAnalyticsToWorker(
+    "create_db:region_selected",
+    {
+      command: CLI_NAME,
+      region: region,
+      "selection-method": "interactive",
+      "user-agent": userAgent,
+    },
+    cliRunId
+  );
 
   return region;
 }
 
-async function createDatabase(name, region, userAgent, cliRunId, silent = false) {
+async function createDatabase(
+  name,
+  region,
+  userAgent,
+  cliRunId,
+  silent = false
+) {
   let s;
   if (!silent) {
     s = spinner();
@@ -473,13 +483,17 @@ async function createDatabase(name, region, userAgent, cliRunId, silent = false)
       );
     }
 
-    void sendAnalyticsToWorker("create_db:database_creation_failed", {
-      command: CLI_NAME,
-      region: region,
-      "error-type": "rate_limit",
-      "status-code": 429,
-      "user-agent": userAgent,
-    }, cliRunId);
+    void sendAnalyticsToWorker(
+      "create_db:database_creation_failed",
+      {
+        command: CLI_NAME,
+        region: region,
+        "error-type": "rate_limit",
+        "status-code": 429,
+        "user-agent": userAgent,
+      },
+      cliRunId
+    );
 
     await flushAnalytics();
     process.exit(1);
@@ -503,13 +517,17 @@ async function createDatabase(name, region, userAgent, cliRunId, silent = false)
       s.stop("Unexpected response from create service.");
     }
 
-    void sendAnalyticsToWorker("create_db:database_creation_failed", {
-      command: CLI_NAME,
-      region,
-      "error-type": "invalid_json",
-      "status-code": resp.status,
-      "user-agent": userAgent,
-    }, cliRunId);
+    void sendAnalyticsToWorker(
+      "create_db:database_creation_failed",
+      {
+        command: CLI_NAME,
+        region,
+        "error-type": "invalid_json",
+        "status-code": resp.status,
+        "user-agent": userAgent,
+      },
+      cliRunId
+    );
 
     await flushAnalytics();
     process.exit(1);
@@ -517,7 +535,6 @@ async function createDatabase(name, region, userAgent, cliRunId, silent = false)
 
   const database = result.data ? result.data.database : result.databases?.[0];
   const projectId = result.data ? result.data.id : result.id;
-  const prismaConn = database?.connectionString;
 
   const directConnDetails = result.data
     ? database?.apiKeys?.[0]?.directConnection
@@ -543,8 +560,7 @@ async function createDatabase(name, region, userAgent, cliRunId, silent = false)
 
   if (silent && !result.error) {
     const jsonResponse = {
-      connectionString: prismaConn,
-      directConnectionString: directConn,
+      connectionString: directConn,
       claimUrl: claimUrl,
       deletionDate: expiryDate.toISOString(),
       region: database?.region?.id || region,
@@ -575,13 +591,17 @@ async function createDatabase(name, region, userAgent, cliRunId, silent = false)
       );
     }
 
-    void sendAnalyticsToWorker("create_db:database_creation_failed", {
-      command: CLI_NAME,
-      region: region,
-      "error-type": "api_error",
-      "error-message": result.error.message,
-      "user-agent": userAgent,
-    }, cliRunId);
+    void sendAnalyticsToWorker(
+      "create_db:database_creation_failed",
+      {
+        command: CLI_NAME,
+        region: region,
+        "error-type": "api_error",
+        "error-message": result.error.message,
+        "user-agent": userAgent,
+      },
+      cliRunId
+    );
 
     await flushAnalytics();
     process.exit(1);
@@ -594,52 +614,42 @@ async function createDatabase(name, region, userAgent, cliRunId, silent = false)
   const expiryFormatted = expiryDate.toLocaleString();
 
   log.message("");
+  log.info(chalk.bold("Database Connection"));
+  log.message("");
 
-  log.info(chalk.bold("Connect to your database →"));
-
-  if (prismaConn) {
-    log.message(
-      chalk.magenta("  Use this connection string optimized for Prisma ORM:")
-    );
-    log.message("  " + chalk.yellow(prismaConn));
-    log.message("");
-  }
-
+  // Direct connection (only output this one)
   if (directConn) {
-    log.message(
-      chalk.cyan("  Use this connection string for everything else:")
-    );
+    log.message(chalk.cyan("  Connection String:"));
     log.message("  " + chalk.yellow(directConn));
     log.message("");
   } else {
-    log.warning(
-      chalk.yellow(
-        "Direct connection details are not available in the API response."
-      )
-    );
+    log.warning(chalk.yellow("  Connection details are not available."));
+    log.message("");
   }
 
+
+  // Claim database section
   const clickableUrl = terminalLink(claimUrl, claimUrl, { fallback: false });
-  log.success(`${chalk.bold("Claim your database →")}`);
-  log.message(
-    chalk.cyan("  Want to keep your database? Claim for free via this link:")
-  );
+  log.success(chalk.bold("Claim Your Database"));
+  log.message(chalk.cyan("  Keep your database for free:"));
   log.message("  " + chalk.yellow(clickableUrl));
   log.message(
     chalk.italic(
       chalk.gray(
-        "  Your database will be deleted on " +
-          expiryFormatted +
-          " if not claimed."
+        `  Database will be deleted on ${expiryFormatted} if not claimed.`
       )
     )
   );
 
-  void sendAnalyticsToWorker("create_db:database_created", {
-    command: CLI_NAME,
-    region,
-    utm_source: CLI_NAME,
-  }, cliRunId);
+  void sendAnalyticsToWorker(
+    "create_db:database_created",
+    {
+      command: CLI_NAME,
+      region,
+      utm_source: CLI_NAME,
+    },
+    cliRunId
+  );
 }
 
 export async function main() {
@@ -659,22 +669,27 @@ export async function main() {
       userAgent = `${userEnvVars.PRISMA_ACTOR_NAME}/${userEnvVars.PRISMA_ACTOR_PROJECT}`;
     }
 
-    void sendAnalyticsToWorker("create_db:cli_command_ran", {
-      command: CLI_NAME,
-      "full-command": `${CLI_NAME} ${rawArgs.join(" ")}`.trim(),
-      "has-region-flag": rawArgs.includes("--region") || rawArgs.includes("-r"),
-      "has-interactive-flag":
-        rawArgs.includes("--interactive") || rawArgs.includes("-i"),
-      "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
-      "has-list-regions-flag": rawArgs.includes("--list-regions"),
-      "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
-      "has-env-flag": rawArgs.includes("--env") || rawArgs.includes("-e"),
-      "has-user-agent-from-env": !!userAgent,
-      "node-version": process.version,
-      platform: process.platform,
-      arch: process.arch,
-      "user-agent": userAgent,
-    }, cliRunId);
+    void sendAnalyticsToWorker(
+      "create_db:cli_command_ran",
+      {
+        command: CLI_NAME,
+        "full-command": `${CLI_NAME} ${rawArgs.join(" ")}`.trim(),
+        "has-region-flag":
+          rawArgs.includes("--region") || rawArgs.includes("-r"),
+        "has-interactive-flag":
+          rawArgs.includes("--interactive") || rawArgs.includes("-i"),
+        "has-help-flag": rawArgs.includes("--help") || rawArgs.includes("-h"),
+        "has-list-regions-flag": rawArgs.includes("--list-regions"),
+        "has-json-flag": rawArgs.includes("--json") || rawArgs.includes("-j"),
+        "has-env-flag": rawArgs.includes("--env") || rawArgs.includes("-e"),
+        "has-user-agent-from-env": !!userAgent,
+        "node-version": process.version,
+        platform: process.platform,
+        arch: process.arch,
+        "user-agent": userAgent,
+      },
+      cliRunId
+    );
 
     if (!flags.help && !flags.json) {
       await isOffline();
@@ -701,12 +716,16 @@ export async function main() {
     if (flags.region) {
       region = flags.region;
 
-      void sendAnalyticsToWorker("create_db:region_selected", {
-        command: CLI_NAME,
-        region: region,
-        "selection-method": "flag",
-        "user-agent": userAgent,
-      }, cliRunId);
+      void sendAnalyticsToWorker(
+        "create_db:region_selected",
+        {
+          command: CLI_NAME,
+          region: region,
+          "selection-method": "flag",
+          "user-agent": userAgent,
+        },
+        cliRunId
+      );
     }
 
     if (flags.interactive) {
@@ -720,7 +739,13 @@ export async function main() {
         } else {
           await validateRegion(region, true);
         }
-        const result = await createDatabase(name, region, userAgent, cliRunId, true);
+        const result = await createDatabase(
+          name,
+          region,
+          userAgent,
+          cliRunId,
+          true
+        );
         console.log(JSON.stringify(result, null, 2));
         await flushAnalytics();
         process.exit(0);
@@ -744,13 +769,19 @@ export async function main() {
         } else {
           await validateRegion(region, true);
         }
-        const result = await createDatabase(name, region, userAgent, cliRunId, true);
+        const result = await createDatabase(
+          name,
+          region,
+          userAgent,
+          cliRunId,
+          true
+        );
         if (result.error) {
           console.error(result.message || "Unknown error");
           await flushAnalytics();
           process.exit(1);
         }
-        console.log(`DATABASE_URL="${result.directConnectionString}"`);
+        console.log(`DATABASE_URL="${result.connectionString}"`);
         console.error("\n# Claim your database at: " + result.claimUrl);
         await flushAnalytics();
         process.exit(0);
@@ -787,7 +818,19 @@ export async function main() {
   }
 }
 
-// Only run main() if this file is being executed directly, not when imported
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+// Run main() if this file is being executed directly
+const isDirectExecution =
+  import.meta.url.endsWith("/index.js") ||
+  process.argv[1] === import.meta.url.replace("file://", "") ||
+  process.argv[1].includes("create-db") ||
+  process.argv[1].includes("create-pg") ||
+  process.argv[1].includes("create-postgres");
+
+if (isDirectExecution && !process.env.__CREATE_DB_EXECUTING) {
+  process.env.__CREATE_DB_EXECUTING = "true";
+  main().catch(console.error);
 }
+
+// if (import.meta.url.endsWith('/index.js') || process.argv[1] === import.meta.url.replace('file://', '')) {
+//   main().catch(console.error);
+// }
