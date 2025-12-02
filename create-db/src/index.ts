@@ -1,4 +1,4 @@
-import { intro, outro, cancel, select, spinner, log } from "@clack/prompts";
+import { intro, outro, cancel, select, spinner, log, isCancel } from "@clack/prompts";
 import { createRouterClient, os } from "@orpc/server";
 import { randomUUID } from "crypto";
 import dotenv from "dotenv";
@@ -413,7 +413,7 @@ const router = os.router({
                             regions.find((r) => r.id === region)?.id || regions[0]?.id,
                     });
 
-                    if (selectedRegion === null) {
+                    if (isCancel(selectedRegion)) {
                         cancel(pc.red("Operation cancelled."));
                         await flushAnalytics();
                         process.exit(0);
@@ -466,7 +466,7 @@ const router = os.router({
                         regions.find((r) => r.id === region)?.id || regions[0]?.id,
                 });
 
-                if (selectedRegion === null) {
+                if (isCancel(selectedRegion)) {
                     cancel(pc.red("Operation cancelled."));
                     await flushAnalytics();
                     process.exit(0);
