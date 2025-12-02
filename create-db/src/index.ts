@@ -531,7 +531,7 @@ const router = os.router({
 
     regions: os
         .meta({ description: "List available Prisma Postgres regions" })
-        .handler(async (): Promise<Region[]> => {
+        .handler(async (): Promise<void> => {
             const regions = await getRegions();
 
             log.message("");
@@ -541,8 +541,6 @@ const router = os.router({
                 log.message(`  ${pc.green(r.id)} - ${r.name || r.id}`);
             }
             log.message("");
-
-            return regions;
         }),
 });
 
