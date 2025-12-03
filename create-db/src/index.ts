@@ -28,6 +28,7 @@ export type {
     RegionId,
     CreateDatabaseResult,
     DatabaseResult,
+    DatabaseError,
     ProgrammaticCreateOptions,
 } from "./types.js";
 
@@ -595,6 +596,11 @@ const caller = createRouterClient(router, { context: {} });
 /**
  * Create a new Prisma Postgres database programmatically.
  *
+ * @param options - Options for creating the database
+ * @param options.region - The AWS region for the database (optional)
+ * @param options.userAgent - Custom user agent string (optional)
+ * @returns A promise that resolves to either a {@link DatabaseResult} or {@link DatabaseError}
+ *
  * @example
  * ```typescript
  * import { create } from "create-db";
@@ -604,6 +610,8 @@ const caller = createRouterClient(router, { context: {} });
  * if (result.success) {
  *   console.log(`Connection string: ${result.connectionString}`);
  *   console.log(`Claim URL: ${result.claimUrl}`);
+ * } else {
+ *   console.error(`Error: ${result.message}`);
  * }
  * ```
  */
