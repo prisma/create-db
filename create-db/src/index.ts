@@ -361,10 +361,11 @@ const router = os.router({
                     .describe("Output machine-readable JSON")
                     .meta({ alias: "j" }),
                 env: z
-                    .boolean()
+                    .string()
                     .optional()
-                    .default(false)
-                    .describe("Output DATABASE_URL format for .env files")
+                    .describe(
+                        "Write DATABASE_URL and CLAIM_URL to the specified .env file"
+                    )
                     .meta({ alias: "e" }),
             })
         )
@@ -385,7 +386,7 @@ const router = os.router({
                     "has-region-flag": !!input.region,
                     "has-interactive-flag": input.interactive,
                     "has-json-flag": input.json,
-                    "has-env-flag": input.env,
+                    "has-env-flag": !!input.env,
                     "has-user-agent-from-env": !!userAgent,
                     "node-version": process.version,
                     platform: process.platform,
@@ -401,7 +402,11 @@ const router = os.router({
                 region = getRegionClosestToLocation(userLocation) ?? region;
             }
 
-            if (input.json || input.env) {
+            const envPath = input.env;
+            const envEnabled =
+                typeof envPath === "string" && envPath.trim().length > 0;
+
+            if (input.json || envEnabled) {
                 if (input.interactive) {
                     await checkOnline();
                     const regions = await getRegions();
@@ -448,8 +453,40 @@ const router = os.router({
                     process.exit(1);
                 }
 
-                console.log(`DATABASE_URL="${result.connectionString}"`);
-                console.error(`\n# Claim your database at: ${result.claimUrl}`);
+                try {
+                    const targetEnvPath = envPath!;
+                    const lines = [
+                        `DATABASE_URL="${result.connectionString ?? ""}"`,
+                        `CLAIM_URL="${result.claimUrl}"`,
+                        "",
+                    ];
+
+                    let prefix = "";
+                    if (fs.existsSync(targetEnvPath)) {
+                        const existing = fs.readFileSync(targetEnvPath, "utf8");
+                        if (existing.length > 0 && !existing.endsWith("\n")) {
+                            prefix = "\n";
+                        }
+                    }
+
+                    fs.appendFileSync(targetEnvPath, prefix + lines.join("\n"), {
+                        encoding: "utf8",
+                    });
+
+                    console.log(
+                        pc.green(`Wrote DATABASE_URL and CLAIM_URL to ${targetEnvPath}`)
+                    );
+                } catch (err) {
+                    console.error(
+                        pc.red(
+                            `Failed to write environment variables to ${envPath}: ${err instanceof Error ? err.message : String(err)
+                            }`
+                        )
+                    );
+                    process.exit(1);
+                }
+
+                return;
             }
 
             await checkOnline();
