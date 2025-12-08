@@ -8,7 +8,7 @@ const CLI_PATH = path.resolve(__dirname, "../dist/cli.mjs");
 
 const runCli = async (
   args: string[] = [],
-  options: { env?: Record<string, string>;[key: string]: unknown } = {}
+  options: { env?: Record<string, string>; [key: string]: unknown } = {}
 ) => {
   const result = await execa("node", [CLI_PATH, ...args], {
     ...options,

@@ -101,9 +101,9 @@ describe("getRegionClosestToLocation", () => {
     expect(
       getRegionClosestToLocation({ latitude: undefined, longitude: undefined })
     ).toBe(null);
-    expect(
-      getRegionClosestToLocation({ latitude: NaN, longitude: NaN })
-    ).toBe(null);
+    expect(getRegionClosestToLocation({ latitude: NaN, longitude: NaN })).toBe(
+      null
+    );
     expect(
       getRegionClosestToLocation({ latitude: "invalid", longitude: "invalid" })
     ).toBe(null);
@@ -123,8 +123,12 @@ describe("REGION_COORDINATES", () => {
 
     for (const region of expectedRegions) {
       expect(REGION_COORDINATES).toHaveProperty(region);
-      expect(REGION_COORDINATES[region as keyof typeof REGION_COORDINATES]).toHaveProperty("lat");
-      expect(REGION_COORDINATES[region as keyof typeof REGION_COORDINATES]).toHaveProperty("lng");
+      expect(
+        REGION_COORDINATES[region as keyof typeof REGION_COORDINATES]
+      ).toHaveProperty("lat");
+      expect(
+        REGION_COORDINATES[region as keyof typeof REGION_COORDINATES]
+      ).toHaveProperty("lng");
     }
   });
 
@@ -140,7 +144,13 @@ describe("REGION_COORDINATES", () => {
 
 describe("CLI database creation with explicit regions", () => {
   it("creates database in ap-southeast-1 (Singapore)", async () => {
-    const { stdout } = await execa("node", ["./dist/cli.mjs", "create", "--region", "ap-southeast-1", "--json"]);
+    const { stdout } = await execa("node", [
+      "./dist/cli.mjs",
+      "create",
+      "--region",
+      "ap-southeast-1",
+      "--json",
+    ]);
     const result = JSON.parse(stdout);
 
     expect(result.success).toBe(true);
@@ -150,7 +160,13 @@ describe("CLI database creation with explicit regions", () => {
   }, 30000);
 
   it("creates database in ap-northeast-1 (Tokyo)", async () => {
-    const { stdout } = await execa("node", ["./dist/cli.mjs", "create", "--region", "ap-northeast-1", "--json"]);
+    const { stdout } = await execa("node", [
+      "./dist/cli.mjs",
+      "create",
+      "--region",
+      "ap-northeast-1",
+      "--json",
+    ]);
     const result = JSON.parse(stdout);
 
     expect(result.success).toBe(true);
@@ -160,7 +176,13 @@ describe("CLI database creation with explicit regions", () => {
   }, 30000);
 
   it("creates database in eu-central-1 (Frankfurt)", async () => {
-    const { stdout } = await execa("node", ["./dist/cli.mjs", "create", "--region", "eu-central-1", "--json"]);
+    const { stdout } = await execa("node", [
+      "./dist/cli.mjs",
+      "create",
+      "--region",
+      "eu-central-1",
+      "--json",
+    ]);
     const result = JSON.parse(stdout);
 
     expect(result.success).toBe(true);
@@ -170,7 +192,13 @@ describe("CLI database creation with explicit regions", () => {
   }, 30000);
 
   it("creates database in eu-west-3 (Paris)", async () => {
-    const { stdout } = await execa("node", ["./dist/cli.mjs", "create", "--region", "eu-west-3", "--json"]);
+    const { stdout } = await execa("node", [
+      "./dist/cli.mjs",
+      "create",
+      "--region",
+      "eu-west-3",
+      "--json",
+    ]);
     const result = JSON.parse(stdout);
 
     expect(result.success).toBe(true);
@@ -180,7 +208,13 @@ describe("CLI database creation with explicit regions", () => {
   }, 30000);
 
   it("creates database in us-east-1 (Virginia)", async () => {
-    const { stdout } = await execa("node", ["./dist/cli.mjs", "create", "--region", "us-east-1", "--json"]);
+    const { stdout } = await execa("node", [
+      "./dist/cli.mjs",
+      "create",
+      "--region",
+      "us-east-1",
+      "--json",
+    ]);
     const result = JSON.parse(stdout);
 
     expect(result.success).toBe(true);
@@ -190,7 +224,13 @@ describe("CLI database creation with explicit regions", () => {
   }, 30000);
 
   it("creates database in us-west-1 (California)", async () => {
-    const { stdout } = await execa("node", ["./dist/cli.mjs", "create", "--region", "us-west-1", "--json"]);
+    const { stdout } = await execa("node", [
+      "./dist/cli.mjs",
+      "create",
+      "--region",
+      "us-west-1",
+      "--json",
+    ]);
     const result = JSON.parse(stdout);
 
     expect(result.success).toBe(true);
