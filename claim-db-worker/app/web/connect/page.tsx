@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Eye, EyeClosed, Lightbulb } from "lucide-react";
+import { Check, Copy, Eye, EyeClosed, Lightbulb, Zap } from "lucide-react";
 import React, { useState } from "react";
 import { useDatabase } from "../DatabaseContext";
 import { customToast } from "@/lib/custom-toast";
@@ -25,9 +25,10 @@ type BuildStep = {
 
 const buildSteps: BuildStep[] = [
   {
-    title: "Install Prisma",
+    title: "Install Dependencies",
     content: null,
-    code: "npm install prisma @prisma/client",
+    code: `npm install prisma tsx @types/pg --save-dev
+npm install @prisma/client @prisma/adapter-pg dotenv pg`,
   },
   {
     title: "Initialize Prisma",
@@ -52,11 +53,18 @@ const buildSteps: BuildStep[] = [
   {
     title: "Start querying",
     content: <span>Import and use Prisma Client in your application</span>,
-    code: `import { PrismaClient } from "@prisma/client";
+    code: `import { PrismaClient } from "./generated/prisma/client.js";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient();
-const users = await prisma.user.findMany();
-console.log(users);`,
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
+
+export default prisma;`,
   },
 ];
 
@@ -106,14 +114,18 @@ const StepItem = ({
 
 export default function ConnectPage() {
   const { dbInfo } = useDatabase();
-  const [copied, setCopied] = useState(false);
+  const [copiedDirect, setCopiedDirect] = useState(false);
+  const [copiedAccel, setCopiedAccel] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const connectionString = dbInfo.connectionString;
+  const connectionString = dbInfo.directConnectionString;
 
-  const handleCopyConnectionString = async () => {
+  const handleCopyConnectionString = async (
+    copyString: string,
+    setCopied: (copied: boolean) => void
+  ) => {
     try {
-      await navigator.clipboard.writeText(connectionString || "");
+      await navigator.clipboard.writeText(copyString);
       setCopied(true);
       customToast("success", "Connection string copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
@@ -172,18 +184,44 @@ export default function ConnectPage() {
           </button>
           <button
             className={`flex items-center justify-center w-12 h-12 border border-subtle rounded-md transition-colors ${
-              copied
+              copiedDirect
                 ? "text-green-400 border-green-400"
                 : "text-muted hover:text-white"
             }`}
-            onClick={handleCopyConnectionString}
+            onClick={() =>
+              handleCopyConnectionString(
+                dbInfo.directConnectionString,
+                setCopiedDirect
+              )
+            }
             title="Copy connection string"
             disabled={!connectionString}
           >
-            {copied ? (
+            {copiedDirect ? (
               <Check className="h-5 w-5" />
             ) : (
               <Copy className="h-5 w-5" />
+            )}
+          </button>
+          <button
+            className={`flex items-center justify-center w-12 h-12 border border-subtle rounded-md transition-colors ${
+              copiedAccel
+                ? "text-green-400 border-green-400"
+                : "text-muted hover:text-white"
+            }`}
+            onClick={() =>
+              handleCopyConnectionString(
+                dbInfo.connectionString,
+                setCopiedAccel
+              )
+            }
+            title="Copy accelerate connection string"
+            disabled={!connectionString}
+          >
+            {copiedAccel ? (
+              <Check className="h-5 w-5" />
+            ) : (
+              <Zap className="h-5 w-5" />
             )}
           </button>
         </div>
