@@ -4,7 +4,12 @@ import { TokenData } from "./auth-utils";
 export async function transferProject(
   projectID: string,
   accessToken: string
-): Promise<{ success: boolean; error?: string; status?: number }> {
+): Promise<{
+  success: boolean;
+  error?: string;
+  status?: number;
+  transferResponse: any;
+}> {
   const env = getEnv();
 
   const requestBody = JSON.stringify({
@@ -24,13 +29,26 @@ export async function transferProject(
   );
 
   if (transferResponse.ok) {
-    return { success: true };
+    const responseText = await transferResponse.text();
+    let responseData = null;
+
+    if (responseText) {
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (e) {
+        console.log("Transfer response (not JSON):", responseText);
+        responseData = { rawResponse: responseText };
+      }
+    }
+
+    return { success: true, transferResponse: responseData };
   } else {
     const responseText = await transferResponse.text();
     return {
       success: false,
       error: responseText,
       status: transferResponse.status,
+      transferResponse: null,
     };
   }
 }

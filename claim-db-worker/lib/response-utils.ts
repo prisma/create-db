@@ -26,10 +26,14 @@ export function redirectToError(
 
 export function redirectToSuccess(
   request: NextRequest,
-  projectID: string
+  projectID: string,
+  workspaceId: string,
+  databaseId: string
 ): Response {
   const params = new URLSearchParams({
     projectID: projectID,
+    workspaceId: workspaceId,
+    databaseId: databaseId,
   });
 
   const baseUrl = getBaseUrl(request);

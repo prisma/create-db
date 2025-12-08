@@ -23,74 +23,42 @@ type BuildStep = {
   code?: string;
 };
 
-type ConnectionType = "prisma" | "direct";
-
-const buildSteps: Record<ConnectionType, BuildStep[]> = {
-  prisma: [
-    {
-      title: "Install Prisma",
-      content: null,
-      code: "npm install prisma @prisma/client",
-    },
-    {
-      title: "Initialize Prisma",
-      content: null,
-      code: "npx prisma init",
-    },
-    {
-      title: "Set connection string in .env",
-      content: null,
-      code: 'DATABASE_URL="<your-connection-string>"',
-    },
-    {
-      title: "Pull the database schema",
-      content: null,
-      code: "npx prisma db pull",
-    },
-    {
-      title: "Generate Prisma Client",
-      content: null,
-      code: "npx prisma generate",
-    },
-    {
-      title: "Start querying",
-      content: <span>Import and use Prisma Client in your application</span>,
-      code: `import { PrismaClient } from "@prisma/client";
+const buildSteps: BuildStep[] = [
+  {
+    title: "Install Prisma",
+    content: null,
+    code: "npm install prisma @prisma/client",
+  },
+  {
+    title: "Initialize Prisma",
+    content: null,
+    code: "npx prisma init",
+  },
+  {
+    title: "Set connection string in .env",
+    content: null,
+    code: 'DATABASE_URL="<your-connection-string>"',
+  },
+  {
+    title: "Pull the database schema",
+    content: null,
+    code: "npx prisma db pull",
+  },
+  {
+    title: "Generate Prisma Client",
+    content: null,
+    code: "npx prisma generate",
+  },
+  {
+    title: "Start querying",
+    content: <span>Import and use Prisma Client in your application</span>,
+    code: `import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const users = await prisma.user.findMany();
 console.log(users);`,
-    },
-  ],
-  direct: [
-    {
-      title: "Install node-postgres",
-      content: null,
-      code: "npm install pg",
-    },
-    {
-      title: "Set connection string in .env",
-      content: null,
-      code: 'DATABASE_URL="<your-connection-string>"',
-    },
-    {
-      title: "Set up connection",
-      content: null,
-      code: `import { Pool } from "pg";
-
-const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL 
-});`,
-    },
-    {
-      title: "Query your database",
-      content: null,
-      code: `const { rows } = await pool.query('SELECT * FROM "User"');
-
-console.log(rows);`,
-    },
-  ],
-};
+  },
+];
 
 const StepItem = ({
   number,
@@ -138,15 +106,10 @@ const StepItem = ({
 
 export default function ConnectPage() {
   const { dbInfo } = useDatabase();
-  const [connectionType, setConnectionType] =
-    useState<ConnectionType>("prisma");
   const [copied, setCopied] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const connectionString =
-    connectionType === "prisma"
-      ? dbInfo.connectionString
-      : dbInfo.directConnectionString;
+  const connectionString = dbInfo.connectionString;
 
   const handleCopyConnectionString = async () => {
     try {
@@ -162,7 +125,7 @@ export default function ConnectPage() {
   return (
     <div className="bg-code rounded-lg rounded-tl-none p-4 sm:p-6 border border-subtle flex flex-col h-full min-h-[calc(100vh-200px)]">
       {/* Connection type toggle */}
-      <div className="flex flex-col sm:flex-row rounded-md p-1 w-full mb-3 gap-2">
+      {/* <div className="flex flex-col sm:flex-row rounded-md p-1 w-full mb-3 gap-2">
         {(["prisma", "direct"] as const).map((type) => (
           <button
             key={type}
@@ -176,7 +139,7 @@ export default function ConnectPage() {
             {type === "prisma" ? "With Prisma ORM" : "With any other tool"}
           </button>
         ))}
-      </div>
+      </div> */}
 
       {/* Connection string input */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-6">
@@ -229,12 +192,10 @@ export default function ConnectPage() {
       <div className="flex-1 flex flex-col">
         <div className="space-y-6">
           <h3 className="text-lg font-bold text-white mb-4">
-            {connectionType === "prisma"
-              ? "Connect with Prisma ORM"
-              : "Connect with node-postgres"}
+            Connect with Prisma ORM
           </h3>
           <div className="space-y-4">
-            {buildSteps[connectionType].map((step, index) => (
+            {buildSteps.map((step, index) => (
               <StepItem
                 key={index}
                 number={index + 1}

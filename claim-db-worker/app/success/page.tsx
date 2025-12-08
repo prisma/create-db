@@ -8,6 +8,13 @@ import { Suspense } from "react";
 function SuccessContent() {
   const searchParams = useSearchParams();
   const projectID = searchParams.get("projectID");
+  const workspaceId = searchParams.get("workspaceId");
+  const databaseId = searchParams.get("databaseId");
+
+  const consoleUrl =
+    workspaceId && projectID && databaseId
+      ? `https://console.prisma.io/${workspaceId}/${projectID}/${databaseId}`
+      : "https://console.prisma.io/";
 
   return (
     <div className="flex flex-col mt-32 items-center justify-center text-center px-4 sm:px-6">
@@ -23,7 +30,7 @@ function SuccessContent() {
         </p>
 
         <a
-          href="https://console.prisma.io/"
+          href={consoleUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-3 bg-[#24bfa7] hover:bg-[#16A394] text-white font-bold text-xl sm:text-xl lg:text-2xl border-none rounded-lg px-8 py-4 sm:px-10 sm:py-5 lg:px-12 lg:py-6 cursor-pointer shadow-lg transition-all duration-200 min-h-[44px] sm:min-h-[52px] lg:min-h-[60px] mx-auto"
