@@ -55,6 +55,7 @@ describe("auth callback API", () => {
       vi.mocked(transferProject).mockResolvedValue({
         success: true,
         status: 200,
+        transferResponse: {},
       });
 
       vi.mocked(redirectToSuccess).mockReturnValue(
@@ -86,7 +87,9 @@ describe("auth callback API", () => {
       );
       expect(redirectToSuccess).toHaveBeenCalledWith(
         request,
-        "test-project-123"
+        "test-project-123",
+        "test-workspace-123", // workspaceId
+        "test-database-123" // databaseId
       );
 
       expect(mockFetch).toHaveBeenCalledWith(
@@ -170,6 +173,7 @@ describe("auth callback API", () => {
         success: false,
         status: 403,
         error: "Insufficient permissions",
+        transferResponse: {},
       });
 
       vi.mocked(redirectToError).mockReturnValue(
