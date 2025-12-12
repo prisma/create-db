@@ -1,106 +1,239 @@
-## **What is `create-db`?**
+# create-db
 
-`create-db` is an open-source CLI tool that provisions [**temporary Prisma Postgres databases**](https://www.prisma.io/postgres?utm_source=create_db_npm_docs) with a single command.
+`create-db` is an open-source CLI tool and library that provisions [**temporary Prisma Postgres databases**](https://www.prisma.io/postgres?utm_source=create_db_npm_docs) with a single command.
 
-Each database is available for **24 hours** by default. To keep the database permanently, you can **claim it for free** using the URL displayed in the CLI output.
+Each database is available for **24 hours** by default. To keep the database permanently, you can **claim it for free** using the URL displayed in the output.
 
 This tool is designed for developers who need a fast way to test, prototype, or integrate Prisma Postgres without manual setup or creating an account.
 
-## **Installation and usage**
+## Installation and Usage
 
-There is no need to install the tool globally. Simply run:
+No installation required. Simply run:
 
 ```bash
 npx create-db@latest
 ```
 
-You can also use the following aliases:
+You can also use these aliases:
 
 ```bash
 npx create-pg@latest
 npx create-postgres@latest
 ```
 
-## **Examples**
+## CLI Usage
+
+### Commands
 
 ```bash
-npx create-db                    # Creates a database in the default region
-npx create-db --region eu-west-1 # Creates a database in a specific region
-npx create-db --i                # Interactive region selection
-
+npx create-db [create]   # Create a new database (default command)
+npx create-db regions    # List available regions
 ```
 
-## **Available options**
+### Options
 
-You can run `npx create-db --help` or `npx create-db -h` to see all the available CLI options:
+| Flag | Alias | Description |
+|------|-------|-------------|
+| `--region <region>` | `-r` | AWS region for the database |
+| `--interactive` | `-i` | Interactive mode to select a region |
+| `--json` | `-j` | Output machine-readable JSON |
+| `--env <path>` | `-e` | Write DATABASE_URL and CLAIM_URL to specified .env file |
+| `--help` | `-h` | Show help message |
+| `--version` | | Show version |
 
+### Available Regions
+
+- `ap-southeast-1` - Asia Pacific (Singapore)
+- `ap-northeast-1` - Asia Pacific (Tokyo)
+- `eu-central-1` - Europe (Frankfurt)
+- `eu-west-3` - Europe (Paris)
+- `us-east-1` - US East (N. Virginia)
+- `us-west-1` - US West (N. California)
+
+### Examples
+
+```bash
+# Create database in auto-detected nearest region
+npx create-db
+
+# Create database in a specific region
+npx create-db --region eu-west-3
+npx create-db -r us-east-1
+
+# Interactive region selection
+npx create-db --interactive
+npx create-db -i
+
+# Output as JSON (useful for scripting)
+npx create-db --json
+npx create-db -j
+
+# Write connection string to .env file
+npx create-db --env .env
+npx create-db -e .env.local
+
+# Combine flags
+npx create-db -r eu-central-1 -j
+npx create-db -i -e .env
+
+# List available regions
+npx create-db regions
 ```
-npx create-db [options]
 
-Options:
-  --region <region>, -r <region>  Specify a region
-                                  Available regions:
-                                  ap-southeast-1, ap-northeast-1,
-                                  eu-central-1, eu-west-3,
-                                  us-east-1, us-west-1
+### JSON Output
 
-  --interactive, -i               Run in interactive mode
+When using `--json`, the output includes:
 
-  --help, -h                      Show this help message
-
+```json
+{
+  "success": true,
+  "connectionString": "postgresql://user:pass@host:5432/postgres?sslmode=require",
+  "claimUrl": "https://create-db.prisma.io/claim?projectID=...",
+  "deletionDate": "2025-12-13T12:00:00.000Z",
+  "region": "us-east-1",
+  "name": "2025-12-12T12:00:00.000Z",
+  "projectId": "proj_..."
+}
 ```
 
-## **CLI output example**
+### Environment File Output
 
-```
-┌  🚀 Creating a Prisma Postgres database
-│
-│  Provisioning a temporary database in us-east-1...
-│
-│  It will be automatically deleted in 24 hours, but you can claim it.
-│
-◇  Database created successfully!
-│
-●  Connect to your database →
-│
-│    Prisma connection string:
-│    prisma+postgres://accelerate.prisma-data.net/?api_key=...
-│
-│    Standard connection string:
-│    postgresql://<username>:<password>@db.prisma.io:5432/postgres
-│
-◆  Claim your database →
-│
-│    Want to keep your database? Claim for free:
-│    https://create-db.prisma.io?projectID=proj_...
-└
+When using `--env`, the following variables are appended to the specified file:
 
+```env
+DATABASE_URL="postgresql://user:pass@host:5432/postgres?sslmode=require"
+CLAIM_URL="https://create-db.prisma.io/claim?projectID=..."
 ```
 
-## **Claiming a database**
+## Programmatic API
 
-When you create a database using `create-db`, it is temporary and will be deleted automatically after **24 hours**.
+You can also use `create-db` as a library in your Node.js applications:
 
-The CLI output includes a **claim URL** that allows you to keep the database permanently for free.
+```bash
+npm install create-db
+# or
+bun add create-db
+```
+
+### `create(options?)`
+
+Create a new Prisma Postgres database programmatically.
+
+```typescript
+import { create } from "create-db";
+
+const result = await create({ region: "us-east-1" });
+
+if (result.success) {
+  console.log(`Connection string: ${result.connectionString}`);
+  console.log(`Claim URL: ${result.claimUrl}`);
+  console.log(`Expires: ${result.deletionDate}`);
+} else {
+  console.error(`Error: ${result.message}`);
+}
+```
+
+#### Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `region` | `RegionId` | AWS region for the database (optional, defaults to `us-east-1`) |
+| `userAgent` | `string` | Custom user agent string for tracking (optional) |
+
+### `regions()`
+
+List available Prisma Postgres regions.
+
+```typescript
+import { regions } from "create-db";
+
+const availableRegions = await regions();
+console.log(availableRegions);
+// [{ id: "us-east-1", name: "US East (N. Virginia)", status: "available" }, ...]
+```
+
+### Type Guards
+
+```typescript
+import { create, isDatabaseSuccess, isDatabaseError } from "create-db";
+
+const result = await create();
+
+if (isDatabaseSuccess(result)) {
+  // result is DatabaseResult
+  console.log(result.connectionString);
+}
+
+if (isDatabaseError(result)) {
+  // result is DatabaseError
+  console.error(result.message);
+}
+```
+
+### Types
+
+```typescript
+import type {
+  Region,
+  RegionId,
+  CreateDatabaseResult,
+  DatabaseResult,
+  DatabaseError,
+  ProgrammaticCreateOptions,
+} from "create-db";
+
+// RegionId is a union type of available regions
+type RegionId = "ap-southeast-1" | "ap-northeast-1" | "eu-central-1" | "eu-west-3" | "us-east-1" | "us-west-1";
+
+// DatabaseResult (success)
+interface DatabaseResult {
+  success: true;
+  connectionString: string | null;
+  claimUrl: string;
+  deletionDate: string;
+  region: string;
+  name: string;
+  projectId: string;
+  userAgent?: string;
+}
+
+// DatabaseError (failure)
+interface DatabaseError {
+  success: false;
+  error: string;
+  message: string;
+  raw?: string;
+  details?: unknown;
+  status?: number;
+}
+
+// CreateDatabaseResult is DatabaseResult | DatabaseError
+```
+
+### Region Validation with Zod
+
+```typescript
+import { RegionSchema } from "create-db";
+
+// Validate region input
+const result = RegionSchema.safeParse("us-east-1");
+if (result.success) {
+  console.log("Valid region:", result.data);
+}
+```
+
+## Claiming a Database
+
+When you create a database, it is temporary and will be deleted after **24 hours**.
+
+The output includes a **claim URL** that allows you to keep the database permanently for free.
 
 **What claiming does:**
 
-- Moves the database into your Prisma Data Platform account.
-- Prevents it from being auto-deleted.
-- Lets you continue using the database as a long-term instance.
+- Moves the database into your Prisma Data Platform account
+- Prevents it from being auto-deleted
+- Lets you continue using the database as a long-term instance
 
-Example:
+## Next Steps
 
-```
-◆  Claim your database →
-│
-│    Want to keep your database? Claim for free:
-|
-│    https://create-db.prisma.io?projectID=proj_...
-│
-│    Your database will be deleted on 7/24/2025, 2:25:41 AM if not claimed.
-```
-
-## **Next steps**
-
-- Refer to the section in the official [Prisma Postgres documentation](https://www.prisma.io/docs/postgres/introduction/npx-create-db).
+- Refer to the [Prisma Postgres documentation](https://www.prisma.io/docs/postgres/introduction/npx-create-db) for more details.
