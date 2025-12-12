@@ -65,10 +65,23 @@ describe("auth callback API", () => {
         })
       );
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({}),
-      });
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            data: { workspace: { id: "wksp_test-workspace-123" } },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            data: [{ id: "db_test-database-123" }],
+          }),
+        })
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({}),
+        });
 
       const request = new NextRequest(
         "http://localhost:3000/api/auth/callback?code=test-code&state=test-state&projectID=test-project-123"
