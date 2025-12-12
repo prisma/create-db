@@ -114,9 +114,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Validate project exists
+    // Validate project exists and get project data
+    let projectData;
     try {
-      await validateProject(projectID);
+      projectData = await validateProject(projectID);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -141,16 +142,57 @@ export async function GET(request: NextRequest) {
       projectID,
       tokenData.access_token
     );
-
     if (transferResult.success) {
+      // Fetch project details with user's token to get workspace ID
+      const projectDetailsRes = await fetch(
+        `https://api.prisma.io/v1/projects/${projectID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenData.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const projectDetails = (await projectDetailsRes.json()) as {
+        data?: { workspace?: { id?: string } };
+      };
+      const workspaceId = (projectDetails.data?.workspace?.id ?? "").replace(
+        /^wksp_/,
+        ""
+      );
+
+      // Fetch databases to get database ID
+      const databasesRes = await fetch(
+        `https://api.prisma.io/v1/projects/${projectID}/databases`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenData.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const databases = (await databasesRes.json()) as {
+        data?: Array<{ id?: string }>;
+      };
+      const databaseId = (databases.data?.[0]?.id ?? "").replace(/^db_/, "");
+
       await sendServerAnalyticsEvent(
         "create_db:claim_successful",
         {
           "project-id": projectID,
+          "workspace-id": workspaceId,
+          "database-id": databaseId,
         },
         request
       );
-      return redirectToSuccess(request, projectID);
+
+      const cleanProjectId = projectID.replace(/^proj_/, "");
+      return redirectToSuccess(
+        request,
+        cleanProjectId,
+        workspaceId,
+        databaseId
+      );
     } else {
       await sendServerAnalyticsEvent(
         "create_db:claim_failed",

@@ -142,7 +142,7 @@ export default {
 			if (!region || !name) {
 				return new Response('Missing region or name in request body', { status: 400 });
 			}
-			console.log('userAgent:', userAgent);
+
 			const prismaResponse = await fetch('https://api.prisma.io/v1/projects', {
 				method: 'POST',
 				headers: {

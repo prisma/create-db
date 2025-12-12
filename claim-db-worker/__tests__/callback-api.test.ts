@@ -55,6 +55,7 @@ describe("auth callback API", () => {
       vi.mocked(transferProject).mockResolvedValue({
         success: true,
         status: 200,
+        transferResponse: {},
       });
 
       vi.mocked(redirectToSuccess).mockReturnValue(
@@ -64,10 +65,23 @@ describe("auth callback API", () => {
         })
       );
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({}),
-      });
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            data: { workspace: { id: "wksp_test-workspace-123" } },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            data: [{ id: "db_test-database-123" }],
+          }),
+        })
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({}),
+        });
 
       const request = new NextRequest(
         "http://localhost:3000/api/auth/callback?code=test-code&state=test-state&projectID=test-project-123"
@@ -86,7 +100,9 @@ describe("auth callback API", () => {
       );
       expect(redirectToSuccess).toHaveBeenCalledWith(
         request,
-        "test-project-123"
+        "test-project-123",
+        "test-workspace-123", // workspaceId
+        "test-database-123" // databaseId
       );
 
       expect(mockFetch).toHaveBeenCalledWith(
@@ -170,6 +186,7 @@ describe("auth callback API", () => {
         success: false,
         status: 403,
         error: "Insufficient permissions",
+        transferResponse: {},
       });
 
       vi.mocked(redirectToError).mockReturnValue(

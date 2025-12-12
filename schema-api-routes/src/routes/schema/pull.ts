@@ -13,7 +13,6 @@ app.post("/", async (c) => {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }`;
 
   try {

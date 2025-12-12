@@ -1,92 +1,224 @@
-name: Release CLIs
+name: Publish CLIs
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+        types:
+            - opened
+            - reopened
+            - synchronize
+    workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 env:
-  WORKSPACES: create-db create-pg create-postgres
-  POSTHOG_API_HOST: ${{ secrets.POSTHOG_API_HOST }}
-  POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+    WORKSPACES: create-db create-pg create-postgres
+    POSTHOG_API_HOST: ${{ secrets.POSTHOG_API_HOST }}
+    POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+    CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+    CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
+
+permissions:
+    contents: read
 
 jobs:
-  release:
-    name: 🚀 Release CLIs
-    runs-on: ubuntu-latest
+    release:
+        name: 🚀 Release CLIs
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write # to create changeset PRs and version commits
+            pull-requests: write # to create changeset PRs
+            id-token: write # required for OIDC / Trusted Publishers
+        steps:
+            - name: 🛎️ Checkout Repo
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  persist-credentials: true
 
-    steps:
-      - name: 🛎️ Checkout Repo
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+            - name: 🤐 Disable Husky
+              run: echo "HUSKY=0" >> $GITHUB_ENV
 
-      - name: 🤐 Disable Husky
-        run: echo "HUSKY=0" >> $GITHUB_ENV
+            - name: 📦 Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 8
 
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
+            - name: 🔧 Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "lts/*"
+                  registry-url: "https://registry.npmjs.org"
+                  cache: "pnpm"
 
-      - name: 🔧 Install dependencies
-        run: pnpm install
+            - name: 🔧 Install dependencies
+              run: pnpm install
 
-      - name: ❌ Disable pnpm git-checks
-        run: pnpm config set git-checks false
+            - name: ❌ Disable pnpm git-checks
+              run: pnpm config set git-checks false
 
-      - name: 🔑 Configure npm auth
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.CREATE_DB_TOKEN_NPM }}" > ~/.npmrc
+            - name: 🚀 Publish Each CLI Package
+              env:
+                  CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+                  CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
+                  POSTHOG_API_HOST: ${{ secrets.POSTHOG_API_HOST }}
+                  POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+              run: |
+                  echo "Using CREATE_DB_WORKER_URL=${CREATE_DB_WORKER_URL}"
+                  echo "Using CLAIM_DB_WORKER_URL=${CLAIM_DB_WORKER_URL}"
+                  echo "Using POSTHOG_API_HOST=${POSTHOG_API_HOST}"
 
-      # Publish each CLI package using the version in package.json
-      - name: 🚀 Publish Each CLI Package
-        run: |
-          echo "Using CREATE_DB_WORKER_URL=${CREATE_DB_WORKER_URL}"
-          echo "Using CLAIM_DB_WORKER_URL=${CLAIM_DB_WORKER_URL}"
-          echo "Using POSTHOG_API_HOST=${POSTHOG_API_HOST}"
+                  for pkg in ${{ env.WORKSPACES }}; do
+                    echo "Publishing $pkg to npm..."
+                    cd "$pkg"
+                    export POSTHOG_API_HOST="${POSTHOG_API_HOST}"
+                    export POSTHOG_API_KEY="${POSTHOG_API_KEY}"
+                    export CREATE_DB_WORKER_URL="${CREATE_DB_WORKER_URL}"
+                    export CLAIM_DB_WORKER_URL="${CLAIM_DB_WORKER_URL}"
+                    
+                    # First try to publish
+                    if ! pnpm publish --access public --no-git-checks; then
+                      echo "Publish failed, trying to bump version and retry..."
+                      npm version patch --no-git-tag-version
+                      pnpm publish --access public --no-git-checks || echo "Publish failed again for $pkg"
+                    fi
+                    cd - >/dev/null
+                  done
 
-          for pkg in $WORKSPACES; do
-            echo "Publishing $pkg to npm..."
-            cd "$pkg"
-            export POSTHOG_API_HOST="${{ secrets.POSTHOG_API_HOST }}"
-            export POSTHOG_API_KEY="${{ secrets.POSTHOG_API_KEY }}"
-            # pnpm publish --access public || echo "Publish failed for $pkg"
-            # First try to publish
-            if ! pnpm publish --access public; then
-              echo "Publish failed, trying to bump version and retry..."
-              npm version patch --no-git-tag-version
-              pnpm publish --access public || echo "Publish failed again for $pkg"
-            fi
-            cd - >/dev/null
-          done
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.CREATE_DB_TOKEN_NPM }}
-          CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
-          CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
-          POSTHOG_API_HOST: ${{ secrets.POSTHOG_API_HOST }}
-          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+            - name: 📝 Ensure Changeset Exists
+              run: |
+                  if [ -z "$(ls -A .changeset 2>/dev/null)" ]; then
+                    echo "No changeset found. Creating a default one..."
+                    pnpm changeset add --empty --message "chore(release): auto-generated changeset"
+                  fi
 
-      - name: 🧹 Cleanup npm auth
-        run: rm -f ~/.npmrc
+            - name: 📝 Prepare Changesets PR
+              id: changesets
+              uses: changesets/action@v1
+              with:
+                  version: pnpm changeset version
+                  commit: "chore(release): version packages"
+                  title: "chore(release): version packages"
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Create a default changeset if none exist
-      - name: 📝 Ensure Changeset Exists
-        run: |
-          if [ -z "$(ls -A .changeset 2>/dev/null)" ]; then
-            echo "No changeset found. Creating a default one..."
-            pnpm changeset add --empty --message "chore(release): auto-generated changeset"
-          fi
+    preview:
+        name: 🚧 Preview release (PR #${{ github.event.number }})
+        if: github.event_name == 'pull_request'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write # For publishing to GitHub releases
+            pull-requests: write # To comment on PRs
+            id-token: write # required for OIDC / Trusted Publishers
+        steps:
+            - name: 🛎️ Checkout full history
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  persist-credentials: true
 
-      # Finally, create a PR for version bump + changelogs
-      - name: 📝 Prepare Changesets PR
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          version: pnpm changeset version
-          commit: "chore(release): version packages"
-          title: "chore(release): version packages"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: 🤐 Disable Husky
+              run: echo "HUSKY=0" >> $GITHUB_ENV
+
+            - name: 📦 Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 8
+
+            - name: 🔧 Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "lts/*"
+                  registry-url: "https://registry.npmjs.org"
+                  cache: "pnpm"
+
+            - name: 🔧 Install dependencies
+              run: pnpm install
+
+            - name: ❌ Disable pnpm git-checks
+              run: pnpm config set git-checks false
+
+            - name: 📄 Copy README to child CLIs
+              run: |
+                  for pkg in create-pg create-postgres; do
+                    cp create-db/README.md "$pkg/README.md"
+                  done
+
+            - name: 🔖 Create unique preview tag
+              run: |
+                  SAFE_REF=$(echo "${{ github.event.pull_request.head.ref }}" | tr '/' '-')
+                  echo "PRE_TAG=pr${{ github.event.number }}-${SAFE_REF}-${{ github.run_id }}" >> $GITHUB_ENV
+
+            - name: 🚀 Bump & publish CLI previews
+              env:
+                  PRE_TAG: ${{ env.PRE_TAG }}
+                  CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+                  CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
+                  POSTHOG_API_HOST: ${{ secrets.POSTHOG_API_HOST }}
+                  POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+              run: |
+                  # Resolve URLs with fallback
+                  CREATE_DB_WORKER_URL="${{ secrets.CREATE_DB_WORKER_URL }}"
+                  CLAIM_DB_WORKER_URL="${{ secrets.CLAIM_DB_WORKER_URL }}"
+
+                  # Persist for next steps
+                  echo "CREATE_DB_WORKER_URL=$CREATE_DB_WORKER_URL" >> $GITHUB_ENV
+                  echo "CLAIM_DB_WORKER_URL=$CLAIM_DB_WORKER_URL" >> $GITHUB_ENV
+
+                  echo "Using CREATE_DB_WORKER_URL=$CREATE_DB_WORKER_URL"
+                  echo "Using CLAIM_DB_WORKER_URL=$CLAIM_DB_WORKER_URL"
+                  echo "Using POSTHOG_API_HOST=${POSTHOG_API_HOST}"
+
+                  for pkg in ${{ env.WORKSPACES }}; do
+                    cd "$pkg"
+                    export CREATE_DB_WORKER_URL
+                    export CLAIM_DB_WORKER_URL
+                    export POSTHOG_API_HOST="${POSTHOG_API_HOST}"
+                    export POSTHOG_API_KEY="${POSTHOG_API_KEY}"
+
+                    npm version prerelease \
+                      --preid "$PRE_TAG" \
+                      --no-git-tag-version
+                    pnpm publish --access public --tag pr${{ github.event.number }} --no-git-checks
+                    cd - >/dev/null
+                  done
+
+            - name: 💬 Post preview-testing instructions
+              uses: actions/github-script@v6
+              env:
+                  PRE_TAG: ${{ env.PRE_TAG }}
+                  CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+                  CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  script: |
+                      const tag = process.env.PRE_TAG;
+                      const dbUrl = process.env.CREATE_DB_WORKER_URL;
+                      const clUrl = process.env.CLAIM_DB_WORKER_URL;
+
+                      await github.rest.issues.createComment({
+                        owner: context.repo.owner,
+                        repo:  context.repo.repo,
+                        issue_number: context.payload.pull_request.number,
+                        body: `
+                      ✅ **Preview CLIs & Workers are live!**
+
+                      Test the CLIs locally under tag \`${tag}\`:
+
+                      \`\`\`bash
+                      npx create-db@pr${{ github.event.number }}
+                      npx create-pg@pr${{ github.event.number }}
+                      npx create-postgres@pr${{ github.event.number }}
+                      \`\`\`
+
+                      **Worker URLs**  
+                      • Create-DB Worker: ${dbUrl}  
+                      • Claim-DB Worker:  ${clUrl}  
+
+                      > These will live as long as this PR exists under tag \`${tag}\`.`
+                      });

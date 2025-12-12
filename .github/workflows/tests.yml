@@ -41,8 +41,14 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: ./create-db
 
+      - name: Build create-db
+        run: pnpm build
+        working-directory: ./create-db
+
       - name: Run create-db tests
         run: pnpm test
         working-directory: ./create-db
         env:
           NODE_ENV: test
+          CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
+          CLAIM_DB_WORKER_URL: ${{ secrets.CLAIM_DB_WORKER_URL }}

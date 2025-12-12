@@ -2,8 +2,7 @@
   "name": "create-postgres",
   "version": "1.1.0",
   "description": "Instantly create a temporary Prisma Postgres database with one command, then claim and persist it in your Prisma Data Platform project when ready.",
-  "main": "index.js",
-  "author": "",
+  "author": "prisma",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/prisma/create-db.git"
@@ -21,8 +20,20 @@
   ],
   "license": "ISC",
   "type": "module",
+  "main": "./index.js",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    },
+    "./cli": {
+      "import": "./cli.js"
+    }
+  },
   "bin": {
-    "create-postgres": "./index.js"
+    "create-postgres": "./cli.js"
   },
   "dependencies": {
     "create-db": "workspace:*"
@@ -31,7 +42,8 @@
     "access": "public"
   },
   "files": [
+    "cli.js",
     "index.js",
-    "README.md"
+    "index.d.ts"
   ]
 }
