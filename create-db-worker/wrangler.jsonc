@@ -14,7 +14,15 @@
 			"binding": "DELETE_DB_WORKFLOW",
 			"class_name": "DeleteDbWorkflow",
 		},
+		{
+			"name": "delete-stale-workflow",
+			"binding": "DELETE_STALE_WORKFLOW",
+			"class_name": "DeleteStaleProjectsWorkflow",
+		},
 	],
+	"triggers": {
+		"crons": ["0 0 * * *"],
+	},
 	"analytics_engine_datasets": [
 		{
 			"binding": "CREATE_DB_DATASET",

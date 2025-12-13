@@ -1,15 +1,17 @@
 import DeleteDbWorkflow from './delete-workflow';
+import DeleteStaleProjectsWorkflow from './delete-stale-workflow';
 import { PosthogEventCapture } from './analytics';
 interface Env {
 	INTEGRATION_TOKEN: string;
 	DELETE_DB_WORKFLOW: Workflow;
+	DELETE_STALE_WORKFLOW: Workflow;
 	CREATE_DB_RATE_LIMITER: RateLimit;
 	CREATE_DB_DATASET: AnalyticsEngineDataset;
 	POSTHOG_API_KEY?: string;
 	POSTHOG_API_HOST?: string;
 }
 
-export { DeleteDbWorkflow };
+export { DeleteDbWorkflow, DeleteStaleProjectsWorkflow };
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -192,5 +194,10 @@ export default {
 
 		// --- Fallback: Method not allowed ---
 		return new Response('Method Not Allowed', { status: 405 });
+	},
+
+	async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+		console.log('Scheduled event triggered:', controller.cron);
+		ctx.waitUntil(env.DELETE_STALE_WORKFLOW.create({ params: {} }));
 	},
 } satisfies ExportedHandler<Env>;
