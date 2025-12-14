@@ -117,16 +117,23 @@ const router = os.router({
             "Write DATABASE_URL and CLAIM_URL to the specified .env file"
           )
           .meta({ alias: "e" }),
+        userAgent: z
+          .string()
+          .optional()
+          .describe("Custom user agent string (e.g. 'test/test')")
+          .meta({ alias: "u" }),
       })
     )
     .handler(async ({ input }) => {
       const cliRunId = randomUUID();
       const CLI_NAME = getCommandName();
 
-      let userAgent: string | undefined;
-      const userEnvVars = readUserEnvFile();
-      if (userEnvVars.PRISMA_ACTOR_NAME && userEnvVars.PRISMA_ACTOR_PROJECT) {
-        userAgent = `${userEnvVars.PRISMA_ACTOR_NAME}/${userEnvVars.PRISMA_ACTOR_PROJECT}`;
+      let userAgent: string | undefined = input.userAgent;
+      if (!userAgent) {
+        const userEnvVars = readUserEnvFile();
+        if (userEnvVars.PRISMA_ACTOR_NAME && userEnvVars.PRISMA_ACTOR_PROJECT) {
+          userAgent = `${userEnvVars.PRISMA_ACTOR_NAME}/${userEnvVars.PRISMA_ACTOR_PROJECT}`;
+        }
       }
 
       void sendAnalyticsWithUrl(
@@ -137,7 +144,7 @@ const router = os.router({
           "has-interactive-flag": input.interactive,
           "has-json-flag": input.json,
           "has-env-flag": !!input.env,
-          "has-user-agent-from-env": !!userAgent,
+          "has-user-agent": !!userAgent,
           "node-version": process.version,
           platform: process.platform,
           arch: process.arch,
