@@ -144,7 +144,7 @@ const router = os.router({
           "has-interactive-flag": input.interactive,
           "has-json-flag": input.json,
           "has-env-flag": !!input.env,
-          "has-user-agent": !!userAgent,
+          "user-agent": userAgent || undefined,
           "node-version": process.version,
           platform: process.platform,
           arch: process.arch,
