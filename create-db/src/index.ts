@@ -32,7 +32,6 @@ import {
   getRegionClosestToLocation,
 } from "./geolocation.js";
 import { checkOnline, getRegions, validateRegion } from "./regions.js";
-import { globalRateLimiter } from "./rate-limiter.js";
 
 export type {
   Region,
@@ -78,14 +77,16 @@ const validateRegionWithUrl = (region: string) =>
 const createDatabaseCoreWithUrl = (
   region: string,
   userAgent?: string,
-  cliRunId?: string
+  cliRunId?: string,
+  source?: "programmatic" | "cli"
 ) =>
   createDatabaseCore(
     region,
     CREATE_DB_WORKER_URL,
     CLAIM_DB_WORKER_URL,
     userAgent,
-    cliRunId
+    cliRunId,
+    source
   );
 
 const router = os.router({
@@ -391,27 +392,11 @@ const caller = createRouterClient(router, { context: {} });
 export async function create(
   options?: ProgrammaticCreateOptions
 ): Promise<CreateDatabaseResult> {
-  // Check rate limit
-  if (!globalRateLimiter.checkLimit()) {
-    const retryAfterMs = globalRateLimiter.getTimeUntilReset();
-    const config = globalRateLimiter.getConfig();
-    const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
-
-    return {
-      success: false,
-      error: "RATE_LIMIT_EXCEEDED",
-      message: `Rate limit exceeded. You can create up to ${config.maxRequests} databases per ${Math.ceil(config.windowMs / 1000)} seconds. Please try again in ${retryAfterSeconds} seconds.`,
-      rateLimitInfo: {
-        retryAfterMs,
-        currentCount: globalRateLimiter.getCurrentCount(),
-        maxRequests: config.maxRequests,
-      },
-    };
-  }
-
   return createDatabaseCoreWithUrl(
     options?.region || "us-east-1",
-    options?.userAgent
+    options?.userAgent,
+    undefined,
+    "programmatic"
   );
 }
 

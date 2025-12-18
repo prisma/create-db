@@ -40,6 +40,15 @@
 					"period": 60,
 				},
 			},
+			{
+				"name": "PROGRAMMATIC_RATE_LIMITER",
+				"type": "ratelimit",
+				"namespace_id": "1006",
+				"simple": {
+					"limit": 1,
+					"period": 60,
+				},
+			},
 		],
 	},
 }
