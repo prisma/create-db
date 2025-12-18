@@ -14,7 +14,8 @@ export async function createDatabaseCore(
   createDbWorkerUrl: string,
   claimDbWorkerUrl: string,
   userAgent?: string,
-  cliRunId?: string
+  cliRunId?: string,
+  source?: "programmatic" | "cli"
 ): Promise<CreateDatabaseResult> {
   const name = new Date().toISOString();
   const runId = cliRunId ?? randomUUID();
@@ -27,6 +28,7 @@ export async function createDatabaseCore(
       name,
       utm_source: getCommandName(),
       userAgent,
+      source: source || "cli",
     }),
   });
 
@@ -37,6 +39,23 @@ export async function createDatabaseCore(
       runId,
       createDbWorkerUrl
     );
+
+    // Try to parse the rate limit response from the server
+    try {
+      const errorData = await resp.json();
+      if (errorData.error === "RATE_LIMIT_EXCEEDED" && errorData.rateLimitInfo) {
+        return {
+          success: false,
+          error: "RATE_LIMIT_EXCEEDED",
+          message: errorData.message,
+          rateLimitInfo: errorData.rateLimitInfo,
+          status: 429,
+        };
+      }
+    } catch {
+      // If parsing fails, fall through to generic message
+    }
+
     return {
       success: false,
       error: "rate_limit_exceeded",

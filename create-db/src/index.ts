@@ -77,14 +77,16 @@ const validateRegionWithUrl = (region: string) =>
 const createDatabaseCoreWithUrl = (
   region: string,
   userAgent?: string,
-  cliRunId?: string
+  cliRunId?: string,
+  source?: "programmatic" | "cli"
 ) =>
   createDatabaseCore(
     region,
     CREATE_DB_WORKER_URL,
     CLAIM_DB_WORKER_URL,
     userAgent,
-    cliRunId
+    cliRunId,
+    source
   );
 
 const router = os.router({
@@ -392,7 +394,9 @@ export async function create(
 ): Promise<CreateDatabaseResult> {
   return createDatabaseCoreWithUrl(
     options?.region || "us-east-1",
-    options?.userAgent
+    options?.userAgent,
+    undefined,
+    "programmatic"
   );
 }
 
