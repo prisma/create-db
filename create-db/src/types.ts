@@ -54,6 +54,11 @@ export interface DatabaseError {
   raw?: string;
   details?: unknown;
   status?: number;
+  rateLimitInfo?: {
+    retryAfterMs: number;
+    currentCount: number;
+    maxRequests: number;
+  };
 }
 
 export type CreateDatabaseResult = DatabaseResult | DatabaseError;

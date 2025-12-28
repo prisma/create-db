@@ -6,6 +6,7 @@ interface Env {
 	DELETE_DB_WORKFLOW: Workflow;
 	DELETE_STALE_WORKFLOW: Workflow;
 	CREATE_DB_RATE_LIMITER: RateLimit;
+	PROGRAMMATIC_RATE_LIMITER: RateLimit;
 	CREATE_DB_DATASET: AnalyticsEngineDataset;
 	POSTHOG_API_KEY?: string;
 	POSTHOG_API_HOST?: string;
@@ -130,6 +131,7 @@ export default {
 				name?: string;
 				analytics?: { eventName?: string; properties?: Record<string, unknown> };
 				userAgent?: string;
+				source?: 'programmatic' | 'cli';
 			};
 
 			let body: CreateDbBody = {};
@@ -140,7 +142,51 @@ export default {
 				return new Response('Invalid JSON body', { status: 400 });
 			}
 
-			const { region, name, analytics: analyticsData, userAgent } = body;
+			const { region, name, analytics: analyticsData, userAgent, source } = body;
+
+			// Apply stricter rate limiting for programmatic requests
+			if (source === 'programmatic') {
+				const programmaticKey = `programmatic:${clientIP}`;
+				try {
+					const res = await env.PROGRAMMATIC_RATE_LIMITER.limit({
+						key: programmaticKey,
+					});
+
+					if (!res.success) {
+						return new Response(
+							JSON.stringify({
+								error: 'RATE_LIMIT_EXCEEDED',
+								message: 'Rate limit exceeded for programmatic database creation. You can create up to 1 database per minute. Please try again later.',
+								rateLimitInfo: {
+									retryAfterMs: 60000, // Approximate - Cloudflare doesn't expose exact timing
+									currentCount: 1,
+									maxRequests: 1,
+								},
+							}),
+							{
+								status: 429,
+								headers: {
+									'Content-Type': 'application/json',
+									'Retry-After': '60',
+								},
+							},
+						);
+					}
+				} catch (e) {
+					console.error('Programmatic rate limiter error:', e);
+					// Fail closed for programmatic requests
+					return new Response(
+						JSON.stringify({
+							error: 'rate_limiter_error',
+							message: 'Rate limiter temporarily unavailable. Please try again later.',
+						}),
+						{
+							status: 503,
+							headers: { 'Content-Type': 'application/json' },
+						},
+					);
+				}
+			}
 			if (!region || !name) {
 				return new Response('Missing region or name in request body', { status: 400 });
 			}
