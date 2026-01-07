@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { serve } from "@hono/node-server";
 import { cors } from "hono/cors";
 import formatRoute from "./routes/schema/format.js";
 import pullRoute from "./routes/schema/pull.js";
@@ -41,7 +42,7 @@ app.use(
 );
 
 app.get("/", (c) => {
-  return c.json({ message: "Hello World" });
+  return c.json({ message: "This is the schema API routes server for the create-db web app" });
 });
 
 app.route("/api/schema/format", formatRoute);
@@ -50,3 +51,10 @@ app.route("/api/schema/push", pushRoute);
 app.route("/api/schema/push-force", pushForceRoute);
 
 export default app;
+
+const port = 4141;
+console.log(`Server is running on http://localhost:${port}`);
+serve({
+  fetch: app.fetch,
+  port,
+});

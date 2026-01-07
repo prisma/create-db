@@ -1,69 +1,71 @@
 import { Hono } from "hono";
-import { writeFile, unlink } from "fs/promises";
-import { spawn } from "child_process";
+import { writeFile, rm, mkdir } from "fs/promises";
 import { execSync } from "child_process";
 
 const app = new Hono();
 
+async function createPrismaWorkspace(
+  connectionString: string,
+  schema: string
+): Promise<{ workDir: string; cleanup: () => Promise<void> }> {
+  const timestamp = Date.now();
+  const workDir = `/tmp/prisma-${timestamp}`;
+  const schemaPath = `${workDir}/schema.prisma`;
+  const configPath = `${workDir}/prisma.config.ts`;
+
+  await mkdir(workDir, { recursive: true });
+
+  await writeFile(schemaPath, schema);
+
+  const configContent = `import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: "./schema.prisma",
+  datasource: {
+    url: "${connectionString}",
+  },
+});
+`;
+  await writeFile(configPath, configContent);
+
+  return {
+    workDir,
+    cleanup: async () => {
+      try {
+        await rm(workDir, { recursive: true, force: true });
+      } catch (e) {
+        console.error("Cleanup error:", e);
+      }
+    },
+  };
+}
+
 app.post("/", async (c) => {
+  const body = await c.req.json();
+  const { schema } = body as { schema: string };
+
+  if (!schema) {
+    return c.json({ error: "Schema is required" }, 400);
+  }
+
+  const connectionString = c.req.header("X-Connection-String");
+  if (!connectionString) {
+    return c.json({ error: "Connection string not provided in headers" }, 400);
+  }
+
+  const workspace = await createPrismaWorkspace(connectionString, schema);
+
   try {
-    const body = await c.req.json();
-    const { schema } = body as {
-      schema: string;
-    };
+    execSync("pnpx prisma db push --accept-data-loss --force-reset", {
+      cwd: workspace.workDir,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
 
-    if (!schema) {
-      return c.json({ error: "Schema is required" }, 400);
-    }
-
-    const connectionString = c.req.header("X-Connection-String");
-
-    if (!connectionString) {
-      return c.json(
-        { error: "Connection string not provided in headers" },
-        400
-      );
-    }
-
-    const tempDir = "/tmp";
-    const schemaPath = `${tempDir}/schema-${Date.now()}.prisma`;
-    const envPath = `${tempDir}/.env-${Date.now()}`;
-
-    try {
-      await writeFile(schemaPath, schema);
-      await writeFile(envPath, `DATABASE_URL="${connectionString}"`);
-
-      try {
-        const result = execSync(
-          `npx prisma db push --schema=${schemaPath} --accept-data-loss --force-reset`,
-          {
-            env: {
-              ...process.env,
-              DATABASE_URL: connectionString,
-              npm_config_cache: "/tmp/.npm",
-              npm_config_prefix: "/tmp/.npm",
-            },
-            cwd: process.cwd(),
-            encoding: "utf8",
-            stdio: "pipe",
-          }
-        );
-      } catch (error) {
-        throw error;
-      }
-
-      return c.json({
-        success: true,
-        message: "Schema pushed successfully with force reset",
-      });
-    } finally {
-      try {
-        await unlink(schemaPath);
-        await unlink(envPath);
-      } catch (cleanupError) {
-        console.error("Cleanup error:", cleanupError);
-      }
-    }
+    return c.json({
+      success: true,
+      message: "Schema pushed successfully with force reset",
+    });
   } catch (error) {
     return c.json(
       {
@@ -72,6 +74,8 @@ app.post("/", async (c) => {
       },
       500
     );
+  } finally {
+    await workspace.cleanup();
   }
 });
 

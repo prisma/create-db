@@ -1,7 +1,8 @@
+const API_URL = "https://create-db-schema-api-routes.vercel.app/api/schema";
+// const API_URL = "http://localhost:4141/api/schema";
+
 export const formatSchema = async (schema: string): Promise<string> => {
-  const response = await fetch(
-    "https://create-db-schema-api-routes.vercel.app/api/schema/format",
-    {
+  const response = await fetch(`${API_URL}/format`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -31,9 +32,7 @@ export const pushSchema = async (
   details?: string;
   requiresForceReset?: boolean;
 }> => {
-  const response = await fetch(
-    "https://create-db-schema-api-routes.vercel.app/api/schema/push",
-    {
+  const response = await fetch(`${API_URL}/push`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -65,9 +64,7 @@ export const pullSchema = async (
   isEmpty?: boolean;
   message?: string;
 }> => {
-  const response = await fetch(
-    "https://create-db-schema-api-routes.vercel.app/api/schema/pull",
-    {
+  const response = await fetch(`${API_URL}/pull`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -95,9 +92,7 @@ export const forcePushSchema = async (
   schema: string,
   connectionString: string
 ): Promise<void> => {
-  const response = await fetch(
-    "https://create-db-schema-api-routes.vercel.app/api/schema/push-force",
-    {
+  const response = await fetch(`${API_URL}/push-force`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
