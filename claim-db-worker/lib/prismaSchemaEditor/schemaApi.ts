@@ -1,6 +1,9 @@
+const API_URL = "https://create-db-schema-api-routes.vercel.app/api/schema";
+// const API_URL = "http://localhost:4141/api/schema";
+
 export const formatSchema = async (schema: string): Promise<string> => {
   const response = await fetch(
-    "https://create-db-schema-api-routes.vercel.app/api/schema/format",
+    `${API_URL}/format`,
     {
       method: "POST",
       headers: {
@@ -32,7 +35,7 @@ export const pushSchema = async (
   requiresForceReset?: boolean;
 }> => {
   const response = await fetch(
-    "https://create-db-schema-api-routes.vercel.app/api/schema/push",
+    `${API_URL}/push`,
     {
       method: "POST",
       headers: {
@@ -66,7 +69,7 @@ export const pullSchema = async (
   message?: string;
 }> => {
   const response = await fetch(
-    "https://create-db-schema-api-routes.vercel.app/api/schema/pull",
+    `${API_URL}/pull`,
     {
       method: "POST",
       headers: {
@@ -96,7 +99,7 @@ export const forcePushSchema = async (
   connectionString: string
 ): Promise<void> => {
   const response = await fetch(
-    "https://create-db-schema-api-routes.vercel.app/api/schema/push-force",
+      `${API_URL}/push-force`,
     {
       method: "POST",
       headers: {

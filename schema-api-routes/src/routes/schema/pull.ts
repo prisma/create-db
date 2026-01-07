@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { writeFile, readFile, unlink } from "fs/promises";
+import { writeFile, readFile, mkdir, rm } from "fs/promises";
 import { spawn } from "child_process";
 import { execSync } from "child_process";
 
@@ -26,22 +26,52 @@ datasource db {
     }
 
     const tempDir = "/tmp";
-    const schemaPath = `${tempDir}/schema-${Date.now()}.prisma`;
-    const envPath = `${tempDir}/.env-${Date.now()}`;
+    const timestamp = Date.now();
+    const projectDir = `${tempDir}/prisma-${timestamp}`;
+    const schemaPath = `${projectDir}/schema.prisma`;
+    const configPath = `${projectDir}/prisma.config.ts`;
 
     try {
-      await writeFile(envPath, `DATABASE_URL="${connectionString}"`);
+      await mkdir(projectDir, { recursive: true });
       await writeFile(schemaPath, minimalSchema);
+
+      const prismaConfig = `import { defineConfig, env } from 'prisma/config';
+
+export default defineConfig({
+  datasource: {
+    url: env('DATABASE_URL'),
+  },
+})`;
+      await writeFile(configPath, prismaConfig);
+
+      const packageJson = `{
+  "name": "temp-prisma-project",
+  "type": "module",
+  "dependencies": {
+    "prisma": "7.2.0"
+  }
+}`;
+      await writeFile(`${projectDir}/package.json`, packageJson);
+
+      execSync('npm install --no-save', {
+        cwd: projectDir,
+        encoding: 'utf8',
+        stdio: 'pipe',
+        env: {
+          ...process.env,
+          HOME: tempDir,
+          npm_config_cache: `${tempDir}/.npm-cache`,
+          npm_config_userconfig: `${tempDir}/.npmrc`,
+        },
+      });
 
       try {
         const result = execSync(`npx prisma db pull --schema=${schemaPath}`, {
           env: {
             ...process.env,
             DATABASE_URL: connectionString,
-            npm_config_cache: "/tmp/.npm",
-            npm_config_prefix: "/tmp/.npm",
           },
-          cwd: process.cwd(),
+          cwd: projectDir,
           encoding: "utf8",
           stdio: "pipe",
         });
@@ -73,8 +103,7 @@ datasource db {
       });
     } finally {
       try {
-        await unlink(schemaPath);
-        await unlink(envPath);
+        await rm(projectDir, { recursive: true, force: true });
       } catch (cleanupError) {
         console.error("Cleanup error:", cleanupError);
       }
