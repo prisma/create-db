@@ -1,3 +1,4 @@
+import { serve } from '@hono/node-server'
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import formatRoute from "./routes/schema/format.js";
@@ -50,3 +51,14 @@ app.route("/api/schema/push", pushRoute);
 app.route("/api/schema/push-force", pushForceRoute);
 
 export default app;
+
+serve({ fetch: app.fetch, port: 4141 });
+
+console.log('Server running on http://localhost:4141');
+console.log('Available routes:');
+console.log('  GET  http://localhost:4141/');
+console.log('  POST http://localhost:4141/api/schema/format');
+console.log('  POST http://localhost:4141/api/schema/pull');
+console.log('  POST http://localhost:4141/api/schema/push');
+console.log('  POST http://localhost:4141/api/schema/push-force');
+
