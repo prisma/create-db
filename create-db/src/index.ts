@@ -14,7 +14,6 @@ import fs from "fs";
 import pc from "picocolors";
 import terminalLink from "terminal-link";
 import { createCli } from "trpc-cli";
-import { z } from "zod";
 
 import {
   type Region,
@@ -22,8 +21,8 @@ import {
   type DatabaseResult,
   type ProgrammaticCreateOptions,
   type RegionId,
-  RegionSchema,
 } from "./types.js";
+import { CreateFlags } from "./flags.js";
 import { sendAnalytics, flushAnalytics } from "./analytics.js";
 import { createDatabaseCore, getCommandName } from "./database.js";
 import { readUserEnvFile } from "./env-utils.js";
@@ -43,6 +42,7 @@ export type {
 } from "./types.js";
 
 export { isDatabaseError, isDatabaseSuccess, RegionSchema } from "./types.js";
+export { CreateFlags, type CreateFlagsInput } from "./flags.js";
 
 dotenv.config({
   quiet: true,
@@ -95,37 +95,7 @@ const router = os.router({
       description: "Create a new Prisma Postgres database",
       default: true,
     })
-    .input(
-      z.object({
-        region: RegionSchema.optional()
-          .describe("AWS region for the database")
-          .meta({ alias: "r" }),
-        interactive: z
-          .boolean()
-          .optional()
-          .default(false)
-          .describe("Run in interactive mode to select a region")
-          .meta({ alias: "i" }),
-        json: z
-          .boolean()
-          .optional()
-          .default(false)
-          .describe("Output machine-readable JSON")
-          .meta({ alias: "j" }),
-        env: z
-          .string()
-          .optional()
-          .describe(
-            "Write DATABASE_URL and CLAIM_URL to the specified .env file"
-          )
-          .meta({ alias: "e" }),
-        userAgent: z
-          .string()
-          .optional()
-          .describe("Custom user agent string (e.g. 'test/test')")
-          .meta({ alias: "u" }),
-      })
-    )
+    .input(CreateFlags)
     .handler(async ({ input }) => {
       const cliRunId = randomUUID();
       const CLI_NAME = getCommandName();
