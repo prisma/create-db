@@ -1,16 +1,5 @@
-import {
-  intro,
-  outro,
-  cancel,
-  select,
-  spinner,
-  log,
-  isCancel,
-} from "@clack/prompts";
+import { select, isCancel } from "@clack/prompts";
 import { randomUUID } from "crypto";
-import fs from "fs";
-import pc from "picocolors";
-import terminalLink from "terminal-link";
 
 import type { CreateFlagsInput } from "../flags.js";
 import type { RegionId } from "../types.js";
@@ -25,6 +14,17 @@ import {
   validateRegionId,
   createDatabase,
 } from "../services.js";
+import {
+  showIntro,
+  showOutro,
+  showCancelled,
+  createSpinner,
+  printDatabaseResult,
+  printJson,
+  printError,
+  printSuccess,
+  writeEnvFile,
+} from "../output.js";
 
 export async function handleCreate(input: CreateFlagsInput): Promise<void> {
   const cliRunId = randomUUID();
@@ -81,7 +81,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
       });
 
       if (isCancel(selectedRegion)) {
-        cancel(pc.red("Operation cancelled."));
+        showCancelled();
         await flushAnalytics();
         process.exit(0);
       }
@@ -106,55 +106,28 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
     await flushAnalytics();
 
     if (input.json) {
-      console.log(JSON.stringify(result, null, 2));
+      printJson(result);
       return;
     }
 
     if (!result.success) {
-      console.error(result.message);
+      printError(result.message);
       process.exit(1);
     }
 
-    try {
-      const targetEnvPath = envPath!;
-      const lines = [
-        `DATABASE_URL="${result.connectionString ?? ""}"`,
-        `CLAIM_URL="${result.claimUrl}"`,
-        "",
-      ];
-
-      let prefix = "";
-      if (fs.existsSync(targetEnvPath)) {
-        const existing = fs.readFileSync(targetEnvPath, "utf8");
-        if (existing.length > 0 && !existing.endsWith("\n")) {
-          prefix = "\n";
-        }
-      }
-
-      fs.appendFileSync(targetEnvPath, prefix + lines.join("\n"), {
-        encoding: "utf8",
-      });
-
-      console.log(
-        pc.green(`Wrote DATABASE_URL and CLAIM_URL to ${targetEnvPath}`)
-      );
-    } catch (err) {
-      console.error(
-        pc.red(
-          `Failed to write environment variables to ${envPath}: ${
-            err instanceof Error ? err.message : String(err)
-          }`
-        )
-      );
+    const writeResult = writeEnvFile(envPath!, result.connectionString, result.claimUrl);
+    if (!writeResult.success) {
+      printError(`Failed to write environment variables to ${envPath}: ${writeResult.error}`);
       process.exit(1);
     }
 
+    printSuccess(`Wrote DATABASE_URL and CLAIM_URL to ${envPath}`);
     return;
   }
 
   await ensureOnline();
 
-  intro(pc.bold(pc.cyan("🚀 Creating a Prisma Postgres database")));
+  showIntro();
 
   if (input.interactive) {
     const regions = await fetchRegions();
@@ -167,7 +140,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
     });
 
     if (isCancel(selectedRegion)) {
-      cancel(pc.red("Operation cancelled."));
+      showCancelled();
       await flushAnalytics();
       process.exit(0);
     }
@@ -187,48 +160,19 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
     );
   }
 
-  const s = spinner();
-  s.start(`Creating database in ${pc.cyan(region)}...`);
+  const spinner = createSpinner();
+  spinner.start(region);
 
   const result = await createDatabase(region, userAgent, cliRunId);
 
   if (!result.success) {
-    s.stop(pc.red(`Error: ${result.message}`));
+    spinner.error(result.message);
     await flushAnalytics();
     process.exit(1);
   }
 
-  s.stop(pc.green("Database created successfully!"));
-
-  const expiryFormatted = new Date(result.deletionDate).toLocaleString();
-  const clickableUrl = terminalLink(result.claimUrl, result.claimUrl, {
-    fallback: false,
-  });
-
-  log.message("");
-  log.info(pc.bold("Database Connection"));
-  log.message("");
-
-  if (result.connectionString) {
-    log.message(pc.cyan("  Connection String:"));
-    log.message("  " + pc.yellow(result.connectionString));
-    log.message("");
-  } else {
-    log.warning(pc.yellow("  Connection details are not available."));
-    log.message("");
-  }
-
-  log.success(pc.bold("Claim Your Database"));
-  log.message(pc.cyan("  Keep your database for free:"));
-  log.message("  " + pc.yellow(clickableUrl));
-  log.message(
-    pc.italic(
-      pc.dim(
-        `  Database will be deleted on ${expiryFormatted} if not claimed.`
-      )
-    )
-  );
-
-  outro(pc.dim("Done!"));
+  spinner.success();
+  printDatabaseResult(result);
+  showOutro();
   await flushAnalytics();
 }
