@@ -34,3 +34,5 @@ export const CreateFlags = z.object({
 
 /** Inferred type from CreateFlags schema. */
 export type CreateFlagsInput = z.infer<typeof CreateFlags>;
+
+// GitHub issue to suppress the Alias in the help text: https://github.com/mmkal/trpc-cli/issues/154
