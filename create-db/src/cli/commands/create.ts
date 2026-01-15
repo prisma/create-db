@@ -2,10 +2,10 @@ import { select, isCancel } from "@clack/prompts";
 import { randomUUID } from "crypto";
 
 import type { CreateFlagsInput } from "../flags.js";
-import type { RegionId } from "../types.js";
-import { getCommandName } from "../database.js";
-import { readUserEnvFile } from "../env-utils.js";
-import { detectUserLocation, getRegionClosestToLocation } from "../geolocation.js";
+import type { RegionId } from "../../types.js";
+import { getCommandName } from "../../core/database.js";
+import { readUserEnvFile } from "../../utils/env-utils.js";
+import { detectUserLocation, getRegionClosestToLocation } from "../../utils/geolocation.js";
 import {
   sendAnalyticsEvent,
   flushAnalytics,
@@ -13,7 +13,7 @@ import {
   fetchRegions,
   validateRegionId,
   createDatabase,
-} from "../services.js";
+} from "../../core/services.js";
 import {
   showIntro,
   showOutro,

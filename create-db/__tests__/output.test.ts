@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { writeEnvFile } from "../src/output.js";
+import { writeEnvFile } from "../src/cli/output.js";
 
 describe("writeEnvFile", () => {
   let tempDir: string;

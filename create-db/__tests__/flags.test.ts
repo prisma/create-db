@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { CreateFlags, type CreateFlagsInput } from "../src/flags.js";
+import { CreateFlags, type CreateFlagsInput } from "../src/cli/flags.js";
 import { RegionSchema } from "../src/types.js";
 
 describe("CreateFlags schema", () => {

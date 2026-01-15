@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fetchRegions } from "../src/services.js";
+import { fetchRegions } from "../src/core/services.js";
 
 // These tests hit the real API but do NOT create databases
 

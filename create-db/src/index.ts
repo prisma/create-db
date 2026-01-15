@@ -6,10 +6,10 @@ import {
   type CreateDatabaseResult,
   type ProgrammaticCreateOptions,
 } from "./types.js";
-import { CreateFlags } from "./flags.js";
-import { getCommandName } from "./database.js";
-import { handleCreate, handleRegions } from "./commands/index.js";
-import { createDatabase, fetchRegions } from "./services.js";
+import { CreateFlags } from "./cli/flags.js";
+import { getCommandName } from "./core/database.js";
+import { handleCreate, handleRegions } from "./cli/commands/index.js";
+import { createDatabase, fetchRegions } from "./core/services.js";
 
 export type {
   Region,
@@ -21,7 +21,7 @@ export type {
 } from "./types.js";
 
 export { isDatabaseError, isDatabaseSuccess, RegionSchema } from "./types.js";
-export { CreateFlags, type CreateFlagsInput } from "./flags.js";
+export { CreateFlags, type CreateFlagsInput } from "./cli/flags.js";
 
 const router = os.router({
   create: os

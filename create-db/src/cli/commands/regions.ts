@@ -1,7 +1,7 @@
 import { log } from "@clack/prompts";
 import pc from "picocolors";
 
-import { fetchRegions } from "../services.js";
+import { fetchRegions } from "../../core/services.js";
 
 export async function handleRegions(): Promise<void> {
   const regions = await fetchRegions();

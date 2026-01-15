@@ -3,7 +3,7 @@ import fs from "fs";
 import pc from "picocolors";
 import terminalLink from "terminal-link";
 
-import type { DatabaseResult } from "./types.js";
+import type { DatabaseResult } from "../types.js";
 
 /** Display the CLI intro message. */
 export function showIntro() {

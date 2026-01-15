@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { sendAnalytics, flushAnalytics } from "./analytics.js";
+import { sendAnalytics, flushAnalytics } from "../utils/analytics.js";
 import { createDatabaseCore } from "./database.js";
 import { checkOnline, getRegions, validateRegion } from "./regions.js";
 

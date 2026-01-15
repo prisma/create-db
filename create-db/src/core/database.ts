@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
-import type { CreateDatabaseResult, ApiResponse } from "./types.js";
-import { sendAnalytics } from "./analytics.js";
+import type { CreateDatabaseResult, ApiResponse } from "../types.js";
+import { sendAnalytics } from "../utils/analytics.js";
 
 export function getCommandName(): string {
   const executable = process.argv[1] || "create-db";

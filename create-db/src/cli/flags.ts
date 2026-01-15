@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RegionSchema } from "./types.js";
+import { RegionSchema } from "../types.js";
 
 /**
  * Zod schema for CLI flags used by the `create` command.

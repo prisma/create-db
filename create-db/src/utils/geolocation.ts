@@ -3,7 +3,7 @@ import type {
   RegionId,
   RegionCoordinates,
   GeoLocationResponse,
-} from "./types.js";
+} from "../types.js";
 
 // Test locations for geolocation testing
 // Set TEST_LOCATION to one of these to simulate being in that location
