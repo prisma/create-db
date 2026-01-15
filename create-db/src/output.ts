@@ -5,18 +5,25 @@ import terminalLink from "terminal-link";
 
 import type { DatabaseResult } from "./types.js";
 
+/** Display the CLI intro message. */
 export function showIntro() {
   intro(pc.bold(pc.cyan("🚀 Creating a Prisma Postgres database")));
 }
 
+/** Display the CLI outro message. */
 export function showOutro() {
   outro(pc.dim("Done!"));
 }
 
+/** Display a cancellation message. */
 export function showCancelled() {
   cancel(pc.red("Operation cancelled."));
 }
 
+/**
+ * Create a spinner for database creation progress.
+ * @returns An object with start, success, and error methods
+ */
 export function createSpinner() {
   const s = clackSpinner();
   return {
@@ -26,6 +33,10 @@ export function createSpinner() {
   };
 }
 
+/**
+ * Print formatted database creation result to the console.
+ * @param result - The successful database creation result
+ */
 export function printDatabaseResult(result: DatabaseResult) {
   const expiryFormatted = new Date(result.deletionDate).toLocaleString();
   const clickableUrl = terminalLink(result.claimUrl, result.claimUrl, {
@@ -55,18 +66,37 @@ export function printDatabaseResult(result: DatabaseResult) {
   );
 }
 
+/**
+ * Print data as formatted JSON.
+ * @param data - Data to serialize and print
+ */
 export function printJson(data: unknown) {
   console.log(JSON.stringify(data, null, 2));
 }
 
+/**
+ * Print an error message in red.
+ * @param message - Error message to display
+ */
 export function printError(message: string) {
   console.error(pc.red(message));
 }
 
+/**
+ * Print a success message in green.
+ * @param message - Success message to display
+ */
 export function printSuccess(message: string) {
   console.log(pc.green(message));
 }
 
+/**
+ * Write database credentials to an env file.
+ * @param envPath - Path to the env file
+ * @param connectionString - Database connection string
+ * @param claimUrl - URL to claim the database
+ * @returns Success or failure with error message
+ */
 export function writeEnvFile(
   envPath: string,
   connectionString: string | null,

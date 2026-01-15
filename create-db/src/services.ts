@@ -12,6 +12,12 @@ const CLAIM_DB_WORKER_URL =
 
 export { flushAnalytics };
 
+/**
+ * Send an analytics event to the create-db worker.
+ * @param eventName - Name of the event to track
+ * @param properties - Event properties
+ * @param cliRunId - Unique identifier for this CLI run
+ */
 export function sendAnalyticsEvent(
   eventName: string,
   properties: Record<string, unknown>,
@@ -20,6 +26,9 @@ export function sendAnalyticsEvent(
   return sendAnalytics(eventName, properties, cliRunId, CREATE_DB_WORKER_URL);
 }
 
+/**
+ * Check if the create-db worker is online. Exits the process if offline.
+ */
 export async function ensureOnline() {
   try {
     await checkOnline(CREATE_DB_WORKER_URL);
@@ -29,14 +38,31 @@ export async function ensureOnline() {
   }
 }
 
+/**
+ * Fetch available Prisma Postgres regions from the worker.
+ * @returns A promise resolving to an array of available regions
+ */
 export function fetchRegions() {
   return getRegions(CREATE_DB_WORKER_URL);
 }
 
+/**
+ * Validate that a region ID is valid.
+ * @param region - The region ID to validate
+ * @throws If the region is invalid
+ */
 export function validateRegionId(region: string) {
   return validateRegion(region, CREATE_DB_WORKER_URL);
 }
 
+/**
+ * Create a new Prisma Postgres database.
+ * @param region - AWS region for the database
+ * @param userAgent - Optional custom user agent string
+ * @param cliRunId - Optional unique identifier for this CLI run
+ * @param source - Whether called from CLI or programmatic API
+ * @returns A promise resolving to the database creation result
+ */
 export function createDatabase(
   region: string,
   userAgent?: string,

@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { RegionSchema } from "./types.js";
 
+/**
+ * Zod schema for CLI flags used by the `create` command.
+ */
 export const CreateFlags = z.object({
   region: RegionSchema.optional()
     .describe("AWS region for the database")
@@ -29,4 +32,5 @@ export const CreateFlags = z.object({
     .meta({ alias: "u" }),
 });
 
+/** Inferred type from CreateFlags schema. */
 export type CreateFlagsInput = z.infer<typeof CreateFlags>;

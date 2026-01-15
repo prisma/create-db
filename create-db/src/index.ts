@@ -37,6 +37,10 @@ const router = os.router({
     .handler(async () => handleRegions()),
 });
 
+/**
+ * Create and return the CLI instance for create-db.
+ * @returns The configured CLI instance
+ */
 export function createDbCli() {
   return createCli({
     router,
@@ -46,6 +50,18 @@ export function createDbCli() {
   });
 }
 
+/**
+ * Create a new Prisma Postgres database programmatically.
+ * @param options - Options for creating the database
+ * @returns A promise resolving to either a DatabaseResult or DatabaseError
+ * @example
+ * ```typescript
+ * const result = await create({ region: "us-east-1" });
+ * if (result.success) {
+ *   console.log(result.connectionString);
+ * }
+ * ```
+ */
 export async function create(
   options?: ProgrammaticCreateOptions
 ): Promise<CreateDatabaseResult> {
@@ -57,6 +73,15 @@ export async function create(
   );
 }
 
+/**
+ * List available Prisma Postgres regions programmatically.
+ * @returns A promise resolving to an array of available regions
+ * @example
+ * ```typescript
+ * const availableRegions = await regions();
+ * console.log(availableRegions);
+ * ```
+ */
 export async function regions(): Promise<Region[]> {
   return fetchRegions();
 }
