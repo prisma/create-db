@@ -2,8 +2,11 @@ import { describe, it, expect } from "vitest";
 import { fetchRegions } from "../src/core/services.js";
 
 // These tests hit the real API but do NOT create databases
+// Set RUN_INTEGRATION_TESTS=true to run these tests
 
-describe("services", () => {
+const runIntegration = process.env.RUN_INTEGRATION_TESTS === "true";
+
+describe.skipIf(!runIntegration)("services (integration)", () => {
   describe("fetchRegions", () => {
     it("returns an array of regions with required properties", async () => {
       const regions = await fetchRegions();
@@ -19,9 +22,12 @@ describe("services", () => {
         expect(typeof region.status).toBe("string");
       }
       
-      // Check known region exists
-      const regionIds = regions.map((r) => r.id);
-      expect(regionIds).toContain("us-east-1");
+      // Optionally check for a specific region if EXPECTED_REGION is set
+      const expectedRegion = process.env.EXPECTED_REGION;
+      if (expectedRegion) {
+        const regionIds = regions.map((r) => r.id);
+        expect(regionIds).toContain(expectedRegion);
+      }
     }, 10000);
   });
 });

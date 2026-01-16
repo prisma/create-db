@@ -107,6 +107,9 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
 
     if (input.json) {
       printJson(result);
+      if (!result.success) {
+        process.exit(1);
+      }
       return;
     }
 

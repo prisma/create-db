@@ -109,7 +109,7 @@ describe("writeEnvFile", () => {
     }
   });
 
-  it("returns error for read-only directory", () => {
+  it.skipIf(process.platform === "win32")("returns error for read-only directory", () => {
     const readOnlyDir = path.join(tempDir, "readonly");
     fs.mkdirSync(readOnlyDir);
     fs.chmodSync(readOnlyDir, 0o444);
