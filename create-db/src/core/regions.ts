@@ -1,5 +1,5 @@
 import pc from "picocolors";
-import type { Region, RegionsResponse } from "./types.js";
+import type { Region, RegionsResponse } from "../types.js";
 
 export async function checkOnline(workerUrl: string): Promise<void> {
   try {

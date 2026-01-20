@@ -1,6 +1,6 @@
 {
   "name": "create-db",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "Instantly create a temporary Prisma Postgres database with one command, then claim and persist it in your Prisma Data Platform project when ready.",
   "type": "module",
   "exports": {
@@ -41,6 +41,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
+    "pretest": "npm run build",
     "test": "vitest run --reporter=verbose",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
