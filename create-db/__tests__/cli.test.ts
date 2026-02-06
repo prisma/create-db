@@ -65,6 +65,7 @@ describe("CLI help and version", () => {
     const result = await runCli(["regions", "--help"]);
     expect(result.exitCode).toBe(0);
     expect(result.all).toContain("List available Prisma Postgres regions");
+    expect(result.all).toContain("--json");
   });
 });
 
