@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { CreateFlags, type CreateFlagsInput } from "../src/cli/flags.js";
+import {
+  CreateFlags,
+  RegionsFlags,
+  type CreateFlagsInput,
+  type RegionsFlagsInput,
+} from "../src/cli/flags.js";
 import { RegionSchema } from "../src/types.js";
 
 describe("CreateFlags schema", () => {
@@ -217,5 +222,29 @@ describe("RegionSchema", () => {
     expect(RegionSchema.safeParse(null).success).toBe(false);
     expect(RegionSchema.safeParse(undefined).success).toBe(false);
     expect(RegionSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe("RegionsFlags schema", () => {
+  it("defaults json to false", () => {
+    const result = RegionsFlags.safeParse({});
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.json).toBe(false);
+    }
+  });
+
+  it("accepts json=true", () => {
+    const result = RegionsFlags.safeParse({ json: true });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.json).toBe(true);
+    }
+  });
+
+  it("infers RegionsFlagsInput correctly", () => {
+    const input: RegionsFlagsInput = { json: true };
+    const result = RegionsFlags.parse(input);
+    expect(result.json).toBe(true);
   });
 });

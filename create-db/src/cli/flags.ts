@@ -35,4 +35,19 @@ export const CreateFlags = z.object({
 /** Inferred type from CreateFlags schema. */
 export type CreateFlagsInput = z.infer<typeof CreateFlags>;
 
+/**
+ * Zod schema for CLI flags used by the `regions` command.
+ */
+export const RegionsFlags = z.object({
+  json: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe("Output machine-readable JSON")
+    .meta({ alias: "j" }),
+});
+
+/** Inferred type from RegionsFlags schema. */
+export type RegionsFlagsInput = z.infer<typeof RegionsFlags>;
+
 // GitHub issue to suppress the Alias in the help text: https://github.com/mmkal/trpc-cli/issues/154

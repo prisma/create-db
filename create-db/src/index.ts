@@ -6,7 +6,10 @@ import {
   type CreateDatabaseResult,
   type ProgrammaticCreateOptions,
 } from "./types.js";
-import { CreateFlags } from "./cli/flags.js";
+import {
+  CreateFlags,
+  RegionsFlags,
+} from "./cli/flags.js";
 import { getCommandName } from "./core/database.js";
 import { handleCreate, handleRegions } from "./cli/commands/index.js";
 import { createDatabase, fetchRegions } from "./core/services.js";
@@ -21,7 +24,12 @@ export type {
 } from "./types.js";
 
 export { isDatabaseError, isDatabaseSuccess, RegionSchema } from "./types.js";
-export { CreateFlags, type CreateFlagsInput } from "./cli/flags.js";
+export {
+  CreateFlags,
+  RegionsFlags,
+  type CreateFlagsInput,
+  type RegionsFlagsInput,
+} from "./cli/flags.js";
 
 const router = os.router({
   create: os
@@ -34,7 +42,8 @@ const router = os.router({
 
   regions: os
     .meta({ description: "List available Prisma Postgres regions" })
-    .handler(async () => handleRegions()),
+    .input(RegionsFlags)
+    .handler(async ({ input }) => handleRegions(input)),
 });
 
 /**

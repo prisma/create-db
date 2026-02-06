@@ -77,4 +77,21 @@ describe("CLI database creation", () => {
     }
     expect(allOutput).toContain("Available Prisma Postgres regions");
   }, 20000);
+
+  it("lists regions as JSON with regions --json", async () => {
+    const result = await runCli(["regions", "--json"]);
+    if (result.exitCode !== 0) {
+      console.error("CLI failed with exit code:", result.exitCode);
+      console.error("stdout:", result.stdout);
+      console.error("stderr:", result.stderr);
+    }
+    expect(result.exitCode).toBe(0);
+    const trimmed = result.stdout.trim();
+    expect(trimmed).toMatch(/^\s*\[/);
+    const parsed = JSON.parse(trimmed);
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed.length).toBeGreaterThan(0);
+    expect(parsed[0]).toHaveProperty("id");
+    expect(parsed[0]).toHaveProperty("status");
+  }, 20000);
 });

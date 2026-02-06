@@ -78,11 +78,14 @@ npx create-db -i -e .env
 
 # List available regions
 npx create-db regions
+
+# List available regions as JSON
+npx create-db regions --json
 ```
 
 ### JSON Output
 
-When using `--json`, the output includes:
+When using `--json` with `create`, the output includes:
 
 ```json
 {
@@ -94,6 +97,18 @@ When using `--json`, the output includes:
   "name": "2025-12-12T12:00:00.000Z",
   "projectId": "proj_..."
 }
+```
+
+When using `--json` with `regions`, the output is an array of region objects:
+
+```json
+[
+  {
+    "id": "us-east-1",
+    "name": "US East (N. Virginia)",
+    "status": "available"
+  }
+]
 ```
 
 ### Environment File Output
