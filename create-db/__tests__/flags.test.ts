@@ -112,6 +112,102 @@ describe("CreateFlags schema", () => {
     });
   });
 
+  describe("ttl field", () => {
+    it("accepts valid ttl strings", () => {
+      const validTtls = ["30m", "1h", "6h", "12h", "24h"];
+
+      for (const ttl of validTtls) {
+        const result = CreateFlags.safeParse({ ttl });
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.ttl).toBe(ttl);
+        }
+      }
+    });
+
+    it("passes through ttl strings for command-level validation", () => {
+      const ttlInputs = ["25h", "7d", "45s", "one-hour", "24"];
+
+      for (const ttl of ttlInputs) {
+        const result = CreateFlags.safeParse({ ttl });
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.ttl).toBe(ttl);
+        }
+      }
+    });
+
+    it("coerces boolean ttl to empty string when value is missing", () => {
+      const result = CreateFlags.safeParse({ ttl: true });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.ttl).toBe("");
+      }
+    });
+
+    it("allows undefined", () => {
+      const result = CreateFlags.safeParse({});
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.ttl).toBeUndefined();
+      }
+    });
+  });
+
+  describe("copy field", () => {
+    it("defaults to false", () => {
+      const result = CreateFlags.safeParse({});
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.copy).toBe(false);
+      }
+    });
+
+    it("accepts true", () => {
+      const result = CreateFlags.safeParse({ copy: true });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.copy).toBe(true);
+      }
+    });
+  });
+
+  describe("quiet field", () => {
+    it("defaults to false", () => {
+      const result = CreateFlags.safeParse({});
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.quiet).toBe(false);
+      }
+    });
+
+    it("accepts true", () => {
+      const result = CreateFlags.safeParse({ quiet: true });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.quiet).toBe(true);
+      }
+    });
+  });
+
+  describe("open field", () => {
+    it("defaults to false", () => {
+      const result = CreateFlags.safeParse({});
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.open).toBe(false);
+      }
+    });
+
+    it("accepts true", () => {
+      const result = CreateFlags.safeParse({ open: true });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.open).toBe(true);
+      }
+    });
+  });
+
   describe("userAgent field", () => {
     it("accepts custom user agent string", () => {
       const result = CreateFlags.safeParse({ userAgent: "myapp/1.0.0" });
@@ -137,6 +233,10 @@ describe("CreateFlags schema", () => {
         interactive: true,
         json: false,
         env: ".env.local",
+        ttl: "12h",
+        copy: true,
+        quiet: false,
+        open: true,
         userAgent: "test/2.0.0",
       };
 
@@ -148,6 +248,10 @@ describe("CreateFlags schema", () => {
           interactive: true,
           json: false,
           env: ".env.local",
+          ttl: "12h",
+          copy: true,
+          quiet: false,
+          open: true,
           userAgent: "test/2.0.0",
         });
       }
@@ -161,6 +265,10 @@ describe("CreateFlags schema", () => {
         expect(result.data.interactive).toBe(false);
         expect(result.data.json).toBe(false);
         expect(result.data.env).toBeUndefined();
+        expect(result.data.ttl).toBeUndefined();
+        expect(result.data.copy).toBe(false);
+        expect(result.data.quiet).toBe(false);
+        expect(result.data.open).toBe(false);
         expect(result.data.userAgent).toBeUndefined();
       }
     });
@@ -173,6 +281,10 @@ describe("CreateFlags schema", () => {
         interactive: false,
         json: true,
         env: ".env",
+        ttl: "24h",
+        copy: true,
+        quiet: false,
+        open: true,
         userAgent: "test/1.0",
       };
 
@@ -181,6 +293,10 @@ describe("CreateFlags schema", () => {
       expect(result.interactive).toBe(input.interactive);
       expect(result.json).toBe(input.json);
       expect(result.env).toBe(input.env);
+      expect(result.ttl).toBe(input.ttl);
+      expect(result.copy).toBe(input.copy);
+      expect(result.quiet).toBe(input.quiet);
+      expect(result.open).toBe(input.open);
       expect(result.userAgent).toBe(input.userAgent);
     });
   });

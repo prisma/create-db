@@ -38,6 +38,10 @@ npx create-db regions    # List available regions
 | `--interactive` | `-i` | Interactive mode to select a region |
 | `--json` | `-j` | Output machine-readable JSON |
 | `--env <path>` | `-e` | Write DATABASE_URL and CLAIM_URL to specified .env file |
+| `--ttl <duration>` | `-t` | Custom database TTL (`30m`, `1h` ... `24h`) |
+| `--copy` | `-c` | Copy connection string to clipboard |
+| `--quiet` | `-q` | Output only the connection string |
+| `--open` | `-o` | Open claim URL in browser |
 | `--help` | `-h` | Show help message |
 | `--version` | | Show version |
 
@@ -72,9 +76,26 @@ npx create-db -j
 npx create-db --env .env
 npx create-db -e .env.local
 
+# Set custom TTL
+npx create-db --ttl 1h
+npx create-db -t 12h
+
+# Copy connection string to clipboard
+npx create-db --copy
+npx create-db -c
+
+# Only print connection string
+npx create-db --quiet
+npx create-db -q
+
+# Open claim URL in browser
+npx create-db --open
+npx create-db -o
+
 # Combine flags
 npx create-db -r eu-central-1 -j
 npx create-db -i -e .env
+npx create-db -t 24h -c -o
 
 # List available regions
 npx create-db regions

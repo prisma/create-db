@@ -15,21 +15,28 @@ export async function createDatabaseCore(
   claimDbWorkerUrl: string,
   userAgent?: string,
   cliRunId?: string,
-  source?: "programmatic" | "cli"
+  source?: "programmatic" | "cli",
+  ttlSeconds?: number
 ): Promise<CreateDatabaseResult> {
   const name = new Date().toISOString();
   const runId = cliRunId ?? randomUUID();
 
+  const payload: Record<string, unknown> = {
+    region,
+    name,
+    utm_source: getCommandName(),
+    userAgent,
+    source: source || "cli",
+  };
+
+  if (typeof ttlSeconds === "number" && Number.isFinite(ttlSeconds) && ttlSeconds > 0) {
+    payload.ttlSeconds = Math.floor(ttlSeconds);
+  }
+
   const resp = await fetch(`${createDbWorkerUrl}/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      region,
-      name,
-      utm_source: getCommandName(),
-      userAgent,
-      source: source || "cli",
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (resp.status === 429) {
@@ -132,7 +139,12 @@ export async function createDatabaseCore(
       : null;
 
   const claimUrl = `${claimDbWorkerUrl}/claim?projectID=${projectId}&utm_source=${userAgent || getCommandName()}&utm_medium=cli`;
-  const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  const ttlSecondsToUse =
+    typeof ttlSeconds === "number" && Number.isFinite(ttlSeconds) && ttlSeconds > 0
+      ? Math.floor(ttlSeconds)
+      : 24 * 60 * 60;
+  const expiryDate = new Date(Date.now() + ttlSecondsToUse * 1000);
 
   void sendAnalytics(
     "create_db:database_created",

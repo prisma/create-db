@@ -132,6 +132,7 @@ export default {
 				analytics?: { eventName?: string; properties?: Record<string, unknown> };
 				userAgent?: string;
 				source?: 'programmatic' | 'cli';
+				ttlSeconds?: number;
 			};
 
 			let body: CreateDbBody = {};
@@ -142,7 +143,16 @@ export default {
 				return new Response('Invalid JSON body', { status: 400 });
 			}
 
-			const { region, name, analytics: analyticsData, userAgent, source } = body;
+			const { region, name, analytics: analyticsData, userAgent, source, ttlSeconds } = body;
+
+			const parsedTtlSeconds =
+				typeof ttlSeconds === 'number' && Number.isFinite(ttlSeconds)
+					? Math.floor(ttlSeconds)
+					: undefined;
+
+			if (ttlSeconds !== undefined && (!parsedTtlSeconds || parsedTtlSeconds <= 0)) {
+				return new Response('Invalid ttlSeconds in request body', { status: 400 });
+			}
 
 			// Apply stricter rate limiting for programmatic requests
 			if (source === 'programmatic') {
@@ -211,7 +221,9 @@ export default {
 					const response = JSON.parse(prismaText);
 					const projectID = response.data ? response.data.id : response.id;
 
-					const workflowPromise = env.DELETE_DB_WORKFLOW.create({ params: { projectID } });
+					const workflowPromise = env.DELETE_DB_WORKFLOW.create({
+						params: { projectID, ttlSeconds: parsedTtlSeconds },
+					});
 
 					const analyticsPromise = env.CREATE_DB_DATASET.writeDataPoint({
 						blobs: ['database_created'],

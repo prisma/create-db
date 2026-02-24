@@ -59,6 +59,10 @@ describe("CLI help and version", () => {
     expect(result.all).toContain("--interactive");
     expect(result.all).toContain("--json");
     expect(result.all).toContain("--env");
+    expect(result.all).toContain("--ttl");
+    expect(result.all).toContain("--copy");
+    expect(result.all).toContain("--quiet");
+    expect(result.all).toContain("--open");
   });
 
   it("displays regions command help", async () => {
