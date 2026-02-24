@@ -131,4 +131,5 @@ export type RegionsResponse = Region[] | RegionsApiResponse;
 export interface ProgrammaticCreateOptions {
   region?: RegionId;
   userAgent?: string;
+  ttl?: string;
 }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { RegionSchema } from "../types.js";
+import { TTL_HELP_DESCRIPTION } from "../utils/ttl.js";
 
 /**
  * Zod schema for CLI flags used by the `create` command.
@@ -31,7 +32,7 @@ export const CreateFlags = z.object({
       z.string()
     )
     .optional()
-    .describe("Auto-delete after (30m, 1h-24h)")
+    .describe(TTL_HELP_DESCRIPTION)
     .meta({ alias: "t" }),
   copy: z
     .boolean()

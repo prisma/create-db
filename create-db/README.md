@@ -175,6 +175,7 @@ if (result.success) {
 |--------|------|-------------|
 | `region` | `RegionId` | AWS region for the database (optional, defaults to `us-east-1`) |
 | `userAgent` | `string` | Custom user agent string for tracking (optional) |
+| `ttl` | `string` | TTL string (`30m`, `1h` ... `24h`) |
 
 ### `regions()`
 

@@ -6,7 +6,7 @@ import type { RegionId, DatabaseResult } from "../../types.js";
 import { getCommandName } from "../../core/database.js";
 import { readUserEnvFile } from "../../utils/env-utils.js";
 import { detectUserLocation, getRegionClosestToLocation } from "../../utils/geolocation.js";
-import { parseTtlToSeconds } from "../../utils/ttl.js";
+import { parseTtlToMilliseconds, buildTtlCliError } from "../../utils/ttl.js";
 import {
   sendAnalyticsEvent,
   flushAnalytics,
@@ -28,14 +28,6 @@ import {
   copyToClipboard,
   openUrlInBrowser,
 } from "../output.js";
-
-const TTL_EXAMPLES = [
-  "Examples:",
-  "npx create-db --ttl 24h",
-  "npx create-db --ttl 8h",
-  "npx create-db --ttl 1h",
-  "npx create-db --ttl 30m",
-].join("\n");
 
 function applyCopyFlag(result: DatabaseResult, quiet: boolean) {
   if (!result.connectionString) {
@@ -71,27 +63,13 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
   const CLI_NAME = getCommandName();
 
   if (input.ttl === "") {
-    printError(
-      [
-        "Could not create database: --ttl was provided without a value.",
-        "Allowed values are 30m or 1h-24h.",
-        "",
-        TTL_EXAMPLES,
-      ].join("\n")
-    );
+    printError(buildTtlCliError("Could not create database: --ttl was provided without a value."));
     process.exit(1);
   }
 
-  const ttlSeconds = input.ttl ? parseTtlToSeconds(input.ttl) : null;
-  if (typeof input.ttl === "string" && ttlSeconds === null) {
-    printError(
-      [
-        `Could not create database: --ttl value "${input.ttl}" is invalid.`,
-        "Allowed values are 30m or 1h-24h.",
-        "",
-        TTL_EXAMPLES,
-      ].join("\n")
-    );
+  const ttlMs = input.ttl ? parseTtlToMilliseconds(input.ttl) : null;
+  if (typeof input.ttl === "string" && ttlMs === null) {
+    printError(buildTtlCliError(`Could not create database: --ttl value "${input.ttl}" is invalid.`));
     process.exit(1);
   }
 
@@ -117,7 +95,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
       "has-copy-flag": input.copy,
       "has-quiet-flag": input.quiet,
       "has-open-flag": input.open,
-      "ttl-seconds": ttlSeconds ?? undefined,
+      "ttl-ms": ttlMs ?? undefined,
       "user-agent": userAgent || undefined,
       "node-version": process.version,
       platform: process.platform,
@@ -179,7 +157,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
       userAgent,
       cliRunId,
       "cli",
-      ttlSeconds ?? undefined
+      ttlMs ?? undefined
     );
     await flushAnalytics();
 
@@ -266,7 +244,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
     userAgent,
     cliRunId,
     "cli",
-    ttlSeconds ?? undefined
+    ttlMs ?? undefined
   );
 
   if (!result.success) {

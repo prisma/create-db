@@ -1,8 +1,9 @@
 import { WorkflowEntrypoint, WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
+import { parseTtlMsInput, clampTtlMs } from './ttl';
 
 type Params = {
 	projectID: string;
-	ttlSeconds?: number;
+	ttlMs?: number;
 };
 
 type Env = {
@@ -11,19 +12,15 @@ type Env = {
 
 export class DeleteDbWorkflow extends WorkflowEntrypoint<Env, Params> {
 	async run(event: WorkflowEvent<Params>, step: WorkflowStep): Promise<void> {
-		const { projectID, ttlSeconds } = event.payload;
+		const { projectID, ttlMs } = event.payload;
 
 		if (!projectID) {
 			throw new Error('No projectID provided.');
 		}
 
-		const MIN_TTL_SECONDS = 30 * 60;
-		const MAX_TTL_SECONDS = 24 * 60 * 60;
-
-		const effectiveTtlSeconds =
-			typeof ttlSeconds === 'number' && Number.isFinite(ttlSeconds)
-				? Math.max(MIN_TTL_SECONDS, Math.min(MAX_TTL_SECONDS, Math.floor(ttlSeconds)))
-				: MAX_TTL_SECONDS;
+		const rawTtlMs = parseTtlMsInput(ttlMs);
+		const effectiveTtlMs = clampTtlMs(rawTtlMs);
+		const effectiveTtlSeconds = Math.ceil(effectiveTtlMs / 1000);
 
 		await step.sleep(`wait ${effectiveTtlSeconds} seconds`, `${effectiveTtlSeconds} seconds`);
 
@@ -38,6 +35,7 @@ export class DeleteDbWorkflow extends WorkflowEntrypoint<Env, Params> {
 		if (!res.ok) {
 			throw new Error(`Failed to delete project: ${res.statusText}`);
 		}
+
 	}
 }
 

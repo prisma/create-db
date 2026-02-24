@@ -16,7 +16,7 @@ export async function createDatabaseCore(
   userAgent?: string,
   cliRunId?: string,
   source?: "programmatic" | "cli",
-  ttlSeconds?: number
+  ttlMs?: number
 ): Promise<CreateDatabaseResult> {
   const name = new Date().toISOString();
   const runId = cliRunId ?? randomUUID();
@@ -29,8 +29,8 @@ export async function createDatabaseCore(
     source: source || "cli",
   };
 
-  if (typeof ttlSeconds === "number" && Number.isFinite(ttlSeconds) && ttlSeconds > 0) {
-    payload.ttlSeconds = Math.floor(ttlSeconds);
+  if (typeof ttlMs === "number" && Number.isFinite(ttlMs) && ttlMs > 0) {
+    payload.ttlMs = Math.floor(ttlMs);
   }
 
   const resp = await fetch(`${createDbWorkerUrl}/create`, {
@@ -140,11 +140,11 @@ export async function createDatabaseCore(
 
   const claimUrl = `${claimDbWorkerUrl}/claim?projectID=${projectId}&utm_source=${userAgent || getCommandName()}&utm_medium=cli`;
 
-  const ttlSecondsToUse =
-    typeof ttlSeconds === "number" && Number.isFinite(ttlSeconds) && ttlSeconds > 0
-      ? Math.floor(ttlSeconds)
-      : 24 * 60 * 60;
-  const expiryDate = new Date(Date.now() + ttlSecondsToUse * 1000);
+  const ttlMsToUse =
+    typeof ttlMs === "number" && Number.isFinite(ttlMs) && ttlMs > 0
+      ? Math.floor(ttlMs)
+      : 24 * 60 * 60 * 1000;
+  const expiryDate = new Date(Date.now() + ttlMsToUse);
 
   void sendAnalytics(
     "create_db:database_created",

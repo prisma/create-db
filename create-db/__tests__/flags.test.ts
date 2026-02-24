@@ -126,7 +126,7 @@ describe("CreateFlags schema", () => {
     });
 
     it("passes through ttl strings for command-level validation", () => {
-      const ttlInputs = ["25h", "7d", "45s", "one-hour", "24"];
+      const ttlInputs = ["25h", "7d", "10s", "45s", "one-hour", "24"];
 
       for (const ttl of ttlInputs) {
         const result = CreateFlags.safeParse({ ttl });
