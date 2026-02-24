@@ -133,7 +133,7 @@ export default {
 				analytics?: { eventName?: string; properties?: Record<string, unknown> };
 				userAgent?: string;
 				source?: 'programmatic' | 'cli';
-				ttlMs?: number;
+				ttlMs?: unknown;
 			};
 
 			let body: CreateDbBody = {};
@@ -146,6 +146,10 @@ export default {
 
 			const { region, name, analytics: analyticsData, userAgent, source, ttlMs } = body;
 			const parsedTtlMs = parseTtlMsInput(ttlMs);
+
+			if (ttlMs !== undefined && parsedTtlMs === undefined) {
+				return new Response('Invalid ttlMs in request body', { status: 400 });
+			}
 
 			if (parsedTtlMs !== undefined && !isTtlMsInRange(parsedTtlMs)) {
 				return new Response('Invalid ttlMs in request body', { status: 400 });

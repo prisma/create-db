@@ -14,7 +14,7 @@ export function isTtlMsInRange(value: number): boolean {
 }
 
 export function clampTtlMs(value: number | undefined): number {
-	if (typeof value !== 'number') {
+	if (typeof value !== 'number' || !Number.isFinite(value)) {
 		return MAX_TTL_MS;
 	}
 
