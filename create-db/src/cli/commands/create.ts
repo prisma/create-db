@@ -208,16 +208,16 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
       }
     }
 
+    if (input.quiet) {
+      console.log(result.connectionString ?? "");
+    }
+
     if (input.copy) {
       applyCopyFlag(result, input.quiet);
     }
 
     if (input.open) {
       applyOpenFlag(result, input.quiet);
-    }
-
-    if (input.quiet) {
-      console.log(result.connectionString ?? "");
     }
 
     return;

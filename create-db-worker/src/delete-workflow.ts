@@ -17,10 +17,13 @@ export class DeleteDbWorkflow extends WorkflowEntrypoint<Env, Params> {
 			throw new Error('No projectID provided.');
 		}
 
+		const MIN_TTL_SECONDS = 30 * 60;
+		const MAX_TTL_SECONDS = 24 * 60 * 60;
+
 		const effectiveTtlSeconds =
-			typeof ttlSeconds === 'number' && Number.isFinite(ttlSeconds) && ttlSeconds > 0
-				? Math.floor(ttlSeconds)
-				: 24 * 60 * 60;
+			typeof ttlSeconds === 'number' && Number.isFinite(ttlSeconds)
+				? Math.max(MIN_TTL_SECONDS, Math.min(MAX_TTL_SECONDS, Math.floor(ttlSeconds)))
+				: MAX_TTL_SECONDS;
 
 		await step.sleep(`wait ${effectiveTtlSeconds} seconds`, `${effectiveTtlSeconds} seconds`);
 
