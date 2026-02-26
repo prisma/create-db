@@ -79,6 +79,18 @@ describe("CLI error handling", () => {
     expect(result.exitCode).not.toBe(0);
   }, 10000);
 
+  it("fails validation when --ttl is provided without a value", async () => {
+    const result = await runCli(["--ttl"]);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.all).toContain("Input validation failed");
+  });
+
+  it("fails validation when --ttl value is invalid", async () => {
+    const result = await runCli(["--ttl", "25h"]);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.all).toContain("Input validation failed");
+  });
+
   it("shows error for unknown command", async () => {
     const result = await runCli(["unknown-command"]);
     expect(result.exitCode).not.toBe(0);

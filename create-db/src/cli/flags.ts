@@ -1,6 +1,43 @@
 import { z } from "zod";
 import { RegionSchema } from "../types.js";
-import { TTL_HELP_DESCRIPTION } from "../utils/ttl.js";
+import {
+  TTL_HELP_DESCRIPTION,
+  buildTtlCliError,
+  parseTtlToMilliseconds,
+} from "../utils/ttl.js";
+
+const TTL_MISSING_VALUE_SENTINEL = "__create_db_ttl_missing_value__";
+
+const TtlFlag = z
+  .preprocess(
+    (value) => (value === true ? TTL_MISSING_VALUE_SENTINEL : value),
+    z
+      .string()
+      .superRefine((value, ctx) => {
+        if (value === TTL_MISSING_VALUE_SENTINEL) {
+          ctx.addIssue({
+            code: "custom",
+            message: buildTtlCliError(
+              "Could not create database: --ttl was provided without a value."
+            ),
+          });
+          return;
+        }
+
+        if (parseTtlToMilliseconds(value) === null) {
+          ctx.addIssue({
+            code: "custom",
+            message: buildTtlCliError(
+              `Could not create database: --ttl value "${value}" is invalid.`
+            ),
+          });
+        }
+      })
+      .transform((value) => parseTtlToMilliseconds(value)!)
+  )
+  .optional()
+  .describe(TTL_HELP_DESCRIPTION)
+  .meta({ alias: "t" });
 
 /**
  * Zod schema for CLI flags used by the `create` command.
@@ -26,14 +63,7 @@ export const CreateFlags = z.object({
     .optional()
     .describe("Write DATABASE_URL and CLAIM_URL to the specified .env file")
     .meta({ alias: "e" }),
-  ttl: z
-    .preprocess(
-      (value) => (value === true ? "" : value),
-      z.string()
-    )
-    .optional()
-    .describe(TTL_HELP_DESCRIPTION)
-    .meta({ alias: "t" }),
+  ttl: TtlFlag,
   copy: z
     .boolean()
     .optional()

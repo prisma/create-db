@@ -114,35 +114,35 @@ describe("CreateFlags schema", () => {
 
   describe("ttl field", () => {
     it("accepts valid ttl strings", () => {
-      const validTtls = ["30m", "1h", "6h", "12h", "24h"];
+      const validTtls = [
+        { input: "30m", expectedMs: 1_800_000 },
+        { input: "1h", expectedMs: 3_600_000 },
+        { input: "6h", expectedMs: 21_600_000 },
+        { input: "12h", expectedMs: 43_200_000 },
+        { input: "24h", expectedMs: 86_400_000 },
+      ];
 
-      for (const ttl of validTtls) {
-        const result = CreateFlags.safeParse({ ttl });
+      for (const { input, expectedMs } of validTtls) {
+        const result = CreateFlags.safeParse({ ttl: input });
         expect(result.success).toBe(true);
         if (result.success) {
-          expect(result.data.ttl).toBe(ttl);
+          expect(result.data.ttl).toBe(expectedMs);
         }
       }
     });
 
-    it("passes through ttl strings for command-level validation", () => {
+    it("rejects invalid ttl strings", () => {
       const ttlInputs = ["25h", "7d", "10s", "45s", "one-hour", "24"];
 
       for (const ttl of ttlInputs) {
         const result = CreateFlags.safeParse({ ttl });
-        expect(result.success).toBe(true);
-        if (result.success) {
-          expect(result.data.ttl).toBe(ttl);
-        }
+        expect(result.success).toBe(false);
       }
     });
 
-    it("coerces boolean ttl to empty string when value is missing", () => {
+    it("rejects missing ttl values", () => {
       const result = CreateFlags.safeParse({ ttl: true });
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.ttl).toBe("");
-      }
+      expect(result.success).toBe(false);
     });
 
     it("allows undefined", () => {
@@ -248,7 +248,7 @@ describe("CreateFlags schema", () => {
           interactive: true,
           json: false,
           env: ".env.local",
-          ttl: "12h",
+          ttl: 43_200_000,
           copy: true,
           quiet: false,
           open: true,
@@ -276,7 +276,7 @@ describe("CreateFlags schema", () => {
 
   describe("type inference", () => {
     it("CreateFlagsInput type matches schema output", () => {
-      const input: CreateFlagsInput = {
+      const result = CreateFlags.parse({
         region: "us-east-1",
         interactive: false,
         json: true,
@@ -286,18 +286,18 @@ describe("CreateFlags schema", () => {
         quiet: false,
         open: true,
         userAgent: "test/1.0",
-      };
+      });
 
-      const result = CreateFlags.parse(input);
-      expect(result.region).toBe(input.region);
-      expect(result.interactive).toBe(input.interactive);
-      expect(result.json).toBe(input.json);
-      expect(result.env).toBe(input.env);
-      expect(result.ttl).toBe(input.ttl);
-      expect(result.copy).toBe(input.copy);
-      expect(result.quiet).toBe(input.quiet);
-      expect(result.open).toBe(input.open);
-      expect(result.userAgent).toBe(input.userAgent);
+      const typedResult: CreateFlagsInput = result;
+      expect(typedResult.region).toBe("us-east-1");
+      expect(typedResult.interactive).toBe(false);
+      expect(typedResult.json).toBe(true);
+      expect(typedResult.env).toBe(".env");
+      expect(typedResult.ttl).toBe(86_400_000);
+      expect(typedResult.copy).toBe(true);
+      expect(typedResult.quiet).toBe(false);
+      expect(typedResult.open).toBe(true);
+      expect(typedResult.userAgent).toBe("test/1.0");
     });
   });
 });

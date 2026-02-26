@@ -6,7 +6,6 @@ import type { RegionId, DatabaseResult } from "../../types.js";
 import { getCommandName } from "../../core/database.js";
 import { readUserEnvFile } from "../../utils/env-utils.js";
 import { detectUserLocation, getRegionClosestToLocation } from "../../utils/geolocation.js";
-import { parseTtlToMilliseconds, buildTtlCliError } from "../../utils/ttl.js";
 import {
   sendAnalyticsEvent,
   flushAnalytics,
@@ -61,17 +60,7 @@ function applyOpenFlag(result: DatabaseResult, quiet: boolean) {
 export async function handleCreate(input: CreateFlagsInput): Promise<void> {
   const cliRunId = randomUUID();
   const CLI_NAME = getCommandName();
-
-  if (input.ttl === "") {
-    printError(buildTtlCliError("Could not create database: --ttl was provided without a value."));
-    process.exit(1);
-  }
-
-  const ttlMs = input.ttl ? parseTtlToMilliseconds(input.ttl) : null;
-  if (typeof input.ttl === "string" && ttlMs === null) {
-    printError(buildTtlCliError(`Could not create database: --ttl value "${input.ttl}" is invalid.`));
-    process.exit(1);
-  }
+  const ttlMs = input.ttl;
 
   const interactiveMode = input.interactive && !input.quiet;
 
@@ -91,11 +80,11 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
       "has-interactive-flag": input.interactive,
       "has-json-flag": input.json,
       "has-env-flag": !!input.env,
-      "has-ttl-flag": !!input.ttl,
+      "has-ttl-flag": input.ttl !== undefined,
       "has-copy-flag": input.copy,
       "has-quiet-flag": input.quiet,
       "has-open-flag": input.open,
-      "ttl-ms": ttlMs ?? undefined,
+      "ttl-ms": ttlMs,
       "user-agent": userAgent || undefined,
       "node-version": process.version,
       platform: process.platform,
@@ -157,7 +146,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
       userAgent,
       cliRunId,
       "cli",
-      ttlMs ?? undefined
+      ttlMs
     );
     await flushAnalytics();
 
@@ -244,7 +233,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
     userAgent,
     cliRunId,
     "cli",
-    ttlMs ?? undefined
+    ttlMs
   );
 
   if (!result.success) {

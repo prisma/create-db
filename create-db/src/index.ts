@@ -93,7 +93,7 @@ export async function create(
     options?.userAgent,
     undefined,
     "programmatic",
-    ttlMs
+    ttlMs ?? undefined
   );
 }
 
