@@ -61,13 +61,15 @@ export function validateRegionId(region: string) {
  * @param userAgent - Optional custom user agent string
  * @param cliRunId - Optional unique identifier for this CLI run
  * @param source - Whether called from CLI or programmatic API
+ * @param ttlMs - Optional database lifetime in milliseconds
  * @returns A promise resolving to the database creation result
  */
 export function createDatabase(
   region: string,
   userAgent?: string,
   cliRunId?: string,
-  source?: "programmatic" | "cli"
+  source?: "programmatic" | "cli",
+  ttlMs?: number
 ) {
   return createDatabaseCore(
     region,
@@ -75,6 +77,7 @@ export function createDatabase(
     CLAIM_DB_WORKER_URL,
     userAgent,
     cliRunId,
-    source
+    source,
+    ttlMs
   );
 }

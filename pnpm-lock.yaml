@@ -133,8 +133,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       trpc-cli:
-        specifier: ^0.12.1
-        version: 0.12.1(@orpc/server@1.12.2(ws@8.18.3))(effect@3.18.4)(valibot@1.2.0(typescript@5.9.3))(zod@4.1.13)
+        specifier: ^0.12.4
+        version: 0.12.4(@orpc/server@1.12.2(ws@8.18.3))(effect@3.18.4)(valibot@1.2.0(typescript@5.9.3))(zod@4.1.13)
       zod:
         specifier: ^4.1.13
         version: 4.1.13
@@ -5644,8 +5644,8 @@ packages:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
 
-  trpc-cli@0.12.1:
-    resolution: {integrity: sha512-/D/mIQf3tUrS7ZKJZ1gmSPJn2psAABJfkC5Eevm55SZ4s6KwANOUNlwhAGXN9HT4VSJVfoF2jettevE9vHPQlg==}
+  trpc-cli@0.12.4:
+    resolution: {integrity: sha512-Yo2Ob5J7hUZSWZ2A1M9Kb+0qfSxwmcmYIs3kkQyLd3sn0qU4ryGzNsySfrY3+urqp6FnDnIIdbCSqC9BKxK6Ag==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -12482,7 +12482,7 @@ snapshots:
 
   tree-kill@1.2.2: {}
 
-  trpc-cli@0.12.1(@orpc/server@1.12.2(ws@8.18.3))(effect@3.18.4)(valibot@1.2.0(typescript@5.9.3))(zod@4.1.13):
+  trpc-cli@0.12.4(@orpc/server@1.12.2(ws@8.18.3))(effect@3.18.4)(valibot@1.2.0(typescript@5.9.3))(zod@4.1.13):
     dependencies:
       commander: 14.0.2
     optionalDependencies:

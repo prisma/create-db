@@ -13,6 +13,7 @@ import {
 import { getCommandName } from "./core/database.js";
 import { handleCreate, handleRegions } from "./cli/commands/index.js";
 import { createDatabase, fetchRegions } from "./core/services.js";
+import { parseTtlToMilliseconds, TTL_RANGE_TEXT } from "./utils/ttl.js";
 
 export type {
   Region,
@@ -74,11 +75,25 @@ export function createDbCli() {
 export async function create(
   options?: ProgrammaticCreateOptions
 ): Promise<CreateDatabaseResult> {
+  const ttlMs =
+    typeof options?.ttl === "string"
+      ? parseTtlToMilliseconds(options.ttl)
+      : undefined;
+
+  if (typeof options?.ttl === "string" && ttlMs === null) {
+    return {
+      success: false,
+      error: "invalid_ttl",
+      message: `Invalid ttl "${options.ttl}". Allowed range is ${TTL_RANGE_TEXT}.`,
+    };
+  }
+
   return createDatabase(
     options?.region || "us-east-1",
     options?.userAgent,
     undefined,
-    "programmatic"
+    "programmatic",
+    ttlMs ?? undefined
   );
 }
 

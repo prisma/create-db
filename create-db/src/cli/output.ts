@@ -1,9 +1,12 @@
 import { intro, outro, cancel, log, spinner as clackSpinner } from "@clack/prompts";
+import { spawnSync } from "child_process";
 import fs from "fs";
 import pc from "picocolors";
 import terminalLink from "terminal-link";
 
 import type { DatabaseResult } from "../types.js";
+
+type OperationResult = { success: true } | { success: false; error: string };
 
 /** Display the CLI intro message. */
 export function showIntro() {
@@ -125,4 +128,74 @@ export function writeEnvFile(
       error: err instanceof Error ? err.message : String(err),
     };
   }
+}
+
+/**
+ * Copy text to the system clipboard.
+ * @param text - Text to copy
+ */
+export function copyToClipboard(text: string): OperationResult {
+  const commands =
+    process.platform === "darwin"
+      ? [{ command: "pbcopy", args: [] as string[] }]
+      : process.platform === "win32"
+        ? [{ command: "cmd", args: ["/c", "clip"] }]
+        : [
+            { command: "wl-copy", args: [] as string[] },
+            { command: "xclip", args: ["-selection", "clipboard"] },
+            { command: "xsel", args: ["--clipboard", "--input"] },
+          ];
+
+  const errors: string[] = [];
+
+  for (const { command, args } of commands) {
+    const result = spawnSync(command, args, {
+      input: text,
+      encoding: "utf8",
+      stdio: ["pipe", "ignore", "pipe"],
+    });
+
+    if (result.status === 0) {
+      return { success: true };
+    }
+
+    if (result.error) {
+      errors.push(`${command}: ${result.error.message}`);
+    } else if (result.stderr?.trim()) {
+      errors.push(`${command}: ${result.stderr.trim()}`);
+    }
+  }
+
+  return {
+    success: false,
+    error: errors[0] || "No clipboard command is available on this system.",
+  };
+}
+
+/**
+ * Open a URL in the user's default browser.
+ * @param url - URL to open
+ */
+export function openUrlInBrowser(url: string): OperationResult {
+  const command =
+    process.platform === "darwin"
+      ? { command: "open", args: [url] }
+      : process.platform === "win32"
+        ? { command: "cmd", args: ["/c", "start", "", url] }
+        : { command: "xdg-open", args: [url] };
+
+  const result = spawnSync(command.command, command.args, { stdio: "ignore" });
+
+  if (result.status === 0) {
+    return { success: true };
+  }
+
+  if (result.error) {
+    return { success: false, error: result.error.message };
+  }
+
+  return {
+    success: false,
+    error: `Command failed: ${command.command}`,
+  };
 }

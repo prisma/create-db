@@ -1,6 +1,7 @@
 import DeleteDbWorkflow from './delete-workflow';
 import DeleteStaleProjectsWorkflow from './delete-stale-workflow';
 import { PosthogEventCapture } from './analytics';
+import { parseTtlMsInput, isTtlMsInRange } from './ttl';
 interface Env {
 	INTEGRATION_TOKEN: string;
 	DELETE_DB_WORKFLOW: Workflow;
@@ -132,6 +133,7 @@ export default {
 				analytics?: { eventName?: string; properties?: Record<string, unknown> };
 				userAgent?: string;
 				source?: 'programmatic' | 'cli';
+				ttlMs?: unknown;
 			};
 
 			let body: CreateDbBody = {};
@@ -142,7 +144,16 @@ export default {
 				return new Response('Invalid JSON body', { status: 400 });
 			}
 
-			const { region, name, analytics: analyticsData, userAgent, source } = body;
+			const { region, name, analytics: analyticsData, userAgent, source, ttlMs } = body;
+			const parsedTtlMs = parseTtlMsInput(ttlMs);
+
+			if (ttlMs !== undefined && parsedTtlMs === undefined) {
+				return new Response('Invalid ttlMs in request body', { status: 400 });
+			}
+
+			if (parsedTtlMs !== undefined && !isTtlMsInRange(parsedTtlMs)) {
+				return new Response('Invalid ttlMs in request body', { status: 400 });
+			}
 
 			// Apply stricter rate limiting for programmatic requests
 			if (source === 'programmatic') {
@@ -211,7 +222,9 @@ export default {
 					const response = JSON.parse(prismaText);
 					const projectID = response.data ? response.data.id : response.id;
 
-					const workflowPromise = env.DELETE_DB_WORKFLOW.create({ params: { projectID } });
+					const workflowPromise = env.DELETE_DB_WORKFLOW.create({
+						params: { projectID, ttlMs: parsedTtlMs },
+					});
 
 					const analyticsPromise = env.CREATE_DB_DATASET.writeDataPoint({
 						blobs: ['database_created'],

@@ -15,14 +15,17 @@ This monorepo contains tools and services that enable developers to quickly prov
 
 ### Available Flags
 
-| Flag             | Description                                       | Example              |
-| ---------------- | ------------------------------------------------- | -------------------- |
-| `--region`       | Specify database region                           | `--region us-east-1` |
-| `--list-regions` | List available regions                            | `--list-regions`     |
-| `--interactive`  | Enable interactive region selection               | `--interactive`      |
-| `--help`         | Show help information                             | `--help`             |
-| `--json`         | Output the info in a JSON format                  | `--json`             |
-| `--env`, `-e`    | Print DATABASE_URL to stdout; claim URL to stderr | `--env`              |
+| Flag                  | Description                                                  | Example                |
+| --------------------- | ------------------------------------------------------------ | ---------------------- |
+| `--region`, `-r`      | Specify database region                                      | `--region us-east-1`   |
+| `--interactive`, `-i` | Enable interactive region selection                          | `--interactive`        |
+| `--json`, `-j`        | Output machine-readable JSON                                 | `--json`               |
+| `--env`, `-e`         | Write `DATABASE_URL` and `CLAIM_URL` to the specified file   | `--env .env`           |
+| `--ttl`, `-t`         | Set auto-delete TTL (`30m`, `1h` ... `24h`)                  | `--ttl 5h`             |
+| `--copy`, `-c`        | Copy connection string to clipboard                          | `--copy`               |
+| `--quiet`, `-q`       | Output only the connection string                            | `--quiet`              |
+| `--open`, `-o`        | Open claim URL in browser                                    | `--open`               |
+| `--help`, `-h`        | Show help information                                        | `--help`               |
 
 ### Examples
 

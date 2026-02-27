@@ -2,7 +2,7 @@ import { select, isCancel } from "@clack/prompts";
 import { randomUUID } from "crypto";
 
 import type { CreateFlagsInput } from "../flags.js";
-import type { RegionId } from "../../types.js";
+import type { RegionId, DatabaseResult } from "../../types.js";
 import { getCommandName } from "../../core/database.js";
 import { readUserEnvFile } from "../../utils/env-utils.js";
 import { detectUserLocation, getRegionClosestToLocation } from "../../utils/geolocation.js";
@@ -24,11 +24,45 @@ import {
   printError,
   printSuccess,
   writeEnvFile,
+  copyToClipboard,
+  openUrlInBrowser,
 } from "../output.js";
+
+function applyCopyFlag(result: DatabaseResult, quiet: boolean) {
+  if (!result.connectionString) {
+    printError("Connection string is unavailable, cannot copy to clipboard.");
+    process.exit(1);
+  }
+
+  const copyResult = copyToClipboard(result.connectionString);
+  if (!copyResult.success) {
+    printError(`Failed to copy connection string: ${copyResult.error}`);
+    process.exit(1);
+  }
+
+  if (!quiet) {
+    printSuccess("Copied connection string to clipboard");
+  }
+}
+
+function applyOpenFlag(result: DatabaseResult, quiet: boolean) {
+  const openResult = openUrlInBrowser(result.claimUrl);
+  if (!openResult.success) {
+    printError(`Failed to open claim URL: ${openResult.error}`);
+    process.exit(1);
+  }
+
+  if (!quiet) {
+    printSuccess("Opened claim URL in browser");
+  }
+}
 
 export async function handleCreate(input: CreateFlagsInput): Promise<void> {
   const cliRunId = randomUUID();
   const CLI_NAME = getCommandName();
+  const ttlMs = input.ttl;
+
+  const interactiveMode = input.interactive && !input.quiet;
 
   let userAgent: string | undefined = input.userAgent;
   if (!userAgent) {
@@ -46,6 +80,11 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
       "has-interactive-flag": input.interactive,
       "has-json-flag": input.json,
       "has-env-flag": !!input.env,
+      "has-ttl-flag": input.ttl !== undefined,
+      "has-copy-flag": input.copy,
+      "has-quiet-flag": input.quiet,
+      "has-open-flag": input.open,
+      "ttl-ms": ttlMs,
       "user-agent": userAgent || undefined,
       "node-version": process.version,
       platform: process.platform,
@@ -65,8 +104,8 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
   const envEnabled =
     typeof envPath === "string" && envPath.trim().length > 0;
 
-  if (input.json || envEnabled) {
-    if (input.interactive) {
+  if (input.json || envEnabled || input.quiet) {
+    if (interactiveMode) {
       await ensureOnline();
       const regions = await fetchRegions();
 
@@ -102,7 +141,13 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
     }
 
     await ensureOnline();
-    const result = await createDatabase(region, userAgent, cliRunId);
+    const result = await createDatabase(
+      region,
+      userAgent,
+      cliRunId,
+      "cli",
+      ttlMs
+    );
     await flushAnalytics();
 
     if (input.json) {
@@ -118,13 +163,30 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
       process.exit(1);
     }
 
-    const writeResult = writeEnvFile(envPath!, result.connectionString, result.claimUrl);
-    if (!writeResult.success) {
-      printError(`Failed to write environment variables to ${envPath}: ${writeResult.error}`);
-      process.exit(1);
+    if (envEnabled) {
+      const writeResult = writeEnvFile(envPath!, result.connectionString, result.claimUrl);
+      if (!writeResult.success) {
+        printError(`Failed to write environment variables to ${envPath}: ${writeResult.error}`);
+        process.exit(1);
+      }
+
+      if (!input.quiet) {
+        printSuccess(`Wrote DATABASE_URL and CLAIM_URL to ${envPath}`);
+      }
     }
 
-    printSuccess(`Wrote DATABASE_URL and CLAIM_URL to ${envPath}`);
+    if (input.quiet) {
+      console.log(result.connectionString ?? "");
+    }
+
+    if (input.copy) {
+      applyCopyFlag(result, input.quiet);
+    }
+
+    if (input.open) {
+      applyOpenFlag(result, input.quiet);
+    }
+
     return;
   }
 
@@ -166,7 +228,13 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
   const spinner = createSpinner();
   spinner.start(region);
 
-  const result = await createDatabase(region, userAgent, cliRunId);
+  const result = await createDatabase(
+    region,
+    userAgent,
+    cliRunId,
+    "cli",
+    ttlMs
+  );
 
   if (!result.success) {
     spinner.error(result.message);
@@ -176,6 +244,15 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
 
   spinner.success();
   printDatabaseResult(result);
+
+  if (input.copy) {
+    applyCopyFlag(result, false);
+  }
+
+  if (input.open) {
+    applyOpenFlag(result, false);
+  }
+
   showOutro();
   await flushAnalytics();
 }
