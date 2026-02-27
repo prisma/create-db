@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEnv } from "@/lib/env";
 import { exchangeCodeForToken, validateProject } from "@/lib/auth-utils";
+import { sendAnalyticsEvent } from "@/lib/analytics";
 import {
   redirectToError,
   redirectToSuccess,
@@ -8,41 +9,6 @@ import {
 } from "@/lib/response-utils";
 import { transferProject } from "@/lib/project-transfer";
 import { buildRateLimitKey } from "@/lib/server/ratelimit";
-
-async function sendServerAnalyticsEvent(
-  event: string,
-  properties: Record<string, any>,
-  request: NextRequest
-) {
-  const env = getEnv();
-
-  if (!env.POSTHOG_API_KEY || !env.POSTHOG_API_HOST) {
-    return;
-  }
-
-  try {
-    await fetch(`${env.POSTHOG_API_HOST}/e`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${env.POSTHOG_API_KEY}`,
-      },
-      body: JSON.stringify({
-        api_key: env.POSTHOG_API_KEY,
-        event,
-        properties: {
-          ...properties,
-          $current_url: request.url,
-          $user_agent: request.headers.get("user-agent"),
-        },
-        distinct_id: "server-claim",
-        timestamp: new Date().toISOString(),
-      }),
-    });
-  } catch (error) {
-    console.error("Failed to send server analytics event:", error);
-  }
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -98,7 +64,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      await sendServerAnalyticsEvent(
+      await sendAnalyticsEvent(
         "create_db:claim_failed",
         {
           "project-id": projectID,
@@ -115,13 +81,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate project exists and get project data
-    let projectData;
     try {
-      projectData = await validateProject(projectID);
+      await validateProject(projectID);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      await sendServerAnalyticsEvent(
+      await sendAnalyticsEvent(
         "create_db:claim_failed",
         {
           "project-id": projectID,
@@ -176,7 +141,7 @@ export async function GET(request: NextRequest) {
       };
       const databaseId = (databases.data?.[0]?.id ?? "").replace(/^db_/, "");
 
-      await sendServerAnalyticsEvent(
+      await sendAnalyticsEvent(
         "create_db:claim_successful",
         {
           "project-id": projectID,
@@ -194,7 +159,7 @@ export async function GET(request: NextRequest) {
         databaseId
       );
     } else {
-      await sendServerAnalyticsEvent(
+      await sendAnalyticsEvent(
         "create_db:claim_failed",
         {
           "project-id": projectID,
