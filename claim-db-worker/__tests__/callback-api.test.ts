@@ -9,7 +9,7 @@ vi.mock("@/lib/env", () => ({
       limit: vi.fn(() => Promise.resolve({ success: true })),
     },
     POSTHOG_API_KEY: "test-key",
-    POSTHOG_API_HOST: "https://app.posthog.com",
+    POSTHOG_PROXY_HOST: "https://proxyhog.prisma-data.net",
   })),
 }));
 

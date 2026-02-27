@@ -17,7 +17,7 @@ export async function sendAnalyticsEvent(
   }
 
   const env = getEnv();
-  const host = env.POSTHOG_API_HOST?.replace(/\/+$/, "");
+  const host = env.POSTHOG_PROXY_HOST?.replace(/\/+$/, "");
   const key = env.POSTHOG_API_KEY;
 
   if (!host || !key) {

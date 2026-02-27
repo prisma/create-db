@@ -5,7 +5,6 @@ export interface Env {
   CLIENT_ID: string;
   CREATE_DB_DATASET: any;
   POSTHOG_API_KEY?: string;
-  POSTHOG_API_HOST?: string;
   POSTHOG_PROXY_HOST?: string;
 }
 
@@ -19,9 +18,6 @@ export function getEnv(): Env {
       CLIENT_ID: (globalThis as any).CLIENT_ID,
       CREATE_DB_DATASET: (globalThis as any).CREATE_DB_DATASET,
       POSTHOG_API_KEY: (globalThis as any).POSTHOG_API_KEY,
-      POSTHOG_API_HOST:
-        (globalThis as any).POSTHOG_API_HOST ||
-        (globalThis as any).POSTHOG_PROXY_HOST,
       POSTHOG_PROXY_HOST: (globalThis as any).POSTHOG_PROXY_HOST,
     };
   }
@@ -38,8 +34,6 @@ export function getEnv(): Env {
       writeDataPoint: async () => {}, // No-op analytics for development
     },
     POSTHOG_API_KEY: process.env.POSTHOG_API_KEY,
-    POSTHOG_API_HOST:
-      process.env.POSTHOG_API_HOST || process.env.POSTHOG_PROXY_HOST,
     POSTHOG_PROXY_HOST: process.env.POSTHOG_PROXY_HOST,
   };
 }
