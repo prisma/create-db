@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEnv } from "@/lib/env";
+import { sendAnalyticsEvent } from "@/lib/analytics";
 import { buildRateLimitKey } from "@/lib/server/ratelimit";
 
 export async function POST(request: NextRequest) {
   const env = getEnv();
-
   const url = new URL(request.url);
   const key = buildRateLimitKey(request);
 
-  // --- Simple rate limiting ---
   const { success } = await env.CLAIM_DB_RATE_LIMITER.limit({ key });
   if (!success) {
     return NextResponse.json(
@@ -21,16 +20,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!env.POSTHOG_API_KEY || !env.POSTHOG_API_HOST) {
-    return NextResponse.json({ success: true });
-  }
-
   try {
-    const {
-      event,
-      properties,
-    }: { event: string; properties: Record<string, any> } =
-      await request.json();
+    const body = (await request.json()) as {
+      event?: string;
+      properties?: Record<string, unknown>;
+    };
+
+    const event = body.event?.trim();
 
     if (!event) {
       return NextResponse.json(
@@ -39,19 +35,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await fetch(`${env.POSTHOG_API_HOST}/e`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${env.POSTHOG_API_KEY}`,
-      },
-      body: JSON.stringify({
-        api_key: env.POSTHOG_API_KEY,
-        event,
-        properties: properties || {},
-        distinct_id: "web-claim",
-      }),
-    });
+    if (!event.startsWith("create_db:")) {
+      return NextResponse.json(
+        { error: "Event must start with create_db:" },
+        { status: 400 }
+      );
+    }
+
+    await sendAnalyticsEvent(event, body.properties || {});
 
     return NextResponse.json({ success: true });
   } catch (error) {
