@@ -80,11 +80,31 @@ export interface ApiResponseData {
   database?: DatabaseRecord;
 }
 
+export interface ConnectionEndpoint {
+  host: string;
+  port: number;
+  connectionString?: string;
+}
+
+export interface Connection {
+  id: string;
+  type: string;
+  name: string;
+  kind: "postgres" | "accelerate";
+  endpoints: {
+    direct?: ConnectionEndpoint;
+    pooled?: ConnectionEndpoint;
+    accelerate?: ConnectionEndpoint;
+  };
+  database: { id: string; name: string };
+}
+
 export interface DatabaseRecord {
   name?: string;
   region?: {
     id?: string;
   };
+  connections?: Connection[];
   apiKeys?: ApiKey[];
 }
 
