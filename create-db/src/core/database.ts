@@ -1,29 +1,6 @@
 import { randomUUID } from "crypto";
-import type { ApiResponse, CreateDatabaseResult, DatabaseRecord } from "../types.js";
+import type { ApiResponse, CreateDatabaseResult } from "../types.js";
 import { sendAnalytics } from "../utils/analytics.js";
-
-function buildLegacyConnectionString(
-  result: ApiResponse,
-  database: DatabaseRecord | undefined
-): string | null {
-  const apiKeys = database?.apiKeys;
-  const directConnDetails = result.data
-    ? apiKeys?.[0]?.directConnection
-    : result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
-
-  if (!directConnDetails?.host) return null;
-
-  const user = directConnDetails.user
-    ? encodeURIComponent(String(directConnDetails.user))
-    : "";
-  const pass = directConnDetails.pass
-    ? encodeURIComponent(String(directConnDetails.pass))
-    : "";
-  const port = directConnDetails.port ? `:${directConnDetails.port}` : "";
-  const dbName = directConnDetails.database || "postgres";
-
-  return `postgresql://${user}:${pass}@${directConnDetails.host}${port}/${dbName}?sslmode=require`;
-}
 
 export function getCommandName(): string {
   const executable = process.argv[1] || "create-db";
@@ -147,7 +124,7 @@ export async function createDatabaseCore(
   const connectionString =
     connection?.endpoints?.direct?.connectionString
     ?? connection?.endpoints?.pooled?.connectionString
-    ?? buildLegacyConnectionString(result, database);
+    ?? null;
 
   const claimUrl = `${claimDbWorkerUrl}/claim?projectID=${projectId}&utm_source=${userAgent || getCommandName()}&utm_medium=cli`;
 
