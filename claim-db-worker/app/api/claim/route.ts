@@ -23,14 +23,22 @@ export async function GET(request: NextRequest) {
   }
 
   const projectID = url.searchParams.get("projectID");
+  const utmSource = url.searchParams.get("utm_source");
+  const utmMedium = url.searchParams.get("utm_medium");
 
   if (!projectID || projectID === "undefined") {
     return NextResponse.json({ error: "Missing project ID" }, { status: 400 });
   }
 
-  await sendAnalyticsEvent("create_db:claim_viewed", {
-    "project-id": projectID,
-  });
+  await sendAnalyticsEvent(
+    "create_db:claim_viewed",
+    {
+      "project-id": projectID,
+      utm_source: utmSource || undefined,
+      utm_medium: utmMedium || undefined,
+    },
+    request
+  );
 
   return NextResponse.json({ success: true });
 }
