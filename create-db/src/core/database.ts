@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import type { CreateDatabaseResult, ApiResponse } from "../types.js";
+import type { ApiResponse, CreateDatabaseResult } from "../types.js";
 import { sendAnalytics } from "../utils/analytics.js";
 
 export function getCommandName(): string {
@@ -116,27 +116,15 @@ export async function createDatabaseCore(
   const database = result.data?.database ?? result.databases?.[0];
   const projectId = result.data?.id ?? result.id ?? "";
 
-  const apiKeys = database?.apiKeys;
-  const directConnDetails = result.data
-    ? apiKeys?.[0]?.directConnection
-    : result.databases?.[0]?.apiKeys?.[0]?.ppgDirectConnection;
-
-  const directUser = directConnDetails?.user
-    ? encodeURIComponent(String(directConnDetails.user))
-    : "";
-  const directPass = directConnDetails?.pass
-    ? encodeURIComponent(String(directConnDetails.pass))
-    : "";
-  const directHost = directConnDetails?.host;
-  const directPort = directConnDetails?.port
-    ? `:${directConnDetails.port}`
-    : "";
-  const directDbName = directConnDetails?.database || "postgres";
-
+  const connection = database?.connections?.find(
+    (c) =>
+      Boolean(c.endpoints?.direct?.connectionString) ||
+      Boolean(c.endpoints?.pooled?.connectionString),
+  );
   const connectionString =
-    directConnDetails && directHost
-      ? `postgresql://${directUser}:${directPass}@${directHost}${directPort}/${directDbName}?sslmode=require`
-      : null;
+    connection?.endpoints?.direct?.connectionString
+    ?? connection?.endpoints?.pooled?.connectionString
+    ?? null;
 
   const claimUrl = `${claimDbWorkerUrl}/claim?projectID=${projectId}&utm_source=${userAgent || getCommandName()}&utm_medium=cli`;
 
