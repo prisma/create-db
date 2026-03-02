@@ -139,7 +139,11 @@ export async function createDatabaseCore(
   const database = result.data?.database ?? result.databases?.[0];
   const projectId = result.data?.id ?? result.id ?? "";
 
-  const connection = database?.connections?.[0];
+  const connection = database?.connections?.find(
+    (c) =>
+      Boolean(c.endpoints?.direct?.connectionString) ||
+      Boolean(c.endpoints?.pooled?.connectionString),
+  );
   const connectionString =
     connection?.endpoints?.direct?.connectionString
     ?? connection?.endpoints?.pooled?.connectionString
