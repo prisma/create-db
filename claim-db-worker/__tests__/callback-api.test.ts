@@ -106,7 +106,7 @@ describe("auth callback API", () => {
       );
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("posthog.com"),
+        expect.stringContaining("proxyhog.prisma-data.net"),
         expect.objectContaining({
           method: "POST",
           body: expect.stringContaining("create_db:claim_successful"),
