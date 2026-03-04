@@ -1,27 +1,37 @@
 "use client";
 
 import { PrismaPostgresLogo } from "@/components/PrismaPostgresLogo";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
-import { useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 
 function ClaimContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const projectID = searchParams.get("projectID");
   const [isLoading, setIsLoading] = useState(false);
 
-  if (!projectID && !window.location.pathname.includes("/test/")) {
-    router.push("/");
+  useEffect(() => {
+    if (!projectID && !pathname.includes("/test/")) {
+      router.push("/");
+    }
+  }, [pathname, projectID, router]);
+
+  if (!projectID && !pathname.includes("/test/")) {
     return null;
   }
 
-  const redirectUri = new URL("/api/auth/callback", window.location.origin);
-  redirectUri.searchParams.set("projectID", projectID!);
-
   const handleClaimClick = async () => {
     try {
+      if (!projectID) {
+        throw new Error("Missing project ID");
+      }
+
       setIsLoading(true);
+      const redirectUri = new URL("/api/auth/callback", window.location.origin);
+      redirectUri.searchParams.set("projectID", projectID);
+
       const response = await fetch("/api/auth/url", {
         method: "POST",
         headers: {

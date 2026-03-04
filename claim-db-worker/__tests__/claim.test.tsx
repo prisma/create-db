@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import ClaimPage from "../app/claim/page";
 
 // This test does not check the actual claim flow, but rather the claim page functionality and claim flow logic.
@@ -20,6 +20,7 @@ Object.defineProperty(window, "open", {
 vi.mock("next/navigation", () => ({
   useSearchParams: vi.fn(),
   useRouter: vi.fn(),
+  usePathname: vi.fn(),
 }));
 
 describe("claim page", () => {
@@ -33,6 +34,7 @@ describe("claim page", () => {
     vi.mocked(useRouter).mockReturnValue({
       push: mockPush,
     } as any);
+    vi.mocked(usePathname).mockReturnValue("/claim");
 
     mockFetch.mockResolvedValue({
       ok: true,

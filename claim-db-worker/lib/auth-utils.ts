@@ -32,7 +32,9 @@ export async function exchangeCodeForToken(
   return (await tokenResponse.json()) as TokenData;
 }
 
-export async function validateProject(projectID: string): Promise<any> {
+export async function validateProject(
+  projectID: string
+): Promise<any> {
   const env = getEnv();
 
   const projectCheckResponse = await fetch(
