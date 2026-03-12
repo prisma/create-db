@@ -31,14 +31,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run claim-db-worker tests
-        run: pnpm test
-        working-directory: ./apps/claim-db-worker
+        run: pnpm turbo run test --filter=./apps/claim-db-worker...
         env:
           NODE_ENV: test
 
       - name: Run create-db tests
-        run: pnpm test
-        working-directory: ./packages/create-db
+        run: pnpm turbo run test --filter=./packages/create-db...
         env:
           NODE_ENV: test
           CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
