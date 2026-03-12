@@ -17,6 +17,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 env:
     WORKSPACES: create-db create-pg create-postgres
+    PACKAGES_DIR: packages
     POSTHOG_API_HOST: ${{ secrets.POSTHOG_API_HOST }}
     POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
     CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}
@@ -47,7 +48,7 @@ jobs:
             - name: 📦 Setup pnpm
               uses: pnpm/action-setup@v4
               with:
-                  version: 8
+                  version: 10
 
             - name: 🔧 Setup Node.js
               uses: actions/setup-node@v4
@@ -75,12 +76,12 @@ jobs:
 
                   for pkg in ${{ env.WORKSPACES }}; do
                     echo "Publishing $pkg to npm..."
-                    cd "$pkg"
+                    cd "${{ env.PACKAGES_DIR }}/$pkg"
                     export POSTHOG_API_HOST="${POSTHOG_API_HOST}"
                     export POSTHOG_API_KEY="${POSTHOG_API_KEY}"
                     export CREATE_DB_WORKER_URL="${CREATE_DB_WORKER_URL}"
                     export CLAIM_DB_WORKER_URL="${CLAIM_DB_WORKER_URL}"
-                    
+
                     # First try to publish
                     if ! pnpm publish --access public --no-git-checks; then
                       echo "Publish failed, trying to bump version and retry..."
@@ -128,7 +129,7 @@ jobs:
             - name: 📦 Setup pnpm
               uses: pnpm/action-setup@v4
               with:
-                  version: 8
+                  version: 10
 
             - name: 🔧 Setup Node.js
               uses: actions/setup-node@v4
@@ -146,7 +147,7 @@ jobs:
             - name: 📄 Copy README to child CLIs
               run: |
                   for pkg in create-pg create-postgres; do
-                    cp create-db/README.md "$pkg/README.md"
+                    cp packages/create-db/README.md "packages/$pkg/README.md"
                   done
 
             - name: 🔖 Create unique preview tag
@@ -175,7 +176,7 @@ jobs:
                   echo "Using POSTHOG_API_HOST=${POSTHOG_API_HOST}"
 
                   for pkg in ${{ env.WORKSPACES }}; do
-                    cd "$pkg"
+                    cd "${{ env.PACKAGES_DIR }}/$pkg"
                     export CREATE_DB_WORKER_URL
                     export CLAIM_DB_WORKER_URL
                     export POSTHOG_API_HOST="${POSTHOG_API_HOST}"
@@ -216,9 +217,9 @@ jobs:
                       npx create-postgres@pr${{ github.event.number }}
                       \`\`\`
 
-                      **Worker URLs**  
-                      • Create-DB Worker: ${dbUrl}  
-                      • Claim-DB Worker:  ${clUrl}  
+                      **Worker URLs**
+                      • Create-DB Worker: ${dbUrl}
+                      • Claim-DB Worker:  ${clUrl}
 
                       > These will live as long as this PR exists under tag \`${tag}\`.`
                       });

@@ -1,7 +1,3 @@
 packages:
-  - "create-db"
-  - "create-db-worker"
-  - "claim-db-worker"
-  - "create-pg"
-  - "create-postgres"
-  - "schema-api-routes"
+  - "apps/*"
+  - "packages/*"
