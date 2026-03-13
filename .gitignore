@@ -1,3 +1,6 @@
+# Turborepo
+.turbo
+
 # Node.js
 node_modules/
 dist/
