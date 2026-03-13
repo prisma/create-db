@@ -35,6 +35,11 @@ jobs:
         env:
           NODE_ENV: test
 
+      - name: Run create-db-worker tests
+        run: pnpm turbo run test --filter=./apps/create-db-worker...
+        env:
+          NODE_ENV: test
+
       - name: Run create-db tests
         run: pnpm turbo run test --filter=./packages/create-db...
         env:
