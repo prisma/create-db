@@ -18,8 +18,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,25 +27,19 @@ jobs:
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: ./claim-db-worker
 
       - name: Run claim-db-worker tests
-        run: pnpm test
-        working-directory: ./claim-db-worker
+        run: pnpm turbo run test --filter=./apps/claim-db-worker...
         env:
           NODE_ENV: test
 
-      - name: Install create-db dependencies
-        run: pnpm install --frozen-lockfile
-        working-directory: ./create-db
-
-      - name: Build create-db
-        run: pnpm build
-        working-directory: ./create-db
+      - name: Run create-db-worker tests
+        run: pnpm turbo run test --filter=./apps/create-db-worker...
+        env:
+          NODE_ENV: test
 
       - name: Run create-db tests
-        run: pnpm test
-        working-directory: ./create-db
+        run: pnpm turbo run test --filter=./packages/create-db...
         env:
           NODE_ENV: test
           CREATE_DB_WORKER_URL: ${{ secrets.CREATE_DB_WORKER_URL }}

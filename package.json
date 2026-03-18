@@ -2,7 +2,15 @@
   "name": "create-db-monorepo",
   "version": "0.0.10",
   "private": true,
+  "packageManager": "pnpm@10.32.1",
   "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --filter=create-db-worker --filter=claim-db-worker",
+    "dev:create": "turbo run dev --filter=create-db-worker",
+    "dev:claim": "turbo run dev --filter=claim-db-worker",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
     "changeset": "changeset",
     "version": "changeset version",
     "publish:cli": "changeset publish --filter create-db",
@@ -14,6 +22,7 @@
     "@commitlint/config-conventional": "^19.8.1",
     "husky": "^9.1.7",
     "prettier": "^3.0.0",
+    "turbo": "^2.8.16",
     "typescript": "^5.0.0"
   }
 }
