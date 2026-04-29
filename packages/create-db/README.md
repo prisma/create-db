@@ -111,7 +111,7 @@ When using `--json` with `create`, the output includes:
 ```json
 {
   "success": true,
-  "connectionString": "postgresql://user:pass@host:5432/postgres?sslmode=require",
+  "connectionString": "postgresql://user:pass@host:5432/postgres?sslmode=verify-full",
   "claimUrl": "https://create-db.prisma.io/claim?projectID=...",
   "deletionDate": "2025-12-13T12:00:00.000Z",
   "region": "us-east-1",
@@ -137,7 +137,7 @@ When using `--json` with `regions`, the output is an array of region objects:
 When using `--env`, the following variables are appended to the specified file:
 
 ```env
-DATABASE_URL="postgresql://user:pass@host:5432/postgres?sslmode=require"
+DATABASE_URL="postgresql://user:pass@host:5432/postgres?sslmode=verify-full"
 CLAIM_URL="https://create-db.prisma.io/claim?projectID=..."
 ```
 

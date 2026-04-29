@@ -90,7 +90,7 @@ export const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
 
       if (db) {
         const directConnString = db.directConnection
-          ? `postgresql://${db.directConnection.user}:${db.directConnection.pass}@${db.directConnection.host}?sslmode=require`
+          ? `postgresql://${db.directConnection.user}:${db.directConnection.pass}@${db.directConnection.host}?sslmode=verify-full`
           : "";
 
         const newDbInfo = {
