@@ -121,10 +121,15 @@ export async function createDatabaseCore(
       Boolean(c.endpoints?.direct?.connectionString) ||
       Boolean(c.endpoints?.pooled?.connectionString),
   );
-  const connectionString =
+  const rawConnectionString =
     connection?.endpoints?.direct?.connectionString
     ?? connection?.endpoints?.pooled?.connectionString
     ?? null;
+  const connectionString =
+    rawConnectionString?.replace(
+      /([?&]sslmode=)(require|prefer|verify-ca)(?=[&#]|$)/i,
+      "$1verify-full"
+    ) ?? null;
 
   const claimUrl = `${claimDbWorkerUrl}/claim?projectID=${projectId}&utm_source=${userAgent || getCommandName()}&utm_medium=cli`;
 
