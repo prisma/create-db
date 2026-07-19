@@ -1,6 +1,34 @@
 import { randomUUID } from "crypto";
+import { defaultClientConfig, prismaPostgres } from "@prisma/ppg";
 import type { ApiResponse, CreateDatabaseResult } from "../types.js";
 import { sendAnalytics } from "../utils/analytics.js";
+
+const READINESS_TIMEOUT_MS = 30_000;
+const READINESS_RETRY_DELAY_MS = 500;
+
+async function waitForDatabaseReady(
+  connectionString: string,
+  timeoutMs = READINESS_TIMEOUT_MS
+): Promise<boolean> {
+  if (!/^postgres(ql)?:\/\//.test(connectionString)) {
+    return true;
+  }
+
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const ppg = prismaPostgres(defaultClientConfig(connectionString));
+      await ppg.sql`SELECT 1`.collect();
+      return true;
+    } catch {
+      await new Promise((resolve) =>
+        setTimeout(resolve, READINESS_RETRY_DELAY_MS)
+      );
+    }
+  }
+
+  return false;
+}
 
 export function getCommandName(): string {
   const executable = process.argv[1] || "create-db";
@@ -141,6 +169,10 @@ export async function createDatabaseCore(
     createDbWorkerUrl
   );
 
+  const ready = connectionString
+    ? await waitForDatabaseReady(connectionString)
+    : false;
+
   return {
     success: true,
     connectionString,
@@ -150,5 +182,6 @@ export async function createDatabaseCore(
     name: database?.name ?? name,
     projectId,
     userAgent,
+    ready,
   };
 }
