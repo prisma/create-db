@@ -45,6 +45,7 @@ export interface DatabaseResult {
   name: string;
   projectId: string;
   userAgent?: string;
+  ready?: boolean;
 }
 
 export interface DatabaseError {
