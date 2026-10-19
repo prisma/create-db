@@ -24,12 +24,12 @@ export default function SidebarActions({
   isMounted,
 }: Props) {
   return (
-    <div className="w-full lg:w-16 h-auto lg:h-auto rounded-lg bg-step flex flex-row lg:flex-col justify-between items-center py-2 px-2 lg:px-0 gap-2 lg:gap-0">
+    <div className="w-full lg:w-16 h-auto lg:h-auto rounded-xl bg-white border border-border flex flex-row lg:flex-col justify-between items-center py-2 px-2 lg:px-0 gap-2 lg:gap-0">
       <div className="flex flex-row lg:flex-col items-center space-y-0 lg:space-y-1 space-x-2 lg:space-x-0 w-full lg:w-auto justify-between lg:justify-start">
         <button
           onClick={onPush}
           disabled={isPushing || isPulling || !hasConnectionString || !isMounted}
-          className="flex flex-row lg:flex-col items-center justify-center rounded-md text-muted hover:text-white hover:bg-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed p-2 lg:aspect-square border border-subtle lg:border-0 w-full lg:w-auto"
+          className="flex flex-row lg:flex-col items-center justify-center rounded-lg text-muted-foreground hover:text-ink hover:bg-black/[0.04] transition-colors disabled:opacity-50 disabled:cursor-not-allowed p-2 lg:aspect-square border border-border lg:border-0 w-full lg:w-auto"
           title={!hasConnectionString ? "No connection string available" : !isMounted ? "Editor initializing..." : "Push schema to database (prisma db push)"}
         >
           {isPushing ? (
@@ -44,13 +44,13 @@ export default function SidebarActions({
               </g>
             </svg>
           )}
-          <span className="text-xs font-bold ml-2 lg:ml-0 lg:mt-1">Push</span>
+          <span className="text-xs font-semibold ml-2 lg:ml-0 lg:mt-1">Push</span>
         </button>
 
         <button
           onClick={onPull}
           disabled={isPulling || isPushing || !hasConnectionString || !isMounted}
-          className="flex flex-row lg:flex-col items-center justify-center rounded-md text-muted hover:text-white hover:bg-button transition-colors disabled:opacity-50 disabled:cursor-not-allowed p-2 lg:aspect-square border border-subtle lg:border-0 w-full lg:w-auto"
+          className="flex flex-row lg:flex-col items-center justify-center rounded-lg text-muted-foreground hover:text-ink hover:bg-black/[0.04] transition-colors disabled:opacity-50 disabled:cursor-not-allowed p-2 lg:aspect-square border border-border lg:border-0 w-full lg:w-auto"
           title={!hasConnectionString ? "No connection string available" : !isMounted ? "Editor initializing..." : "Pull schema from database (prisma db pull)"}
         >
           {isPulling ? (
@@ -65,14 +65,14 @@ export default function SidebarActions({
               </g>
             </svg>
           )}
-          <span className="text-xs font-bold ml-2 lg:ml-0 lg:mt-1">Pull</span>
+          <span className="text-xs font-semibold ml-2 lg:ml-0 lg:mt-1">Pull</span>
         </button>
 
         <button
           onClick={onFormat}
           disabled={isFormatting || isPulling || isPushing || !isMounted}
-          className={`flex flex-row lg:flex-col items-center justify-center text-muted hover:text-white hover:bg-button rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed p-2 lg:aspect-square border border-subtle lg:border-0 w-full lg:w-auto ${
-            isFormatting ? "bg-button text-white" : ""
+          className={`flex flex-row lg:flex-col items-center justify-center text-muted-foreground hover:text-ink hover:bg-black/[0.04] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed p-2 lg:aspect-square border border-border lg:border-0 w-full lg:w-auto ${
+            isFormatting ? "bg-black/[0.04] text-ink" : ""
           }`}
           title={isFormatting ? "Formatting schema..." : !isMounted ? "Editor initializing..." : "Format schema (Shift+Alt+F)"}
         >
@@ -85,7 +85,7 @@ export default function SidebarActions({
               <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="m14.363 5.652l1.48-1.48a2 2 0 0 1 2.829 0l1.414 1.414a2 2 0 0 1 0 2.828l-1.48 1.48m-4.243-4.242l-9.616 9.615a2 2 0 0 0-.578 1.238l-.242 2.74a1 1 0 0 0 1.084 1.085l2.74-.242a2 2 0 0 0 1.24-.578l9.615-9.616m-4.243-4.242l4.243 4.242" />
             </svg>
           )}
-          <span className="text-xs font-bold ml-2 lg:ml-0 lg:mt-1">Format</span>
+          <span className="text-xs font-semibold ml-2 lg:ml-0 lg:mt-1">Format</span>
         </button>
       </div>
     </div>

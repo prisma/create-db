@@ -6,13 +6,13 @@ import { useDatabase } from "../DatabaseContext";
 import { customToast } from "@/lib/custom-toast";
 
 const InlineCode = ({ children }: { children: React.ReactNode }) => (
-  <code className="bg-step px-1 py-0.5 sm:px-1.5 sm:py-0.5 rounded text-white text-xs sm:text-sm">
+  <code className="bg-white border border-border px-1 py-0.5 sm:px-1.5 sm:py-0.5 rounded font-mono text-ink text-xs sm:text-sm">
     {children}
   </code>
 );
 
 const StepNumber = ({ number }: { number: number }) => (
-  <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-table-header rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-medium">
+  <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-white border border-border rounded-full flex items-center justify-center font-mono text-ink text-xs sm:text-sm">
     {number}
   </div>
 );
@@ -97,13 +97,13 @@ const StepItem = ({
   return (
     <div className="flex items-start gap-2 sm:gap-4 w-full">
       <StepNumber number={number} />
-      <div className="leading-relaxed text-sm sm:text-lg text-muted overflow-x-auto min-h-16">
-        <span className="text-white font-medium">{title}</span>
+      <div className="leading-relaxed text-sm sm:text-base text-muted-foreground overflow-x-auto min-h-16">
+        <span className="text-ink font-semibold">{title}</span>
         {content && <div className="mt-1">{content}</div>}
         {code && (
           <div className="mt-2">
-            <pre className="bg-card p-3 rounded border border-subtle overflow-x-auto">
-              <code className="text-sm whitespace-pre">{displayCode}</code>
+            <pre className="bg-white p-3 rounded-xl border border-border overflow-x-auto">
+              <code className="font-mono text-sm text-ink whitespace-pre">{displayCode}</code>
             </pre>
           </div>
         )}
@@ -135,7 +135,7 @@ export default function ConnectPage() {
   };
 
   return (
-    <div className="bg-code rounded-lg rounded-tl-none p-4 sm:p-6 border border-subtle flex flex-col h-full min-h-[calc(100vh-200px)]">
+    <div className="bg-paper rounded-2xl rounded-tl-none p-4 sm:p-6 border border-border flex flex-col h-full min-h-[calc(100vh-200px)]">
       {/* Connection type toggle */}
       {/* <div className="flex flex-col sm:flex-row rounded-md p-1 w-full mb-3 gap-2">
         {(["prisma", "direct"] as const).map((type) => (
@@ -143,8 +143,8 @@ export default function ConnectPage() {
             key={type}
             className={`flex-1 px-3 py-2 sm:py-1 text-sm rounded-md transition-colors font-medium border ${
               connectionType === type
-                ? "text-brand-surface-highlight border-brand-surface-highlight bg-brand-surface-highlight/10"
-                : "text-muted hover:text-white border-transparent bg-table-header hover:bg-brand-surface-highlight/5"
+                ? "text-ink border-border bg-white"
+                : "text-muted-foreground hover:text-ink border-transparent hover:bg-black/[0.03]"
             }`}
             onClick={() => setConnectionType(type)}
           >
@@ -155,12 +155,12 @@ export default function ConnectPage() {
 
       {/* Connection string input */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-6">
-        <div className="bg-card rounded-md font-mono text-sm flex-1 min-h-[48px] sm:h-12 border border-subtle min-w-0 flex items-center">
+        <div className="bg-white rounded-full font-mono text-sm flex-1 min-h-[48px] sm:h-12 border border-border min-w-0 flex items-center px-2">
           <input
             type={showPassword ? "text" : "password"}
             value={connectionString || "Loading connection string..."}
             readOnly
-            className="bg-transparent p-3 text-white text-sm flex-1 outline-none font-mono w-full"
+            className="bg-transparent p-3 text-ink text-sm flex-1 outline-none font-mono w-full"
             style={
               {
                 ["WebkitTextSecurity" as any]: showPassword ? "none" : "disc",
@@ -170,7 +170,7 @@ export default function ConnectPage() {
         </div>
         <div className="flex gap-2">
           <button
-            className="flex items-center justify-center w-12 h-12 border border-subtle rounded-md transition-colors text-muted hover:text-white"
+            className="flex items-center justify-center w-12 h-12 bg-white border border-border rounded-full transition-colors text-muted-foreground hover:text-ink hover:border-black/20"
             onClick={() => setShowPassword(!showPassword)}
             title={
               showPassword ? "Hide connection string" : "Show connection string"
@@ -183,10 +183,10 @@ export default function ConnectPage() {
             )}
           </button>
           <button
-            className={`flex items-center justify-center w-12 h-12 border border-subtle rounded-md transition-colors ${
+            className={`flex items-center justify-center w-12 h-12 bg-white border rounded-full transition-colors ${
               copiedDirect
-                ? "text-green-400 border-green-400"
-                : "text-muted hover:text-white"
+                ? "text-prism-cyan-700 border-prism-cyan-400"
+                : "border-border text-muted-foreground hover:text-ink hover:border-black/20"
             }`}
             onClick={() =>
               handleCopyConnectionString(
@@ -204,10 +204,10 @@ export default function ConnectPage() {
             )}
           </button>
           <button
-            className={`flex items-center justify-center w-12 h-12 border border-subtle rounded-md transition-colors ${
+            className={`flex items-center justify-center w-12 h-12 bg-white border rounded-full transition-colors ${
               copiedAccel
-                ? "text-green-400 border-green-400"
-                : "text-muted hover:text-white"
+                ? "text-prism-cyan-700 border-prism-cyan-400"
+                : "border-border text-muted-foreground hover:text-ink hover:border-black/20"
             }`}
             onClick={() =>
               handleCopyConnectionString(
@@ -229,7 +229,7 @@ export default function ConnectPage() {
 
       <div className="flex-1 flex flex-col">
         <div className="space-y-6">
-          <h3 className="text-lg font-bold text-white mb-4">
+          <h3 className="text-xl mb-4">
             Connect with Prisma ORM
           </h3>
           <div className="space-y-4">
@@ -248,13 +248,13 @@ export default function ConnectPage() {
         </div>
 
         <div className="mt-auto pt-6">
-          <div className="p-3 bg-brand-surface-highlight/10 border border-brand-surface-highlight/20 rounded-md">
-            <p className="text-xs sm:text-sm text-brand-surface-highlight">
-              <Lightbulb className="w-4 h-4 mr-1 inline-block" />
+          <div className="p-3 bg-prism-cyan-50 border border-prism-cyan-200 rounded-xl">
+            <p className="text-xs sm:text-sm text-prism-cyan-900">
+              <Lightbulb className="w-4 h-4 mr-1 inline-block text-prism-cyan-700" />
               <strong>Tip:</strong> To create a DB on the fly from any terminal,
               use{" "}
               <InlineCode>
-                npx create-db<span className="text-muted">@latest</span>
+                npx create-db<span className="text-muted-foreground">@latest</span>
               </InlineCode>
             </p>
           </div>
