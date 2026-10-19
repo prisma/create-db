@@ -19,7 +19,7 @@ const Modal = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] overflow-hidden"
+      className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-center justify-center z-[9999] overflow-hidden"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -30,17 +30,17 @@ const Modal = ({
       tabIndex={-1}
     >
       <div
-        className={`bg-card border border-subtle rounded-lg p-6 ${maxWidth} w-full mx-4 max-h-[90vh] overflow-y-auto`}
+        className={`bg-white border border-border rounded-2xl p-6 shadow-xl ${maxWidth} w-full mx-4 max-h-[90vh] overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 id="modal-title" className="text-lg font-bold text-white">
+          <h2 id="modal-title" className="text-xl">
             {title}
           </h2>
           <button
             type="button"
             aria-label="Close modal"
-            className="text-white/80 hover:text-white"
+            className="flex size-8 items-center justify-center rounded-full text-xl leading-none text-muted-foreground transition-colors hover:bg-black/[0.05] hover:text-ink"
             onClick={onClose}
           >
             ×

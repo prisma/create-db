@@ -45,7 +45,9 @@ describe("success page", () => {
       mockSearchParams.set("projectID", "test-project-123");
       render(<SuccessPage />);
 
-      expect(screen.getByAltText("Database Success")).toBeInTheDocument();
+      expect(
+        screen.getByAltText("Prismo, the Prisma mascot, smiling")
+      ).toBeInTheDocument();
     });
   });
 });

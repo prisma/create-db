@@ -6,52 +6,55 @@ import { createPostgresAdapter } from "@prisma/studio-core/data/postgres-core";
 import { createStudioBFFClient } from "@prisma/studio-core/data/bff";
 import "@prisma/studio-core/ui/index.css";
 
+// Studio on the brand palette (light): ink primary, paper surfaces, prism
+// cyan focus ring, prism red for destructive. Applied to both roots because
+// Studio may toggle .dark on its own.
 const customTheme = `
 @layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --card: #161a20;
-    --card-foreground: #ededed;
-    --popover: #161a20;
-    --popover-foreground: #ededed;
-    --primary: #71e8df;
-    --primary-foreground: #0a0a0a;
-    --secondary: #2d3138;
-    --secondary-foreground: #ededed;
-    --muted: #1c1f26;
-    --muted-foreground: #a0aec0;
-    --accent: #71e8df;
-    --accent-foreground: #0a0a0a;
-    --destructive: #fc8181;
-    --destructive-foreground: #0a0a0a;
-    --border: #202734;
-    --input: #2d3138;
-    --ring: #71e8df;
-    --radius: 0.5rem;
+    --background: #ffffff;
+    --foreground: #3a3b3c;
+    --card: #ffffff;
+    --card-foreground: #3a3b3c;
+    --popover: #ffffff;
+    --popover-foreground: #3a3b3c;
+    --primary: #151515;
+    --primary-foreground: #f9faf5;
+    --secondary: #f6f7f2;
+    --secondary-foreground: #3a3b3c;
+    --muted: #f6f7f2;
+    --muted-foreground: #646567;
+    --accent: #eeffff;
+    --accent-foreground: #151515;
+    --destructive: #d02344;
+    --destructive-foreground: #ffffff;
+    --border: #e5e5e5;
+    --input: #e5e5e5;
+    --ring: #01d7e4;
+    --radius: 0.625rem;
   }
 
   .dark {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --card: #161a20;
-    --card-foreground: #ededed;
-    --popover: #161a20;
-    --popover-foreground: #ededed;
-    --primary: #71e8df;
-    --primary-foreground: #0a0a0a;
-    --secondary: #2d3138;
-    --secondary-foreground: #ededed;
-    --muted: #1c1f26;
-    --muted-foreground: #a0aec0;
-    --accent: #71e8df;
-    --accent-foreground: #0a0a0a;
-    --destructive: #fc8181;
-    --destructive-foreground: #0a0a0a;
-    --border: #202734;
-    --input: #2d3138;
-    --ring: #71e8df;
-    --radius: 0.5rem;
+    --background: #ffffff;
+    --foreground: #3a3b3c;
+    --card: #ffffff;
+    --card-foreground: #3a3b3c;
+    --popover: #ffffff;
+    --popover-foreground: #3a3b3c;
+    --primary: #151515;
+    --primary-foreground: #f9faf5;
+    --secondary: #f6f7f2;
+    --secondary-foreground: #3a3b3c;
+    --muted: #f6f7f2;
+    --muted-foreground: #646567;
+    --accent: #eeffff;
+    --accent-foreground: #151515;
+    --destructive: #d02344;
+    --destructive-foreground: #ffffff;
+    --border: #e5e5e5;
+    --input: #e5e5e5;
+    --ring: #01d7e4;
+    --radius: 0.625rem;
   }
 }`;
 
@@ -68,8 +71,8 @@ export default function StudioClient({ connectionString }: { connectionString: s
   }, [connectionString]);
 
   return (
-    <div className="w-full h-full bg-white rounded-lg rounded-tl-none">
-      <div className="w-full bg-black rounded-tl-none rounded-lg h-full">
+    <div className="w-full h-full overflow-hidden rounded-2xl rounded-tl-none border border-border bg-white">
+      <div className="w-full h-full">
         <Studio theme={customTheme} adapter={adapter} />
       </div>
     </div>

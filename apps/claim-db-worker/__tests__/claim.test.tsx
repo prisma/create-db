@@ -57,7 +57,7 @@ describe("claim page", () => {
       mockSearchParams.set("projectID", "test-project-123");
       render(<ClaimPage />);
 
-      const claimButton = screen.getByText("Claim database");
+      const claimButton = screen.getByRole("button", { name: "Claim database" });
       expect(claimButton).not.toBeDisabled();
 
       fireEvent.click(claimButton);
@@ -102,7 +102,7 @@ describe("claim page", () => {
       mockSearchParams.set("projectID", "test-project-123");
       render(<ClaimPage />);
 
-      const claimButton = screen.getByText("Claim database");
+      const claimButton = screen.getByRole("button", { name: "Claim database" });
       fireEvent.click(claimButton);
 
       await waitFor(() => {
@@ -138,7 +138,7 @@ describe("claim page", () => {
 
       render(<ClaimPage />);
 
-      const claimButton = screen.getByText("Claim database");
+      const claimButton = screen.getByRole("button", { name: "Claim database" });
 
       fireEvent.click(claimButton);
 

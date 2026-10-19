@@ -1,15 +1,7 @@
-import Image from "next/image";
+import { RoleKicker } from "@/components/brand/Brand";
 
+// The brand has no separate Prisma Postgres lockup: the product is named with
+// a role kicker (Postgres owns cyan) and the Prisma logo stays in the navbar.
 export function PrismaPostgresLogo() {
-  return (
-    <div className="mb-8 w-fit">
-      <Image
-        src="/prisma-postgres-logo.svg"
-        alt="Prisma Postgres Logo"
-        width={250}
-        height={100}
-        className="w-40 sm:w-56 md:w-64 lg:w-64 h-auto"
-      />
-    </div>
-  );
+  return <RoleKicker className="mb-4">Prisma Postgres</RoleKicker>;
 }

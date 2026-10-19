@@ -52,47 +52,52 @@ export const createPrismaLanguageConfig = (monaco: any) => {
   });
 };
 
+// Light editor theme on the brand palette. Token colours use the darker steps
+// of the prism scales (700–800) so they hold contrast on white; the bright
+// anchors only appear as accents (cursor, bracket match).
 export const createPrismaTheme = (monaco: any) => {
-  monaco.editor.defineTheme("prisma-dark", {
-    base: "vs-dark",
+  monaco.editor.defineTheme("prisma-light", {
+    base: "vs",
     inherit: true,
     rules: [
-      { token: "keyword.control", foreground: "7f9cf5", fontStyle: "bold" },
-      { token: "keyword.other", foreground: "5a67d8" },
-      { token: "type.primitive", foreground: "71e8df", fontStyle: "bold" },
-      { token: "type.model", foreground: "16a394" },
-      { token: "annotation", foreground: "667eea" },
-      { token: "string", foreground: "92efe6" },
-      { token: "string.escape", foreground: "04c8bb" },
-      { token: "comment", foreground: "a0aec0", fontStyle: "italic" },
-      { token: "number", foreground: "667eea" },
-      { token: "number.float", foreground: "667eea" },
-      { token: "variable.env", foreground: "16a394" },
-      { token: "operator.optional", foreground: "e2e8f0" },
-      { token: "operator.array", foreground: "e2e8f0" },
-      { token: "identifier", foreground: "e2e8f0" },
-      { token: "delimiter.bracket", foreground: "e2e8f0" },
-      { token: "delimiter", foreground: "cbd5e0" },
-      { token: "operator", foreground: "e2e8f0" },
+      { token: "keyword.control", foreground: "af0a33", fontStyle: "bold" }, // prism-red-700
+      { token: "keyword.other", foreground: "af0a33" },
+      { token: "type.primitive", foreground: "007f8d", fontStyle: "bold" }, // prism-cyan-700
+      { token: "type.model", foreground: "006772" }, // prism-cyan-800
+      { token: "annotation", foreground: "965100" }, // prism-yellow-700
+      { token: "string", foreground: "7a4200" }, // prism-yellow-800
+      { token: "string.escape", foreground: "965100" },
+      { token: "comment", foreground: "646567", fontStyle: "italic" }, // text secondary
+      { token: "number", foreground: "d02344" }, // prism-red-600
+      { token: "number.float", foreground: "d02344" },
+      { token: "variable.env", foreground: "006772" },
+      { token: "operator.optional", foreground: "3a3b3c" },
+      { token: "operator.array", foreground: "3a3b3c" },
+      { token: "identifier", foreground: "151515" }, // ink
+      { token: "delimiter.bracket", foreground: "3a3b3c" },
+      { token: "delimiter", foreground: "646567" },
+      { token: "operator", foreground: "3a3b3c" },
     ],
     colors: {
-      "editor.background": "#181b21",
-      "editor.foreground": "#e2e8f0",
-      "editorLineNumber.foreground": "#718096",
-      "editorLineNumber.activeForeground": "#e2e8f0",
-      "editor.selectionBackground": "#2d3748",
-      "editor.selectionHighlightBackground": "#4a5568",
-      "editor.wordHighlightBackground": "#4a5568",
-      "editor.wordHighlightStrongBackground": "#2d3748",
-      "editorCursor.foreground": "#e2e8f0",
-      "editorBracketMatch.background": "#2d374850",
-      "editorBracketMatch.border": "#5a67d8",
-      "editor.lineHighlightBackground": "#2d3748",
-      "editorGutter.background": "#181b22",
-      "editorWhitespace.foreground": "#4a5568",
-      "editorIndentGuide.background": "#4a5568",
-      "editorIndentGuide.activeBackground": "#718096",
-      "editorRuler.foreground": "#4a5568",
+      "editor.background": "#ffffff",
+      "editor.foreground": "#151515",
+      "editorLineNumber.foreground": "#a3a4a6",
+      "editorLineNumber.activeForeground": "#3a3b3c",
+      "editor.selectionBackground": "#b3f4f9", // prism-cyan-200
+      "editor.inactiveSelectionBackground": "#dcfdff",
+      "editor.selectionHighlightBackground": "#dcfdff",
+      "editor.wordHighlightBackground": "#fcedc2", // prism-yellow-100
+      "editor.wordHighlightStrongBackground": "#f8da85",
+      "editorCursor.foreground": "#151515",
+      "editorBracketMatch.background": "#dcfdff",
+      "editorBracketMatch.border": "#01d7e4", // prism-cyan-400
+      "editor.lineHighlightBackground": "#f9faf5", // paper
+      "editor.lineHighlightBorder": "#f9faf5",
+      "editorGutter.background": "#ffffff",
+      "editorWhitespace.foreground": "#e5e5e5",
+      "editorIndentGuide.background": "#ececec",
+      "editorIndentGuide.activeBackground": "#c9cacc",
+      "editorRuler.foreground": "#ececec",
     },
   });
 };
