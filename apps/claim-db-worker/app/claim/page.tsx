@@ -1,8 +1,11 @@
 "use client";
 
 import { PrismaPostgresLogo } from "@/components/PrismaPostgresLogo";
+import { PrismButton } from "@/components/brand/PrismButton";
+import { Mascot } from "@/components/brand/Brand";
+import { StatePanel } from "@/components/brand/StatePanel";
+import { ArrowRight } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import Image from "next/image";
 import { useEffect, useState, Suspense } from "react";
 
 function ClaimContent() {
@@ -56,43 +59,30 @@ function ClaimContent() {
   };
 
   return (
-    <div className="flex flex-col mt-32 items-center justify-center text-center px-4 sm:px-6">
-      <div className="max-w-2xl w-full flex flex-col items-center">
-        <PrismaPostgresLogo />
+    <StatePanel>
+      <Mascot expression="salute" alt="Prismo, the Prisma mascot, saluting" className="mb-8 w-28 sm:w-32" />
+      <PrismaPostgresLogo />
 
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-16 tracking-tight leading-tight">
-          Claim your database
-          <span className="text-muted">*</span>
-        </h1>
+      <h1 className="text-balance text-[clamp(2.25rem,5vw,3.75rem)] leading-[1.06]">
+        Claim your database
+        <span className="text-muted-foreground">*</span>
+      </h1>
 
-        <button
-          onClick={handleClaimClick}
-          disabled={isLoading}
-          className="flex items-center justify-center gap-3 bg-[#24bfa7] hover:bg-[#16A394] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xl sm:text-2xl lg:text-3xl border-none rounded-lg px-8 py-4 sm:px-10 sm:py-5 lg:px-12 lg:py-6 cursor-pointer shadow-lg transition-all duration-200 mb-16 min-h-[44px] sm:min-h-[52px] lg:min-h-[60px] mx-auto"
-        >
-          <Image
-            src="/db-icon.svg"
-            alt="Database Icon"
-            width={24}
-            height={24}
-            className="w-6 h-6"
-          />
+      <div className="mt-10">
+        <PrismButton onClick={handleClaimClick} disabled={isLoading} size="lg">
           Claim database
-          <Image
-            src="/arrow-right.svg"
-            alt="Arrow Right"
-            width={24}
-            height={24}
-            className="w-6 h-6"
-          />
-        </button>
-
-        <p className="text-muted text-sm sm:text-base lg:text-lg italic">
-          *your <b>database will be deleted 24 hours after creation</b> unless
-          you claim it
-        </p>
+          <ArrowRight className="h-5 w-5" aria-hidden />
+        </PrismButton>
       </div>
-    </div>
+
+      <p className="mt-10 max-w-[48ch] text-pretty text-muted-foreground">
+        *Your database will be{" "}
+        <strong className="font-semibold text-foreground">
+          deleted 24 hours after creation
+        </strong>{" "}
+        unless you claim it.
+      </p>
+    </StatePanel>
   );
 }
 

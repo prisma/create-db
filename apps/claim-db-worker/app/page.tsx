@@ -1,6 +1,7 @@
-import Image from "next/image";
 import { PrismaPostgresLogo } from "@/components/PrismaPostgresLogo";
 import { CodeSnippet } from "@/components/CodeSnippet";
+import { PrismButton } from "@/components/brand/PrismButton";
+import { PrismRay, RoleKicker, SpectralWash, Texture } from "@/components/brand/Brand";
 import {
   Globe,
   Zap,
@@ -11,46 +12,43 @@ import {
   Terminal,
   LayoutDashboard,
   Laptop,
-  Pencil,
-  Puzzle,
 } from "lucide-react";
 import { ClientRedirect } from "../components/ClientRedirect";
 import Link from "next/link";
 
+// The three prism colours, in brand order, for anything that comes in threes.
+const PRISM_DOTS = ["bg-prism-cyan-400", "bg-prism-yellow-300", "bg-prism-red-500"];
+const PRISM_BORDERS = [
+  "border-t-prism-cyan-400",
+  "border-t-prism-yellow-300",
+  "border-t-prism-red-500",
+];
+
 const steps = [
   {
-    number: "1",
     title: "Create your database",
     description: (
       <>
         Use the{" "}
-        <Link
-          href="/web/connect"
-          className="text-white font-bold hover:underline"
-        >
+        <Link href="/web/connect" className="font-semibold text-ink underline-offset-4 hover:underline">
           web interface
         </Link>{" "}
-        or run{" "}
-        <span className="text-white font-bold">npx create-db@latest</span> to
-        get a Prisma Postgres database instantly. No account or setup required.
+        or run <code className="font-mono text-[0.9em] font-semibold text-ink">npx create-db@latest</code>{" "}
+        to get a Prisma Postgres database instantly. No account or setup required.
       </>
     ),
   },
   {
-    number: "2",
     title: "Connect and use",
     description:
       "Get your connection string and start building. Perfect for development, testing, prototypes, and AI applications.",
   },
   {
-    number: "3",
     title: "Keep it forever",
     description: (
       <>
-        Claim your database to your Prisma account to keep it permanently.{" "}
-        <span className="italic">
-          Unclaimed databases expire after 24 hours.
-        </span>
+        Claim your database to your Prisma account to keep it permanently. Unclaimed databases
+        expire after 24 hours.
       </>
     ),
   },
@@ -58,23 +56,22 @@ const steps = [
 
 const featuresTable = [
   {
-    icon: <Globe className="w-5 h-5" />,
+    icon: Globe,
     title: "Global deployment",
-    description:
-      "Deploy in regions closest to your users for optimal performance",
+    description: "Deploy in regions closest to your users for optimal performance",
   },
   {
-    icon: <Zap className="w-5 h-5" />,
+    icon: Zap,
     title: "Instant provisioning",
     description: "Get a fully configured PostgreSQL database in seconds",
   },
   {
-    icon: <ArrowRightLeft className="w-5 h-5" />,
+    icon: ArrowRightLeft,
     title: "Seamless migration",
     description: "One-click transfer to your Prisma account when ready",
   },
   {
-    icon: <Sparkles className="w-5 h-5" />,
+    icon: Sparkles,
     title: "Zero configuration",
     description: "No setup, no accounts, no credit cards required",
   },
@@ -82,44 +79,37 @@ const featuresTable = [
 
 const features = [
   {
-    icon: <Zap className="w-5 h-5 text-brand-surface-highlight" />,
-    title: "Instant Database",
+    icon: Zap,
+    title: "Instant database",
     description: "Get a database with just one command",
-    webOnly: false,
   },
   {
-    icon: <Terminal className="w-5 h-5 text-brand-surface-highlight" />,
-    title: "Terminal Ready",
+    icon: Terminal,
+    title: "Terminal ready",
     description: "Perfect for scripts and CI/CD pipelines",
-    webOnly: false,
   },
   {
-    icon: <Sparkles className="w-5 h-5 text-brand-surface-highlight" />,
-    title: "No Configuration Needed",
+    icon: Sparkles,
+    title: "No configuration needed",
     description: "Zero setup required, just run and connect",
-    webOnly: false,
   },
 ];
 
 const featuresWebOnly = [
   {
-    icon: <Laptop className="w-5 h-5 text-brand-surface-highlight" />,
-    title: "Interactive Web Interface",
+    icon: Laptop,
+    title: "Interactive web interface",
     description: "Interact with your database directly in the browser",
-    webOnly: true,
   },
-
   {
-    icon: <Database className="w-5 h-5 text-brand-surface-highlight" />,
-    title: "Visual Schema Editor",
+    icon: Database,
+    title: "Visual schema editor",
     description: "Design your database schema with the built-in editor",
-    webOnly: true,
   },
   {
-    icon: <LayoutDashboard className="w-5 h-5 text-brand-surface-highlight" />,
+    icon: LayoutDashboard,
     title: "Prisma Studio",
     description: "Manage your data with the built-in database client",
-    webOnly: true,
   },
 ];
 
@@ -130,212 +120,187 @@ interface PageProps {
 async function HomePageContent({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
   return (
-    <div className="text-foreground">
+    <div className="w-full">
       <ClientRedirect searchParams={resolvedSearchParams} />
-      <div className="flex flex-col items-center text-center max-w-6xl w-full px-4 sm:px-6">
-        <PrismaPostgresLogo />
 
-        <PillBadge />
+      {/* Hero: the site's wrapped prismatic panel — spectral wash along the
+          bottom, grain, and the triple-band ray passing behind the console. */}
+      <section className="px-3 sm:px-4">
+        <div className="relative mx-auto max-w-[96rem] overflow-hidden rounded-[1.5rem] border border-black/[0.06] bg-white">
+          <SpectralWash />
+          <Texture />
 
-        <h1 className="text-3xl font-[800] text-white mb-6 tracking-tight sm:text-3xl md:text-4xl lg:text-6xl">
-          Get a free, instant Prisma Postgres database
-        </h1>
+          <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 pb-20 pt-16 text-center sm:px-8 md:pb-28 md:pt-24">
+            <div className="flex animate-hero-rise flex-col items-center motion-reduce:animate-none">
+              <PrismaPostgresLogo />
+              <h1 className="max-w-[18ch] text-balance text-[clamp(2.25rem,5vw,3.75rem)] leading-[1.06]">
+                Get a free, instant Prisma Postgres database
+              </h1>
+              <p className="mt-6 max-w-[48ch] text-pretty text-lg leading-relaxed text-muted-foreground">
+                No account or config needed. Spin one up in the browser or from your terminal, and
+                claim it when you want to keep it.
+              </p>
+            </div>
 
-        <div className="w-full max-w-4xl mx-auto mt-8 mb-12">
-          <div className="bg-card/80 p-4 sm:p-8 rounded-xl border border-subtle">
-            <div className="grid grid-cols-1 md:grid-cols-2 sm:gap-8">
-              <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <Globe className="w-6 h-6 text-brand-surface-highlight" />
-                  <h2 className="text-2xl font-bold text-white">
-                    Web Interface
-                  </h2>
+            <div className="relative mt-12 w-full max-w-4xl">
+              <PrismRay
+                className="hidden sm:block left-1/2 top-1/2 h-12 w-[48rem] -translate-x-1/2 -translate-y-1/2 md:h-20 md:w-[72rem]"
+                intensity="hero"
+              />
+              <div className="relative grid grid-cols-1 gap-8 rounded-2xl border border-black/[0.06] bg-white p-6 text-left shadow-sm sm:p-8 md:grid-cols-2">
+                <div>
+                  <RoleKicker color="bg-prism-cyan-400">Web interface</RoleKicker>
+                  <div className="mt-4 h-14">
+                    <PrismButton href="/web/connect" fullWidth className="h-full">
+                      <span className="sm:hidden">Use the web interface</span>
+                      <span className="hidden sm:inline">Create with the web interface</span>
+                      <ArrowRight className="h-5 w-5" aria-hidden />
+                    </PrismButton>
+                  </div>
                 </div>
-                <Link
-                  href="/web/connect"
-                  className="h-16 mb-8 w-full flex items-center justify-center gap-3 bg-button-blue hover:bg-button-blue-hover text-white font-bold text-lg rounded-lg px-6 py-3 cursor-pointer transition-all duration-200"
-                >
-                  <span className="sm:hidden">Use the Web Interface</span>
-                  <span className="hidden sm:block">
-                    Create with the Web Interface
-                  </span>
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-              </div>
-              <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <Terminal className="w-6 h-6 text-brand-surface-highlight" />
-                  <h2 className="text-2xl font-bold text-white">
-                    Command Line
-                  </h2>
-                </div>
-                <div className="h-16">
-                  <CodeSnippet />
+                <div>
+                  <RoleKicker color="bg-prism-yellow-300">Command line</RoleKicker>
+                  <div className="mt-4 h-14">
+                    <CodeSnippet />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="my-6 mt-10 sm:my-6 flex items-center justify-center gap-2 w-full">
-              <Puzzle className="w-5 h-5 text-brand-surface-highlight" />
-              <h1 className="text-white font-bold text-2xl">Features</h1>
+            <p className="relative mt-6 text-sm text-muted-foreground">
+              Databases are deleted after 24 hours unless claimed.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="px-4 py-20 sm:px-8 sm:py-24">
+        <div className="mx-auto max-w-5xl">
+          <SectionHeader kicker="Features" title="Everything you need to start building" />
+          <div className="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="space-y-4">
+              {features.map((feature) => (
+                <FeatureRow key={feature.title} {...feature} />
+              ))}
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                {features.map((feature, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-3 p-4 bg-step/30 rounded-lg border border-subtle"
-                  >
-                    <div className="mt-0.5 flex-shrink-0">{feature.icon}</div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-white">
-                          {feature.title}
-                        </h3>
-                      </div>
-                      <p className="text-muted text-sm mt-1">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-4">
-                {featuresWebOnly.map((feature, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-3 p-4 bg-step/30 rounded-lg border border-subtle"
-                  >
-                    <div className="mt-0.5 flex-shrink-0">{feature.icon}</div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-white">
-                          {feature.title}
-                        </h3>
-                        <span className="text-xs bg-brand-surface-highlight/20 text-brand-surface-highlight px-2 py-0.5 rounded-full">
-                          Web Only
-                        </span>
-                      </div>
-                      <p className="text-muted text-sm mt-1">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="space-y-4">
+              {featuresWebOnly.map((feature) => (
+                <FeatureRow key={feature.title} {...feature} webOnly />
+              ))}
             </div>
           </div>
         </div>
+      </section>
 
-        <p className="text-xs text-muted italic text-center max-w-2xl px-2 sm:text-xs md:text-xs lg:text-sm">
-          databases will be deleted in 24 hours unless claimed
-        </p>
-      </div>
+      {/* How it works */}
+      <section className="px-4 pb-20 sm:px-8 sm:pb-32">
+        <div className="mx-auto max-w-5xl">
+          <SectionHeader kicker="How it works" kickerColor="bg-prism-yellow-300" title="Three steps, zero setup" />
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {steps.map((step, index) => (
+              <div
+                key={step.title}
+                className={`rounded-2xl border border-black/[0.06] border-t-2 ${PRISM_BORDERS[index]} bg-white p-6`}
+              >
+                <p className="font-mono text-sm text-muted-foreground">0{index + 1}</p>
+                <h3 className="mt-3 text-xl">{step.title}</h3>
+                <p className="mt-2 leading-relaxed text-muted-foreground">{step.description}</p>
+              </div>
+            ))}
+          </div>
 
-      <div className="flex flex-col items-center gap-6 py-8 px-4 w-full max-w-2xl mx-auto sm:gap-8 sm:py-10 md:py-16 md:px-5 lg:gap-10 lg:py-32 lg:px-6">
-        <div className="flex flex-col gap-4 w-full sm:gap-7 md:gap-7 lg:gap-8">
-          {steps.map((step, index) => (
-            <Step key={index} step={step} />
-          ))}
-          <FeaturesTable />
-          <div className="flex flex-col gap-3 text-left">
-            <div className="flex items-center gap-3">
-              <div className="bg-step rounded text-white font-bold w-7 h-7 flex items-center justify-center sm:w-7 md:w-8 lg:w-9 sm:text-base md:text-lg lg:text-xl">
-                <Pencil
-                  width={20}
-                  height={20}
-                  className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5"
-                />
+          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {featuresTable.map((feature, index) => (
+              <div
+                key={feature.title}
+                className="rounded-2xl border border-black/[0.06] bg-paper p-6 transition-colors hover:border-black/[0.12]"
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    aria-hidden
+                    className={`size-2 rounded-full ${PRISM_DOTS[index % PRISM_DOTS.length]}`}
+                  />
+                  <feature.icon className="h-5 w-5 text-ink" aria-hidden />
+                  <span className="font-semibold text-ink">{feature.title}</span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  {feature.description}
+                </p>
               </div>
-              <div className="text-white uppercase font-bold sm:text-base md:text-lg lg:text-xl">
-                How it's made
-              </div>
-            </div>
-            <div className="text-muted ml-8 sm:ml-10 md:ml-11 lg:ml-12 md:text-base lg:text-lg">
-              create-db utilizes the power of the Prisma Postgres Management API
-              to create and manage your database. If you'd like to buid
-              something similar, see the{" "}
+            ))}
+          </div>
+
+          <div className="mx-auto mt-16 max-w-2xl text-left md:text-center">
+            <RoleKicker color="bg-prism-red-500" className="md:justify-center">
+              How it&apos;s made
+            </RoleKicker>
+            <p className="mt-4 text-pretty text-lg leading-relaxed text-muted-foreground">
+              create-db utilizes the power of the Prisma Postgres Management API to create and
+              manage your database. If you&apos;d like to build something similar, see the{" "}
               <a
                 href="https://www.prisma.io/partners"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-brand-surface-highlight hover:underline"
+                className="font-semibold text-ink underline underline-offset-4 decoration-prism-cyan-400 decoration-2 hover:decoration-ink"
               >
                 Prisma Partners page
               </a>
               .
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PillBadge() {
-  return (
-    <div className="rounded-full p-px bg-gradient-to-b from-gradient-start to-gradient-end mb-8">
-      <div className="rounded-full px-2 py-1 sm:px-3 sm:py-2 flex items-center gap-2 font-bold bg-card">
-        <Image
-          src="/magic-wand-icon.svg"
-          alt="Magic Wand Icon"
-          width={20}
-          height={20}
-          className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5"
-        />
-        <p className="uppercase font-extrabold text-white text-sm sm:text-base">
-          No account or config needed
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function Step({ step }: { step: (typeof steps)[0] }) {
-  return (
-    <div className="flex flex-col gap-3 text-left">
-      <div className="flex items-center gap-3">
-        <div className="bg-step rounded text-white font-bold w-7 h-7 flex items-center justify-center sm:w-7 md:w-8 lg:w-9 sm:text-base md:text-lg lg:text-xl">
-          {step.number}
-        </div>
-        <div className="text-white uppercase font-bold sm:text-base md:text-lg lg:text-xl">
-          {step.title}
-        </div>
-      </div>
-      <div className="text-muted ml-8 sm:ml-10 md:ml-11 lg:ml-12 md:text-base lg:text-lg">
-        {step.description}
-      </div>
-    </div>
-  );
-}
-
-function FeaturesTable() {
-  return (
-    <div className="flex flex-col gap-3 text-left">
-      <div className="flex items-center gap-3">
-        <div className="bg-step rounded text-white font-bold w-7 h-7 flex items-center justify-center sm:w-7 md:w-8 lg:w-9 sm:text-base md:text-lg lg:text-xl">
-          <Sparkles className="w-4 h-4" />
-        </div>
-        <div className="text-white uppercase font-bold sm:text-base md:text-lg lg:text-xl">
-          Features
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ml-8 sm:ml-10 md:ml-11 lg:ml-12">
-        {featuresTable.map((feature, index) => (
-          <div
-            key={index}
-            className="bg-step rounded-lg p-4 border border-subtle hover:border-brand-surface-highlight/30 transition-colors"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="text-brand-surface-highlight">{feature.icon}</div>
-              <span className="text-white font-bold">{feature.title}</span>
-            </div>
-            <p className="text-muted text-sm leading-relaxed">
-              {feature.description}
             </p>
           </div>
-        ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SectionHeader({
+  kicker,
+  kickerColor = "bg-prism-cyan-400",
+  title,
+}: {
+  kicker: string;
+  kickerColor?: string;
+  title: string;
+}) {
+  return (
+    <div className="flex flex-col items-start text-left md:items-center md:text-center">
+      <RoleKicker color={kickerColor}>{kicker}</RoleKicker>
+      <h2 className="mt-4 max-w-[24ch] text-balance text-[clamp(1.75rem,3.2vw,2.5rem)] leading-[1.1]">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function FeatureRow({
+  icon: Icon,
+  title,
+  description,
+  webOnly = false,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  webOnly?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-4 rounded-2xl border border-black/[0.06] bg-white p-5">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-paper text-ink">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h3 className="text-base">{title}</h3>
+          {webOnly && (
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground/70">
+              <span aria-hidden className="size-1.5 rounded-full bg-prism-cyan-400" />
+              Web only
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>
     </div>
   );

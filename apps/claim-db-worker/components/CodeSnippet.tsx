@@ -15,17 +15,17 @@ export function CodeSnippet() {
   };
 
   return (
-    <div className="bg-code border-2 border-accent shadow-[0_0_20px_5px_#71e8df]/10 flex items-center gap-2 p-3 text-white w-full h-full font-mono rounded-xl font-bold sm:gap-3 sm:p-4">
-      <span className="text-dim text-sm font-medium sm:text-base">$</span>
-      <span className="text-sm sm:text-base flex-1 text-start">
-        npx create-db<span className="text-muted">@latest</span>
+    <div className="flex h-full w-full items-center gap-2 rounded-full border border-border bg-code py-2 pl-5 pr-2 font-mono text-ink sm:gap-3">
+      <span className="text-sm text-muted-foreground sm:text-base">$</span>
+      <span className="flex-1 text-start text-sm font-semibold sm:text-base">
+        npx create-db<span className="font-normal text-muted-foreground">@latest</span>
       </span>
       <button
         onClick={handleCopy}
-        className="bg-button rounded-lg px-2 py-2 cursor-pointer transition-all duration-50 flex items-center text-muted hover:bg-button-hover hover:text-accent sm:px-3"
+        className="flex items-center rounded-full p-2.5 text-muted-foreground transition-colors hover:bg-black/[0.05] hover:text-ink"
         aria-label="Copy command"
       >
-        <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
+        <Copy className="h-4 w-4 sm:h-5 sm:w-5" />
       </button>
     </div>
   );

@@ -3,10 +3,10 @@ import { Info } from "lucide-react";
 
 export default function InfoNote() {
   return (
-    <div className="mt-2 p-3 bg-brand-surface-highlight/10 border border-brand-surface-highlight/20 rounded-md">
-      <p className="text-xs sm:text-sm text-brand-surface-highlight">
+    <div className="mt-2 p-3 bg-prism-cyan-50 border border-prism-cyan-200 rounded-xl">
+      <p className="text-xs sm:text-sm text-prism-cyan-900">
         <Info
-          className="w-4 h-4 mr-1 inline-block"
+          className="w-4 h-4 mr-1 inline-block text-prism-cyan-700"
           aria-hidden="true"
           focusable="false"
         />

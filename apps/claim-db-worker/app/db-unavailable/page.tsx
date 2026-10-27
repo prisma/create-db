@@ -1,7 +1,9 @@
 "use client";
 
 import { cookieUtils } from "@/lib/utils";
-import { Info } from "lucide-react";
+import { Mascot } from "@/components/brand/Brand";
+import { PrismButton } from "@/components/brand/PrismButton";
+import { StatePanel } from "@/components/brand/StatePanel";
 
 const DB_KEY = "temp_db_info";
 
@@ -11,21 +13,17 @@ export default function DBUnavailablePage() {
   };
 
   return (
-    <div className="w-fit min-h-[calc(100vh-200px)] max-w-7xl mx-auto px-2 sm:px-4 py-8 sm:py-16 font-barlow">
-      <div className="bg-code text-center gap-6 h-fit rounded-lg p-4 sm:p-6 border border-subtle flex flex-col">
-        <h1 className="text-2xl gap-2 font-bold flex items-center">
-          <Info className="inline text-brand-surface-highlight" /> Database
-          already claimed or deleted
-        </h1>
-        <p className="text-muted">Please create a new one</p>
-        <a
-          href="/web/connect"
-          className="h-16 w-full flex items-center justify-center gap-3 bg-button-blue hover:bg-button-blue-hover text-white font-bold text-lg rounded-lg px-6 py-3 cursor-pointer transition-all duration-200"
-          onClick={handleCreateNew}
-        >
-          Create New Database
-        </a>
+    <StatePanel>
+      <Mascot expression="sad" alt="Prismo, the Prisma mascot, looking sad" className="mb-8 w-28 sm:w-32" />
+      <h1 className="text-balance text-[clamp(1.75rem,4vw,2.75rem)] leading-[1.1]">
+        Database already claimed or deleted
+      </h1>
+      <p className="mt-4 text-lg text-muted-foreground">Please create a new one</p>
+      <div className="mt-10">
+        <PrismButton href="/web/connect" reload onClick={handleCreateNew} size="lg">
+          Create new database
+        </PrismButton>
       </div>
-    </div>
+    </StatePanel>
   );
 }

@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { customToast } from "@/lib/custom-toast";
 import Modal from "@/components/Modal";
+import { PrismButtonOutline } from "@/components/brand/PrismButton";
 import { useDatabase } from "../DatabaseContext";
 import { formatPrismaSchema } from "@/lib/prismaSchemaEditor/prismaSchemaUtils";
 import {
@@ -104,7 +105,7 @@ export default function SchemaPage() {
 
     createPrismaLanguageConfig(monaco);
     createPrismaTheme(monaco);
-    monaco.editor.setTheme("prisma-dark");
+    monaco.editor.setTheme("prisma-light");
 
     const completionProvider = createCompletionProvider(monaco);
     const hoverProvider = createHoverProvider(monaco);
@@ -226,7 +227,7 @@ export default function SchemaPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)] lg:flex-row bg-code rounded-lg rounded-tl-none p-2 gap-2">
+    <div className="flex flex-col h-[calc(100vh-200px)] lg:flex-row bg-paper border border-border rounded-2xl rounded-tl-none p-2 gap-2">
       {/* Sidebar - responsive layout */}
       <SidebarActions
         onPush={handlePushToDb}
@@ -243,14 +244,14 @@ export default function SchemaPage() {
         <BusyPanel isPulling={isPulling} />
       ) : (
         <div className="flex flex-col h-full w-full">
-          <div className="flex-1 p-1 bg-[#181b21] flex flex-col rounded-lg relative">
+          <div className="flex-1 p-1 bg-white border border-border flex flex-col rounded-xl relative overflow-hidden">
             <div className="flex-1 w-full h-full">
               <Editor
                 language="prisma"
                 value={schemaContent}
                 onChange={(newValue) => setSchemaContent(newValue || "")}
                 onMount={handleEditorDidMount}
-                theme="prisma-dark"
+                theme="prisma-light"
                 options={PRISMA_EDITOR_OPTIONS as any}
               />
             </div>
@@ -266,24 +267,21 @@ export default function SchemaPage() {
         onClose={() => setShowErrorModal(false)}
         title="Schema Push Failed"
       >
-        <div className="text-muted mb-6">
+        <div className="text-muted-foreground mb-6">
           Failed to push schema to database. Please check your schema for
           errors.
         </div>
         {errorDetails && (
-          <div className="bg-step p-4 rounded border border-subtle mb-6">
-            <pre className="text-sm text-muted whitespace-pre-wrap break-words">
+          <div className="bg-code p-4 rounded-xl border border-border mb-6">
+            <pre className="font-mono text-sm text-foreground whitespace-pre-wrap break-words">
               {errorDetails}
             </pre>
           </div>
         )}
         <div className="flex gap-3 justify-end">
-          <button
-            onClick={() => setShowErrorModal(false)}
-            className="px-4 py-2 text-muted hover:text-white transition-colors"
-          >
+          <PrismButtonOutline size="sm" onClick={() => setShowErrorModal(false)}>
             Close
-          </button>
+          </PrismButtonOutline>
         </div>
       </Modal>
 
@@ -295,30 +293,30 @@ export default function SchemaPage() {
         }}
         title="Database Reset Required"
       >
-        <div className="text-muted mb-6">
+        <div className="text-muted-foreground mb-6">
           This operation will reset your database and lose all data. This is
           required when removing models or making other destructive changes.
         </div>
-        <div className="bg-step p-4 rounded border border-subtle mb-6">
-          <p className="text-sm text-muted">
+        <div className="bg-prism-red-50 p-4 rounded-xl border border-prism-red-200 mb-6">
+          <p className="text-sm text-prism-red-800">
             The database will be completely reset and all existing data will be
             lost. This action cannot be undone.
           </p>
         </div>
         <div className="flex gap-3 justify-end">
-          <button
+          <PrismButtonOutline
+            size="sm"
             onClick={() => {
               setShowForceResetModal(false);
               setPendingSchema("");
             }}
-            className="px-4 py-2 text-muted hover:text-white transition-colors"
           >
             Cancel
-          </button>
+          </PrismButtonOutline>
           <button
             onClick={handleForceReset}
             disabled={isPushing}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-full bg-prism-red-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-prism-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isPushing ? "Resetting..." : "Reset Database"}
           </button>
