@@ -23,6 +23,9 @@ import {
   printJson,
   printError,
   printSuccess,
+  printClaimReminder,
+  formatJsonResult,
+  withOutputMode,
   writeEnvFile,
   copyToClipboard,
   openUrlInBrowser,
@@ -141,7 +144,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
     }
 
     await ensureOnline();
-    const result = await createDatabase(
+    const created = await createDatabase(
       region,
       userAgent,
       cliRunId,
@@ -151,17 +154,23 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
     await flushAnalytics();
 
     if (input.json) {
-      printJson(result);
-      if (!result.success) {
+      printJson(
+        created.success
+          ? formatJsonResult(withOutputMode(created, "json"))
+          : created
+      );
+      if (!created.success) {
         process.exit(1);
       }
       return;
     }
 
-    if (!result.success) {
-      printError(result.message);
+    if (!created.success) {
+      printError(created.message);
       process.exit(1);
     }
+
+    const result = withOutputMode(created, input.quiet ? "quiet" : "env");
 
     if (envEnabled) {
       const writeResult = writeEnvFile(envPath!, result.connectionString, result.claimUrl);
@@ -172,11 +181,13 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
 
       if (!input.quiet) {
         printSuccess(`Wrote DATABASE_URL and CLAIM_URL to ${envPath}`);
+        printClaimReminder(result);
       }
     }
 
     if (input.quiet) {
       console.log(result.connectionString ?? "");
+      printClaimReminder(result, "stderr");
     }
 
     if (input.copy) {
@@ -228,7 +239,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
   const spinner = createSpinner();
   spinner.start(region);
 
-  const result = await createDatabase(
+  const created = await createDatabase(
     region,
     userAgent,
     cliRunId,
@@ -236,11 +247,13 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
     ttlMs
   );
 
-  if (!result.success) {
-    spinner.error(result.message);
+  if (!created.success) {
+    spinner.error(created.message);
     await flushAnalytics();
     process.exit(1);
   }
+
+  const result = withOutputMode(created, "default");
 
   spinner.success();
   printDatabaseResult(result);

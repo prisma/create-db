@@ -23,7 +23,7 @@ This monorepo contains tools and services that enable developers to quickly prov
 | `--env`, `-e`         | Write `DATABASE_URL` and `CLAIM_URL` to the specified file   | `--env .env`           |
 | `--ttl`, `-t`         | Set auto-delete TTL (`30m`, `1h` ... `24h`)                  | `--ttl 5h`             |
 | `--copy`, `-c`        | Copy connection string to clipboard                          | `--copy`               |
-| `--quiet`, `-q`       | Output only the connection string                            | `--quiet`              |
+| `--quiet`, `-q`       | Output only the connection string (claim URL on stderr)      | `--quiet`              |
 | `--open`, `-o`        | Open claim URL in browser                                    | `--open`               |
 | `--help`, `-h`        | Show help information                                        | `--help`               |
 
