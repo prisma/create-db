@@ -60,6 +60,20 @@ function applyOpenFlag(result: DatabaseResult, quiet: boolean) {
   }
 }
 
+/**
+ * Exit once stdout and stderr have flushed, so JSON written to a pipe isn't
+ * cut off. trpc-cli exits with 0 after the handler returns, so setting
+ * `process.exitCode` and returning would lose the failure code.
+ */
+async function exitWhenFlushed(code: number): Promise<never> {
+  await Promise.all(
+    [process.stdout, process.stderr].map(
+      (stream) => new Promise<void>((resolve) => stream.write("", () => resolve()))
+    )
+  );
+  process.exit(code);
+}
+
 export async function handleCreate(input: CreateFlagsInput): Promise<void> {
   const cliRunId = randomUUID();
   const CLI_NAME = getCommandName();
@@ -156,7 +170,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
     if (input.json) {
       if (!created.success) {
         printJson(created);
-        process.exit(1);
+        return exitWhenFlushed(1);
       }
 
       const result = withOutputMode(created, "json");
@@ -170,7 +184,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
 
       if (writeResult && !writeResult.success) {
         printError(`Failed to write environment variables to ${envPath}: ${writeResult.error}`);
-        process.exit(1);
+        return exitWhenFlushed(1);
       }
       return;
     }
