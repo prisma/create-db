@@ -74,7 +74,8 @@ export type OutputMode = "default" | "json" | "env" | "quiet";
 
 /**
  * Tag the claim URL with the output mode, so claim page visits can be
- * attributed to the mode that produced them.
+ * attributed to the mode that produced them. The existing query string is
+ * left as is rather than re-serialized, so other params keep their encoding.
  * @param result - The successful database creation result
  * @param mode - The output mode in use
  * @returns The result with a tagged claim URL
@@ -83,7 +84,11 @@ export function withOutputMode(
   result: DatabaseResult,
   mode: OutputMode
 ): DatabaseResult {
-  return { ...result, claimUrl: `${result.claimUrl}&utm_content=${mode}` };
+  const separator = result.claimUrl.includes("?") ? "&" : "?";
+  return {
+    ...result,
+    claimUrl: `${result.claimUrl}${separator}utm_content=${mode}`,
+  };
 }
 
 /**

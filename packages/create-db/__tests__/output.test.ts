@@ -167,6 +167,21 @@ describe("withOutputMode", () => {
     expect(new URL(tagged.claimUrl).searchParams.get("projectID")).toBe("proj_123");
   });
 
+  it("starts a query string when the claim URL has none", () => {
+    const tagged = withOutputMode(
+      { ...sampleResult, claimUrl: "https://create-db.prisma.io/claim/proj_123" },
+      "env"
+    );
+    expect(tagged.claimUrl).toBe("https://create-db.prisma.io/claim/proj_123?utm_content=env");
+  });
+
+  it("keeps the encoding of existing params", () => {
+    const claimUrl =
+      "https://create-db.prisma.io/claim?projectID=proj_123&utm_source=claude-code/my-app&utm_medium=cli";
+    const tagged = withOutputMode({ ...sampleResult, claimUrl }, "default");
+    expect(tagged.claimUrl).toBe(`${claimUrl}&utm_content=default`);
+  });
+
   it("leaves the input result unchanged", () => {
     withOutputMode(sampleResult, "quiet");
     expect(sampleResult.claimUrl).not.toContain("utm_content");
