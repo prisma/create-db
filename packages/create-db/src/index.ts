@@ -10,6 +10,7 @@ import {
   CreateFlags,
   RegionsFlags,
 } from "./cli/flags.js";
+import { version } from "../package.json";
 import { getCommandName } from "./core/database.js";
 import { handleCreate, handleRegions } from "./cli/commands/index.js";
 import { createDatabase, fetchRegions } from "./core/services.js";
@@ -55,7 +56,7 @@ export function createDbCli() {
   return createCli({
     router,
     name: getCommandName(),
-    version: "1.1.0",
+    version,
     description: "Instantly create a temporary Prisma Postgres database",
   });
 }

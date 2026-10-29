@@ -2,7 +2,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { writeEnvFile } from "../src/cli/output.js";
+import {
+  writeEnvFile,
+  withOutputMode,
+  formatDeletionDate,
+  formatJsonResult,
+  printClaimReminder,
+} from "../src/cli/output.js";
+import type { DatabaseResult } from "../src/types.js";
 
 describe("writeEnvFile", () => {
   let tempDir: string;
@@ -140,5 +147,89 @@ describe("writeEnvFile", () => {
 
     const content = fs.readFileSync(envFilePath, "utf8");
     expect(content).toContain(`DATABASE_URL="${connectionString}"`);
+  });
+});
+
+const sampleResult: DatabaseResult = {
+  success: true,
+  connectionString: "postgresql://user:pass@host:5432/postgres",
+  claimUrl:
+    "https://create-db.prisma.io/claim?projectID=proj_123&utm_source=create-db&utm_medium=cli",
+  deletionDate: "2026-10-29T12:00:00.000Z",
+  region: "us-east-1",
+  name: "2026-10-28T12:00:00.000Z",
+  projectId: "proj_123",
+};
+
+describe("withOutputMode", () => {
+  it("appends the output mode to the claim URL as utm_content", () => {
+    const tagged = withOutputMode(sampleResult, "json");
+    expect(tagged.claimUrl).toBe(`${sampleResult.claimUrl}&utm_content=json`);
+    expect(new URL(tagged.claimUrl).searchParams.get("projectID")).toBe("proj_123");
+  });
+
+  it("starts a query string when the claim URL has none", () => {
+    const tagged = withOutputMode(
+      { ...sampleResult, claimUrl: "https://create-db.prisma.io/claim/proj_123" },
+      "env"
+    );
+    expect(tagged.claimUrl).toBe("https://create-db.prisma.io/claim/proj_123?utm_content=env");
+  });
+
+  it("keeps the encoding of existing params", () => {
+    const claimUrl =
+      "https://create-db.prisma.io/claim?projectID=proj_123&utm_source=claude-code/my-app&utm_medium=cli";
+    const tagged = withOutputMode({ ...sampleResult, claimUrl }, "default");
+    expect(tagged.claimUrl).toBe(`${claimUrl}&utm_content=default`);
+  });
+
+  it("leaves the input result unchanged", () => {
+    withOutputMode(sampleResult, "quiet");
+    expect(sampleResult.claimUrl).not.toContain("utm_content");
+  });
+});
+
+describe("formatDeletionDate", () => {
+  it("includes the time zone", () => {
+    const date = new Date(sampleResult.deletionDate);
+    const zone = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" })
+      .formatToParts(date)
+      .find((part) => part.type === "timeZoneName")?.value;
+    expect(zone).toBeTruthy();
+    expect(formatDeletionDate(sampleResult.deletionDate)).toContain(zone);
+  });
+});
+
+describe("formatJsonResult", () => {
+  it("keeps every result field and adds a nextStep with the claim URL and deletion time", () => {
+    const json = formatJsonResult(sampleResult);
+    expect(json).toMatchObject(sampleResult);
+    expect(json.nextStep).toContain(sampleResult.claimUrl);
+    expect(json.nextStep).toContain(sampleResult.deletionDate);
+    expect(json.nextStep.endsWith(sampleResult.claimUrl)).toBe(true);
+  });
+});
+
+describe("printClaimReminder", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("prints the claim URL to stdout by default", () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    printClaimReminder(sampleResult);
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(log.mock.calls[0][0]).toContain(sampleResult.claimUrl);
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  it("prints to stderr when asked, keeping stdout clean", () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    printClaimReminder(sampleResult, "stderr");
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error.mock.calls[0][0]).toContain(sampleResult.claimUrl);
+    expect(log).not.toHaveBeenCalled();
   });
 });

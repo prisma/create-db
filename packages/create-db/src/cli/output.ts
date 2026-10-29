@@ -37,11 +37,23 @@ export function createSpinner() {
 }
 
 /**
+ * Format the deletion date in local time with the time zone, so the time
+ * stays unambiguous when it's relayed from a sandbox in another zone.
+ * @param deletionDate - ISO deletion date from the database result
+ * @returns The formatted date, e.g. "10/30/2026, 9:02:10 AM UTC"
+ */
+export function formatDeletionDate(deletionDate: string) {
+  return new Date(deletionDate).toLocaleString(undefined, {
+    timeZoneName: "short",
+  });
+}
+
+/**
  * Print formatted database creation result to the console.
  * @param result - The successful database creation result
  */
 export function printDatabaseResult(result: DatabaseResult) {
-  const expiryFormatted = new Date(result.deletionDate).toLocaleString();
+  const expiryFormatted = formatDeletionDate(result.deletionDate);
   const clickableUrl = terminalLink(result.claimUrl, result.claimUrl, {
     fallback: false,
   });
@@ -67,6 +79,60 @@ export function printDatabaseResult(result: DatabaseResult) {
       pc.dim(`  Database will be deleted on ${expiryFormatted} if not claimed.`)
     )
   );
+}
+
+/** How the CLI printed its result; recorded on the claim URL as `utm_content`. */
+export type OutputMode = "default" | "json" | "env" | "quiet";
+
+/**
+ * Tag the claim URL with the output mode, so claim page visits can be
+ * attributed to the mode that produced them. The existing query string is
+ * left as is rather than re-serialized, so other params keep their encoding.
+ * @param result - The successful database creation result
+ * @param mode - The output mode in use
+ * @returns The result with a tagged claim URL
+ */
+export function withOutputMode(
+  result: DatabaseResult,
+  mode: OutputMode
+): DatabaseResult {
+  const separator = result.claimUrl.includes("?") ? "&" : "?";
+  return {
+    ...result,
+    claimUrl: `${result.claimUrl}${separator}utm_content=${mode}`,
+  };
+}
+
+/**
+ * Build the JSON printed by `--json`: the result plus a `nextStep` telling the
+ * agent or script to pass the claim URL on, since the database is deleted
+ * unless someone claims it.
+ * @param result - The successful database creation result
+ * @returns The JSON payload
+ */
+export function formatJsonResult(result: DatabaseResult) {
+  return {
+    ...result,
+    nextStep: `The database is deleted at ${result.deletionDate} unless the user claims it, which keeps it for free. Give the user this claim URL: ${result.claimUrl}`,
+  };
+}
+
+/**
+ * Print a one-line claim reminder for the non-interactive modes.
+ * @param result - The successful database creation result
+ * @param stream - Where to print; `stderr` keeps stdout clean for `--quiet`
+ */
+export function printClaimReminder(
+  result: DatabaseResult,
+  stream: "stdout" | "stderr" = "stdout"
+) {
+  const expiryFormatted = formatDeletionDate(result.deletionDate);
+  const line = `Keep your database for free: ${result.claimUrl} (deleted on ${expiryFormatted} if not claimed)`;
+  if (stream === "stderr") {
+    console.error(line);
+  } else {
+    console.log(line);
+  }
 }
 
 /**

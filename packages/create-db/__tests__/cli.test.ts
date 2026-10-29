@@ -2,9 +2,13 @@ import { describe, it, expect } from "vitest";
 import { execa } from "execa";
 import { fileURLToPath } from "url";
 import path from "path";
+import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = path.resolve(__dirname, "../dist/cli.mjs");
+const { version: PACKAGE_VERSION } = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, "../package.json"), "utf8")
+);
 
 const runCli = async (
   args: string[] = [],
@@ -43,13 +47,13 @@ describe("CLI help and version", () => {
   it("displays version with --version flag", async () => {
     const result = await runCli(["--version"]);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
+    expect(result.stdout.trim()).toBe(PACKAGE_VERSION);
   });
 
   it("displays version with -V flag", async () => {
     const result = await runCli(["-V"]);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
+    expect(result.stdout.trim()).toBe(PACKAGE_VERSION);
   });
 
   it("displays create command help", async () => {

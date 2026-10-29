@@ -40,7 +40,7 @@ npx create-db regions    # List available regions
 | `--env <path>` | `-e` | Write DATABASE_URL and CLAIM_URL to specified .env file |
 | `--ttl <duration>` | `-t` | Custom database TTL (`30m`, `1h` ... `24h`) |
 | `--copy` | `-c` | Copy connection string to clipboard |
-| `--quiet` | `-q` | Output only the connection string |
+| `--quiet` | `-q` | Output only the connection string (the claim URL goes to stderr) |
 | `--open` | `-o` | Open claim URL in browser |
 | `--help` | `-h` | Show help message |
 | `--version` | | Show version |
@@ -116,9 +116,14 @@ When using `--json` with `create`, the output includes:
   "deletionDate": "2025-12-13T12:00:00.000Z",
   "region": "us-east-1",
   "name": "2025-12-12T12:00:00.000Z",
-  "projectId": "proj_..."
+  "projectId": "proj_...",
+  "nextStep": "The database is deleted at 2025-12-13T12:00:00.000Z unless the user claims it, which keeps it for free. Give the user this claim URL: https://create-db.prisma.io/claim?projectID=..."
 }
 ```
+
+`nextStep` is for agents and scripts that run `create-db` for someone else: the database is deleted at `deletionDate` unless that person opens `claimUrl` and claims it.
+
+Add `--env <path>` to also write `DATABASE_URL` and `CLAIM_URL` to that file. If the file can't be written, the JSON is still printed and the command exits with code 1.
 
 When using `--json` with `regions`, the output is an array of region objects:
 
@@ -140,6 +145,8 @@ When using `--env`, the following variables are appended to the specified file:
 DATABASE_URL="postgresql://user:pass@host:5432/postgres?sslmode=require"
 CLAIM_URL="https://create-db.prisma.io/claim?projectID=..."
 ```
+
+The CLI also prints the claim URL and deletion time, so the person running it can claim the database before it is deleted.
 
 ## Programmatic API
 
