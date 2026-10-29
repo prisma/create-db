@@ -6,17 +6,20 @@ import {
   createPostgresJSExecutor,
 } from "@prisma/studio-core/data/postgresjs";
 
-/** Whether the connection string points at a Prisma Postgres database, the only ones create-db makes. */
-function isPrismaPostgres(connectionString: string) {
+/**
+ * The Prisma Postgres host the connection string points at, the only databases
+ * create-db makes, or undefined for anything else.
+ */
+function prismaPostgresHost(connectionString: string) {
   try {
     const url = new URL(connectionString);
-    return (
+    const isPrismaPostgres =
       (url.protocol === "postgres:" || url.protocol === "postgresql:") &&
-      (url.hostname === "db.prisma.io" || url.hostname.endsWith(".db.prisma.io")) &&
-      (url.port === "" || url.port === "5432")
-    );
+      /^(?:[a-z0-9-]+\.)*db\.prisma\.io$/.test(url.hostname) &&
+      (url.port === "" || url.port === "5432");
+    return isPrismaPostgres ? url.hostname : undefined;
   } catch {
-    return false;
+    return undefined;
   }
 }
 
@@ -27,7 +30,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json([serializeError(new Error("Connection string not provided"))]);
   }
   // This route is public, so it must not open connections to arbitrary hosts.
-  if (!isPrismaPostgres(connectionString)) {
+  const host = prismaPostgresHost(connectionString);
+  if (!host) {
     return NextResponse.json([
       serializeError(new Error("Only Prisma Postgres connection strings are supported")),
     ]);
@@ -50,6 +54,10 @@ export async function POST(request: NextRequest) {
   const config = createPostgresJSConnectionConfig(connectionString);
   const sql = postgres(config.connectionString, {
     ...config.options,
+    // postgres.js parses the host itself (a comma means several hosts), so
+    // pin the one checked above.
+    host,
+    port: 5432,
     max: 1,
     connect_timeout: 10,
   });
