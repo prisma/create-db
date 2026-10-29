@@ -61,7 +61,12 @@ function jsonCliErrors(): TrpcCliRunParams {
     },
     logger: {
       error: (...parts) => {
-        message ??= parts.join(" ").trim().replace(/^error: /, "");
+        // trpc-cli appends the command's help to validation errors.
+        message ??= parts
+          .join(" ")
+          .replace(/\n+Usage: [\s\S]*$/, "")
+          .trim()
+          .replace(/^error: /, "");
       },
     },
     process: {

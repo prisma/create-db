@@ -110,6 +110,8 @@ describe("CLI error handling", () => {
     const output = JSON.parse(result.stdout);
     expect(output).toMatchObject({ success: false, error: "invalid_arguments" });
     expect(output.message).toContain('--ttl value "25h" is invalid');
+    expect(output.message).not.toContain("Usage:");
+    expect(result.stderr).not.toContain("Usage:");
   });
 
   it("shows error for unknown command", async () => {
