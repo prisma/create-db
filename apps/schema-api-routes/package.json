@@ -2,15 +2,14 @@
   "name": "schema-api-routes",
   "type": "module",
   "dependencies": {
-    "@hono/node-server": "^1.8.2",
-    "hono": "^4.9.4",
-    "prisma": "^7.2.0",
-    "vercel": "^46.0.2"
+    "@hono/node-server": "^2.1.5",
+    "hono": "^4.13.14",
+    "vercel": "^65.7.0"
   },
   "devDependencies": {
-    "@types/node": "^20.11.17",
-    "tsx": "^4.7.1",
-    "typescript": "^5.8.3"
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
   },
   "scripts": {
     "dev": "tsx src/index.ts",

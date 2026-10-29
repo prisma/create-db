@@ -1,7 +1,6 @@
 import { Hono } from "hono";
-import { writeFile, mkdir, rm } from "fs/promises";
-import { spawn } from "child_process";
-import { execSync } from "child_process";
+
+import { withPrismaProject } from "../../prisma.js";
 
 const app = new Hono();
 
@@ -25,78 +24,42 @@ app.post("/", async (c) => {
       );
     }
 
-    const tempDir = "/tmp";
-    const timestamp = Date.now();
-    const projectDir = `${tempDir}/prisma-${timestamp}`;
-    const schemaPath = `${projectDir}/schema.prisma`;
-    const configPath = `${projectDir}/prisma.config.ts`;
-
-    try {
-      await mkdir(projectDir, { recursive: true });
-      await writeFile(schemaPath, schema);
-
-      const prismaConfig = `import { defineConfig, env } from 'prisma/config';
-
-export default defineConfig({
-  datasource: {
-    url: env('DATABASE_URL'),
-  },
-})`;
-      await writeFile(configPath, prismaConfig);
-
-      const packageJson = `{
-  "name": "temp-prisma-project",
-  "type": "module",
-  "dependencies": {
-    "prisma": "7.2.0"
-  }
-}`;
-      await writeFile(`${projectDir}/package.json`, packageJson);
-
-      execSync('npm install --no-save', {
-        cwd: projectDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-        env: {
-          ...process.env,
-          HOME: tempDir,
-          npm_config_cache: `${tempDir}/.npm-cache`,
-          npm_config_userconfig: `${tempDir}/.npmrc`,
-        },
-      });
-
-      try {
-        const result = execSync(
-          `npx prisma db push --schema=${schemaPath} --accept-data-loss --force-reset`,
-          {
-            env: {
-              ...process.env,
-              DATABASE_URL: connectionString,
-            },
-            cwd: projectDir,
-            encoding: "utf8",
-            stdio: "pipe",
-          }
+    return await withPrismaProject(connectionString, schema, async (prisma) => {
+      const emit = await prisma.run(["contract", "emit"]);
+      if (!emit.ok) {
+        return c.json(
+          { error: "Invalid schema", details: prisma.describe(emit) },
+          400
         );
-      } catch (error) {
-        throw error;
+      }
+
+      let update = await prisma.run(["db", "update"]);
+      if (update.error?.code === "CLI.CONSENT_REQUIRED") {
+        // The user confirmed the data loss, so answer each question with
+        // --delete. Anything else (a rename, an access change) can't be
+        // answered from a yes, so it stays a failure.
+        const unanswered = update.error.meta?.unanswered ?? [];
+        if (unanswered.every((consent) => consent.verbs.includes("delete"))) {
+          update = await prisma.run([
+            "db",
+            "update",
+            ...unanswered.flatMap((consent) => ["--delete", consent.subject]),
+          ]);
+        }
+      }
+      if (!update.ok) {
+        throw new Error(prisma.describe(update));
       }
 
       return c.json({
         success: true,
-        message: "Schema pushed successfully with force reset",
+        message: "Schema pushed successfully",
       });
-    } finally {
-      try {
-        await rm(projectDir, { recursive: true, force: true });
-      } catch (cleanupError) {
-        console.error("Cleanup error:", cleanupError);
-      }
-    }
+    });
   } catch (error) {
     return c.json(
       {
-        error: "Failed to push schema with force reset",
+        error: "Failed to push schema",
         details: error instanceof Error ? error.message : String(error),
       },
       500

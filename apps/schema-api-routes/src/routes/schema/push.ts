@@ -1,7 +1,6 @@
 import { Hono } from "hono";
-import { writeFile, mkdir, rm } from "fs/promises";
-import { spawn } from "child_process";
-import { execSync } from "child_process";
+
+import { withPrismaProject } from "../../prisma.js";
 
 const app = new Hono();
 
@@ -25,88 +24,37 @@ app.post("/", async (c) => {
       );
     }
 
-    const tempDir = "/tmp";
-    const timestamp = Date.now();
-    const projectDir = `${tempDir}/prisma-${timestamp}`;
-    const schemaPath = `${projectDir}/schema.prisma`;
-    const configPath = `${projectDir}/prisma.config.ts`;
-
-    try {
-      await mkdir(projectDir, { recursive: true });
-      await writeFile(schemaPath, schema);
-
-      const prismaConfig = `import { defineConfig, env } from 'prisma/config';
-
-export default defineConfig({
-  datasource: {
-    url: env('DATABASE_URL'),
-  },
-})`;
-      await writeFile(configPath, prismaConfig);
-
-      const packageJson = `{
-  "name": "temp-prisma-project",
-  "type": "module",
-  "dependencies": {
-    "prisma": "7.2.0"
-  }
-}`;
-      await writeFile(`${projectDir}/package.json`, packageJson);
-
-      execSync('npm install --no-save', {
-        cwd: projectDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-        env: {
-          ...process.env,
-          HOME: tempDir,
-          npm_config_cache: `${tempDir}/.npm-cache`,
-          npm_config_userconfig: `${tempDir}/.npmrc`,
-        },
-      });
-
-      try {
-        const result = execSync(
-          `npx prisma db push --schema=${schemaPath} --accept-data-loss`,
-          {
-            env: {
-              ...process.env,
-              DATABASE_URL: connectionString,
-            },
-            cwd: projectDir,
-            encoding: "utf8",
-            stdio: "pipe",
-          }
+    return await withPrismaProject(connectionString, schema, async (prisma) => {
+      const emit = await prisma.run(["contract", "emit"]);
+      if (!emit.ok) {
+        return c.json(
+          { error: "Invalid schema", details: prisma.describe(emit) },
+          400
         );
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          (error.message.includes("data loss") ||
-            error.message.includes("force-reset") ||
-            error.message.includes("reset") ||
-            error.message.includes("neither a built-in type"))
-        ) {
-          return c.json({
-            requiresForceReset: true,
-            message:
-              "This operation will reset your database and lose all data. Please confirm to continue.",
-          });
-        } else {
-          throw error;
-        }
+      }
+
+      const update = await prisma.run(["db", "update"]);
+      if (update.error?.code === "CLI.CONSENT_REQUIRED") {
+        // Applying this schema would lose data; the editor asks before pushing
+        // again through /push-force.
+        const dataLoss = (update.error.meta?.unanswered ?? []).map(
+          (consent) => consent.subject
+        );
+        return c.json({
+          requiresForceReset: true,
+          dataLoss,
+          message: `This push deletes data in ${dataLoss.join(", ")}. Please confirm to continue.`,
+        });
+      }
+      if (!update.ok) {
+        throw new Error(prisma.describe(update));
       }
 
       return c.json({
         success: true,
         message: "Schema pushed successfully",
       });
-    } finally {
-      try {
-        await rm(projectDir, { recursive: true, force: true });
-      } catch (cleanupError) {
-        console.error("Cleanup error:", cleanupError);
-      }
-    }
+    });
   } catch (error) {
     return c.json(
       {
