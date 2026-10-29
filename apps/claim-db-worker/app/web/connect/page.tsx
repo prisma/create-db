@@ -27,13 +27,14 @@ const buildSteps: BuildStep[] = [
   {
     title: "Install Dependencies",
     content: null,
-    code: `npm install prisma tsx @types/pg --save-dev
-npm install @prisma/client @prisma/adapter-pg dotenv pg`,
+    code: `npm pkg set type=module
+npm install @prisma/orm-postgres dotenv
+npm install prisma @prisma/cli-engine @types/node --save-dev`,
   },
   {
     title: "Initialize Prisma",
     content: null,
-    code: "npx prisma init",
+    code: "npx prisma orm init --target postgres --authoring psl --skip-install",
   },
   {
     title: "Set connection string in .env",
@@ -43,28 +44,20 @@ npm install @prisma/client @prisma/adapter-pg dotenv pg`,
   {
     title: "Pull the database schema",
     content: null,
-    code: "npx prisma db pull",
+    code: "npx prisma contract infer",
   },
   {
-    title: "Generate Prisma Client",
+    title: "Emit the contract",
     content: null,
-    code: "npx prisma generate",
+    code: "npx prisma contract emit",
   },
   {
     title: "Start querying",
-    content: <span>Import and use Prisma Client in your application</span>,
-    code: `import { PrismaClient } from "./generated/prisma/client.js";
-import { PrismaPg } from "@prisma/adapter-pg";
+    content: <span>Import the client from src/prisma/db.ts</span>,
+    code: `import { db } from "./src/prisma/db";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
-
-const prisma = new PrismaClient({
-  adapter,
-});
-
-export default prisma;`,
+// Each model in your schema is on db.orm.public, for example:
+const users = await db.orm.public.User.all();`,
   },
 ];
 
@@ -163,7 +156,7 @@ export default function ConnectPage() {
             className="bg-transparent p-3 text-ink text-sm flex-1 outline-none font-mono w-full"
             style={
               {
-                ["WebkitTextSecurity" as any]: showPassword ? "none" : "disc",
+                WebkitTextSecurity: showPassword ? "none" : "disc",
               } as React.CSSProperties
             }
           />

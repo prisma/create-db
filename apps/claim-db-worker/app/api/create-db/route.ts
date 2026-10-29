@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 interface PrismaProject {
   id?: string;
@@ -22,7 +22,7 @@ interface PrismaProject {
 const CREATE_DB_WORKER_URL =
   process.env.CREATE_DB_WORKER_URL || "https://create-db-temp.prisma.io";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const name = new Date().toISOString();
 

@@ -41,7 +41,7 @@ describe("auth callback API", () => {
       const { exchangeCodeForToken, validateProject } = await import(
         "@/lib/auth-utils"
       );
-      const { redirectToError, redirectToSuccess } = await import(
+      const { redirectToSuccess } = await import(
         "@/lib/response-utils"
       );
       const { transferProject } = await import("@/lib/project-transfer");
@@ -87,7 +87,7 @@ describe("auth callback API", () => {
         "http://localhost:3000/api/auth/callback?code=test-code&state=test-state&projectID=test-project-123"
       );
 
-      const response = await GET(request);
+      await GET(request);
 
       expect(exchangeCodeForToken).toHaveBeenCalledWith(
         "test-code",

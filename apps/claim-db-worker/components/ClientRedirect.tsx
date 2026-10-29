@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 interface ClientRedirectProps {
   searchParams: { [key: string]: string | string[] | undefined };

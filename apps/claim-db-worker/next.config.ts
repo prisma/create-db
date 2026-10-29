@@ -1,17 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@prisma/client", ".prisma/client", "postgres"],
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        path: false,
-      };
-    }
-    return config;
-  },
+  // Left to OpenNext's bundler, which picks postgres.js's workerd build
+  // (TCP through cloudflare:sockets) instead of its Node.js one.
+  serverExternalPackages: ["postgres"],
 };
 
 export default nextConfig;

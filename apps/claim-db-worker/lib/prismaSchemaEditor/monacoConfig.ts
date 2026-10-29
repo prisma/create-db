@@ -1,6 +1,9 @@
+import type { Monaco } from "@monaco-editor/react";
+import type { editor as MonacoEditor, languages, Position } from "monaco-editor";
+
 import { isInsideBlock } from "./prismaSchemaUtils";
 
-export const createPrismaLanguageConfig = (monaco: any) => {
+export const createPrismaLanguageConfig = (monaco: Monaco) => {
   monaco.languages.register({ id: "prisma" });
 
   monaco.languages.setMonarchTokensProvider("prisma", {
@@ -8,7 +11,7 @@ export const createPrismaLanguageConfig = (monaco: any) => {
       root: [
         [/\/\/.*$/, "comment"],
         [/\/\*/, "comment", "@comment"],
-        [/\b(generator|datasource|model|enum|type|view)\b/, "keyword.control"],
+        [/\b(model|enum|type|view)\b/, "keyword.control"],
         [
           /\b(provider|url|relationMode|binaryTargets|previewFeatures|output|directUrl|shadowDatabaseUrl)\b/,
           "keyword.other",
@@ -55,7 +58,7 @@ export const createPrismaLanguageConfig = (monaco: any) => {
 // Light editor theme on the brand palette. Token colours use the darker steps
 // of the prism scales (700–800) so they hold contrast on white; the bright
 // anchors only appear as accents (cursor, bracket match).
-export const createPrismaTheme = (monaco: any) => {
+export const createPrismaTheme = (monaco: Monaco) => {
   monaco.editor.defineTheme("prisma-light", {
     base: "vs",
     inherit: true,
@@ -102,10 +105,10 @@ export const createPrismaTheme = (monaco: any) => {
   });
 };
 
-export const createCompletionProvider = (monaco: any) => {
+export const createCompletionProvider = (monaco: Monaco) => {
   return monaco.languages.registerCompletionItemProvider("prisma", {
     triggerCharacters: ["@", "=", '"', " ", "\n", "{"],
-    provideCompletionItems: (model: any, position: any) => {
+    provideCompletionItems: (model: MonacoEditor.ITextModel, position: Position) => {
       const word = model.getWordUntilPosition(position);
       const range = {
         startLineNumber: position.lineNumber,
@@ -119,71 +122,16 @@ export const createCompletionProvider = (monaco: any) => {
       const allText = model.getValue();
       const linesBefore = allText.split("\n").slice(0, position.lineNumber - 1);
 
-      const isInGenerator = isInsideBlock(linesBefore, line, "generator");
-      const isInDatasource = isInsideBlock(linesBefore, line, "datasource");
       const isInModel = isInsideBlock(linesBefore, line, "model");
       const isInEnum = isInsideBlock(linesBefore, line, "enum");
       const isAfterAt = beforeCursor.trim().endsWith("@");
-      const isFieldDeclaration =
-        isInModel && /^\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$/.test(beforeCursor);
       const isFieldType =
         isInModel && /^\s+[a-zA-Z_][a-zA-Z0-9_]*\s+$/.test(beforeCursor);
-      const isPropertyValue = /=\s*$/.test(beforeCursor);
-      const isAfterSpace = beforeCursor.endsWith(" ");
       const isNewLine = beforeCursor.trim() === "";
       const isInsideParens =
         beforeCursor.includes("(") && !beforeCursor.includes(")");
 
-      let suggestions: any[] = [];
-
-      if (isInDatasource && !isPropertyValue) {
-        const datasourceProps = [
-          { name: "provider", snippet: 'provider = "${1:postgresql}"' },
-          { name: "url", snippet: 'url = env("${1:DATABASE_URL}")' },
-          {
-            name: "directUrl",
-            snippet: 'directUrl = env("${1:DIRECT_URL}")',
-          },
-          {
-            name: "shadowDatabaseUrl",
-            snippet: 'shadowDatabaseUrl = env("${1:SHADOW_DATABASE_URL}")',
-          },
-        ];
-
-        suggestions.push(
-          ...datasourceProps.map((prop) => ({
-            label: prop.name,
-            kind: monaco.languages.CompletionItemKind.Property,
-            insertText: prop.snippet,
-            insertTextRules:
-              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            range,
-          }))
-        );
-      }
-
-      if (
-        isInDatasource &&
-        isPropertyValue &&
-        beforeCursor.includes("provider")
-      ) {
-        const providers = [
-          "postgresql",
-          "mysql",
-          "sqlite",
-          "sqlserver",
-          "mongodb",
-          "cockroachdb",
-        ];
-        suggestions.push(
-          ...providers.map((provider) => ({
-            label: `"${provider}"`,
-            kind: monaco.languages.CompletionItemKind.Value,
-            insertText: `"${provider}"`,
-            range,
-          }))
-        );
-      }
+      const suggestions: languages.CompletionItem[] = [];
 
       if (isInModel && isNewLine && !isFieldType && !isAfterAt) {
         suggestions.push(
@@ -191,7 +139,7 @@ export const createCompletionProvider = (monaco: any) => {
             label: "id",
             kind: monaco.languages.CompletionItemKind.Snippet,
             insertText:
-              "id    ${1|Int,String|} @id @default(${2|autoincrement(),cuid(),uuid()|})",
+              "id    ${1|Int @id @default(autoincrement()),String @id @onCreate(cuid(2)),String @id @onCreate(uuid())|}",
             insertTextRules:
               monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             documentation: "Primary key field",
@@ -220,7 +168,7 @@ export const createCompletionProvider = (monaco: any) => {
           {
             label: "updatedAt",
             kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: "updatedAt DateTime @updatedAt",
+            insertText: "updatedAt DateTime @onCreate(now()) @onUpdate(now())",
             documentation: "Update timestamp field",
             range,
             sortText: "4",
@@ -283,24 +231,19 @@ export const createCompletionProvider = (monaco: any) => {
             desc: "Defines a relation",
           },
           {
-            name: "updatedAt",
-            snippet: "updatedAt",
-            desc: "Auto-updates timestamp",
+            name: "onCreate",
+            snippet: "onCreate(${1|cuid(2),uuid(),now()|})",
+            desc: "Sets a value when the record is created",
+          },
+          {
+            name: "onUpdate",
+            snippet: "onUpdate(now())",
+            desc: "Sets a value whenever the record is updated",
           },
           {
             name: "map",
             snippet: 'map("${1:column_name}")',
             desc: "Maps to database column",
-          },
-          {
-            name: "db",
-            snippet: "db.${1:VarChar(255)}",
-            desc: "Database-specific attribute",
-          },
-          {
-            name: "ignore",
-            snippet: "ignore",
-            desc: "Excludes field from client",
           },
         ];
 
@@ -322,14 +265,8 @@ export const createCompletionProvider = (monaco: any) => {
       if (isInsideParens && beforeCursor.includes("@default(")) {
         const functions = [
           { name: "autoincrement()", desc: "Auto-incrementing integer" },
-          { name: "cuid()", desc: "Collision-resistant unique identifier" },
-          { name: "uuid()", desc: "UUID v4" },
           { name: "now()", desc: "Current timestamp" },
-          { name: 'env("DATABASE_URL")', desc: "Environment variable" },
-          {
-            name: 'dbgenerated("expression")',
-            desc: "Database-generated value",
-          },
+          { name: "sql`expression`", desc: "SQL expression the database evaluates" },
         ];
 
         suggestions.push(
@@ -344,91 +281,9 @@ export const createCompletionProvider = (monaco: any) => {
         );
       }
 
-      if (isInGenerator && !isPropertyValue) {
-        const generatorProps = [
-          {
-            name: "provider",
-            snippet: 'provider = "${1:prisma-client-js}"',
-          },
-          {
-            name: "output",
-            snippet: 'output = "${1:../generated/client}"',
-          },
-          {
-            name: "previewFeatures",
-            snippet: 'previewFeatures = [${1:"relationJoins"}]',
-          },
-          {
-            name: "binaryTargets",
-            snippet: 'binaryTargets = [${1:"native"}]',
-          },
-        ];
-
-        suggestions.push(
-          ...generatorProps.map((prop) => ({
-            label: prop.name,
-            kind: monaco.languages.CompletionItemKind.Property,
-            insertText: prop.snippet,
-            insertTextRules:
-              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            range,
-          }))
-        );
-      }
-
-      if (isInGenerator && isPropertyValue) {
-        if (beforeCursor.includes("provider")) {
+      if (!isInModel && !isInEnum) {
+        if (isNewLine || /^\s*(mod|enu|typ|vie)/.test(line)) {
           suggestions.push(
-            {
-              label: '"prisma-client"',
-              kind: monaco.languages.CompletionItemKind.Value,
-              insertText: '"prisma-client"',
-              range,
-            },
-            {
-              label: '"prisma-client-js"',
-              kind: monaco.languages.CompletionItemKind.Value,
-              insertText: '"prisma-client-js"',
-              range,
-            }
-          );
-        } else if (beforeCursor.includes("previewFeatures")) {
-          const features = [
-            "relationJoins",
-            "fullTextSearch",
-            "postgresqlExtensions",
-            "views",
-            "multiSchema",
-          ];
-          suggestions.push(
-            ...features.map((feature) => ({
-              label: `"${feature}"`,
-              kind: monaco.languages.CompletionItemKind.Value,
-              insertText: `"${feature}"`,
-              range,
-            }))
-          );
-        }
-      }
-
-      if (!isInGenerator && !isInDatasource && !isInModel && !isInEnum) {
-        if (isNewLine || /^\s*(gen|mod|dat|enu|typ|vie)/.test(line)) {
-          suggestions.push(
-            {
-              label: "generator",
-              kind: monaco.languages.CompletionItemKind.Class,
-              insertText: [
-                "generator ${1:client} {",
-                '  provider = "prisma-client"',
-                '  output   = "../generated/prisma/client"',
-                "}",
-              ].join("\n"),
-              insertTextRules:
-                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: "Define a code generator",
-              range,
-              sortText: "1",
-            },
             {
               label: "model",
               kind: monaco.languages.CompletionItemKind.Class,
@@ -444,21 +299,6 @@ export const createCompletionProvider = (monaco: any) => {
               documentation: "Define a data model",
               range,
               sortText: "2",
-            },
-            {
-              label: "datasource",
-              kind: monaco.languages.CompletionItemKind.Module,
-              insertText: [
-                "datasource ${1:db} {",
-                '  provider = "${2:postgresql}"',
-                '  url      = env("${3:DATABASE_URL}")',
-                "}",
-              ].join("\n"),
-              insertTextRules:
-                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: "Define a datasource",
-              range,
-              sortText: "3",
             },
             {
               label: "enum",
@@ -495,27 +335,25 @@ export const createCompletionProvider = (monaco: any) => {
   });
 };
 
-export const createHoverProvider = (monaco: any) => {
+export const createHoverProvider = (monaco: Monaco) => {
   return monaco.languages.registerHoverProvider("prisma", {
-    provideHover: (model: any, position: any) => {
+    provideHover: (model: MonacoEditor.ITextModel, position: Position) => {
       const word = model.getWordAtPosition(position);
       if (!word) return;
 
       const documentation: { [key: string]: string } = {
         model:
           "**Model** - Represents an entity in your application domain and maps to a table (relational databases) or collection (MongoDB)",
-        generator:
-          "**Generator** - Determines which assets are created from your Prisma schema",
-        datasource:
-          "**Datasource** - Tells Prisma what database you use and how to connect to it",
         enum: "**Enum** - Defines a list of possible values for a field",
         "@id": "**@id** - Defines a single-field ID on the model",
         "@unique": "**@unique** - Defines a unique constraint for this field",
         "@default": "**@default** - Defines a default value for this field",
         "@relation":
           "**@relation** - Defines meta information about the relation",
-        "@updatedAt":
-          "**@updatedAt** - Automatically stores the time when a record was last updated",
+        onCreate:
+          "**@onCreate** - Sets a value when the record is created, e.g. `@onCreate(cuid(2))`",
+        onUpdate:
+          "**@onUpdate** - Sets a value whenever the record is updated, e.g. `@onUpdate(now())`",
         "@map":
           "**@map** - Maps a field name or enum value from the Prisma schema to a column or document field name in the database",
         String: "**String** - Variable length text",
@@ -529,8 +367,8 @@ export const createHoverProvider = (monaco: any) => {
         Bytes: "**Bytes** - Raw bytes (binary data)",
         autoincrement:
           "**autoincrement()** - Creates a sequence of integers in the underlying database",
-        cuid: "**cuid()** - Generates a globally unique identifier based on the cuid spec",
-        uuid: "**uuid()** - Generates a globally unique identifier based on the UUID spec",
+        cuid: "**cuid(2)** - Generates a globally unique identifier based on the cuid spec; use it in `@onCreate`",
+        uuid: "**uuid()** - Generates a globally unique identifier based on the UUID spec; use it in `@onCreate`",
         now: "**now()** - Sets a timestamp of the time when a record is created",
       };
 
@@ -550,11 +388,11 @@ export const createHoverProvider = (monaco: any) => {
 };
 
 export const createFormattingProvider = (
-  monaco: any,
+  monaco: Monaco,
   formatPrismaSchema: (schema: string) => string
 ) => {
   return monaco.languages.registerDocumentFormattingEditProvider("prisma", {
-    provideDocumentFormattingEdits: (model: any) => {
+    provideDocumentFormattingEdits: (model: MonacoEditor.ITextModel) => {
       const value = model.getValue();
       const formatted = formatPrismaSchema(value);
 
@@ -569,8 +407,8 @@ export const createFormattingProvider = (
 };
 
 export const createEditorActions = (
-  monaco: any,
-  editor: any,
+  monaco: Monaco,
+  editor: MonacoEditor.IStandaloneCodeEditor,
   handleFormat: () => void
 ) => {
   editor.addAction({

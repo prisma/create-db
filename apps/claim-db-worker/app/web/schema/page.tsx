@@ -2,6 +2,8 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import type { OnMount } from "@monaco-editor/react";
+import type { editor as MonacoEditor } from "monaco-editor";
 import { customToast } from "@/lib/custom-toast";
 import Modal from "@/components/Modal";
 import { PrismButtonOutline } from "@/components/brand/PrismButton";
@@ -35,41 +37,31 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
 
 export default function SchemaPage() {
   const { dbInfo } = useDatabase();
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const [isFormatting, setIsFormatting] = useState(false);
   const [isPushing, setIsPushing] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [isPageRefresh, setIsPageRefresh] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      const first = !sessionStorage.getItem("editor-initialized");
-      if (first) {
-        sessionStorage.setItem("editor-initialized", "true");
-        return true;
-      }
-    }
-    return false;
-  });
-  const [completionDisposable, setCompletionDisposable] = useState<any>(null);
+  const [completionDisposable, setCompletionDisposable] = useState<{
+    dispose: () => void;
+  } | null>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string>("");
   const [showForceResetModal, setShowForceResetModal] = useState(false);
   const [pendingSchema, setPendingSchema] = useState<string>("");
+  const [dataLoss, setDataLoss] = useState<string[]>([]);
   const [isPulling, setIsPulling] = useState(false);
-  const [schemaContent, setSchemaContent] = useState<string>(
-    DEFAULT_PRISMA_SCHEMA
-  );
-
-  useEffect(() => {
+  // The editor only renders on the client, so reading the saved schema up
+  // front can't make the server and client markup differ.
+  const [schemaContent, setSchemaContent] = useState<string>(() => {
     try {
       const saved =
         typeof window !== "undefined"
           ? sessionStorage.getItem("schema-content")
           : null;
-      if (saved) {
-        setSchemaContent(saved);
-      }
+      if (saved) return saved;
     } catch {}
-  }, []);
+    return DEFAULT_PRISMA_SCHEMA;
+  });
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -91,16 +83,11 @@ export default function SchemaPage() {
 
   useEffect(() => {
     return () => {
-      if (
-        completionDisposable &&
-        typeof completionDisposable.dispose === "function"
-      ) {
-        completionDisposable.dispose();
-      }
+      completionDisposable?.dispose();
     };
   }, [completionDisposable]);
 
-  const handleEditorDidMount = (editor: any, monaco: any) => {
+  const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
 
     createPrismaLanguageConfig(monaco);
@@ -159,6 +146,7 @@ export default function SchemaPage() {
 
       if (result.requiresForceReset) {
         setPendingSchema(currentValue);
+        setDataLoss(result.dataLoss ?? []);
         setShowForceResetModal(true);
         return;
       }
@@ -168,7 +156,7 @@ export default function SchemaPage() {
       console.error("Error pushing to database:", error);
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      setErrorDetails(`Network error during push: ${errorMessage}`);
+      setErrorDetails(errorMessage);
       setShowErrorModal(true);
     } finally {
       setIsPushing(false);
@@ -198,7 +186,7 @@ export default function SchemaPage() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      setErrorDetails(`Network error during pull: ${errorMessage}`);
+      setErrorDetails(errorMessage);
       setShowErrorModal(true);
     } finally {
       setIsPulling(false);
@@ -218,7 +206,7 @@ export default function SchemaPage() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      setErrorDetails(`Network error during force reset: ${errorMessage}`);
+      setErrorDetails(errorMessage);
       setShowErrorModal(true);
       setShowForceResetModal(false);
     } finally {
@@ -252,7 +240,7 @@ export default function SchemaPage() {
                 onChange={(newValue) => setSchemaContent(newValue || "")}
                 onMount={handleEditorDidMount}
                 theme="prisma-light"
-                options={PRISMA_EDITOR_OPTIONS as any}
+                options={PRISMA_EDITOR_OPTIONS}
               />
             </div>
 
@@ -291,16 +279,19 @@ export default function SchemaPage() {
           setShowForceResetModal(false);
           setPendingSchema("");
         }}
-        title="Database Reset Required"
+        title="Confirm Data Loss"
       >
         <div className="text-muted-foreground mb-6">
-          This operation will reset your database and lose all data. This is
-          required when removing models or making other destructive changes.
+          Pushing this schema deletes the data stored in:
         </div>
         <div className="bg-prism-red-50 p-4 rounded-xl border border-prism-red-200 mb-6">
-          <p className="text-sm text-prism-red-800">
-            The database will be completely reset and all existing data will be
-            lost. This action cannot be undone.
+          <ul className="text-sm text-prism-red-800 font-mono list-disc pl-5">
+            {dataLoss.map((subject) => (
+              <li key={subject}>{subject}</li>
+            ))}
+          </ul>
+          <p className="text-sm text-prism-red-800 mt-3">
+            Everything else is kept. This action cannot be undone.
           </p>
         </div>
         <div className="flex gap-3 justify-end">
@@ -318,7 +309,7 @@ export default function SchemaPage() {
             disabled={isPushing}
             className="rounded-full bg-prism-red-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-prism-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isPushing ? "Resetting..." : "Reset Database"}
+            {isPushing ? "Pushing..." : "Delete and Push"}
           </button>
         </div>
       </Modal>

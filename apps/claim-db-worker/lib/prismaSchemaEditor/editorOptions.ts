@@ -1,4 +1,6 @@
-export const PRISMA_EDITOR_OPTIONS = {
+import type { editor } from "monaco-editor";
+
+export const PRISMA_EDITOR_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   minimap: { enabled: true },
   fontSize: 14,
   fontFamily:
@@ -47,7 +49,6 @@ export const PRISMA_EDITOR_OPTIONS = {
   autoClosingBrackets: "always",
   autoClosingQuotes: "always",
   autoIndent: "full",
-  iPadShowKeyboard: false,
   acceptSuggestionOnCommitCharacter: true,
   acceptSuggestionOnEnter: "off",
   tabCompletion: "on",

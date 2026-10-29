@@ -21,7 +21,6 @@ const WebLayoutContent = ({ children }: WebLayoutProps) => {
   const {
     setTimeRemaining,
     setProjectId,
-    setIsLoading,
     handleClaimDatabase,
     timeRemaining,
   } = useDropContext();

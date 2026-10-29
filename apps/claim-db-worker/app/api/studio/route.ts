@@ -1,67 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPrismaPostgresHttpClient } from "@prisma/studio-core/data/ppg";
-import { serializeError } from "@prisma/studio-core/data/bff";
+import postgres from "postgres";
+import { serializeError, type StudioBFFRequest } from "@prisma/studio-core/data/bff";
+import {
+  createPostgresJSConnectionConfig,
+  createPostgresJSExecutor,
+} from "@prisma/studio-core/data/postgresjs";
 
+/** Studio's backend: runs the queries Studio sends against the user's database. */
 export async function POST(request: NextRequest) {
+  const connectionString = request.headers.get("X-Connection-String");
+  if (!connectionString) {
+    return NextResponse.json([serializeError(new Error("Connection string not provided"))]);
+  }
+
+  let payload: StudioBFFRequest;
   try {
-    // 1. Check if request has content
-    const contentType = request.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      return NextResponse.json([
-        serializeError(new Error("Content-Type must be application/json")),
-      ]);
+    payload = (await request.json()) as StudioBFFRequest;
+  } catch (parseError) {
+    return NextResponse.json([
+      serializeError(
+        new Error(
+          `Invalid JSON: ${parseError instanceof Error ? parseError.message : "Unknown error"}`
+        )
+      ),
+    ]);
+  }
+
+  // One client per request: a worker can't keep connections between requests.
+  const config = createPostgresJSConnectionConfig(connectionString);
+  const sql = postgres(config.connectionString, { ...config.options, max: 1 });
+  const executor = createPostgresJSExecutor(sql);
+
+  try {
+    if (payload.procedure === "query") {
+      const [error, result] = await executor.execute(payload.query, {
+        schema: payload.schema,
+      });
+      return NextResponse.json([error ? serializeError(error) : null, result]);
     }
 
-    // 2. Extract the query and custom data from the request
-    let body;
-    try {
-      const text = await request.text();
-      if (!text || text.trim() === "") {
-        return NextResponse.json([
-          serializeError(new Error("Request body is empty")),
-        ]);
-      }
-      body = JSON.parse(text) as { query: any };
-    } catch (parseError) {
-      return NextResponse.json([
-        serializeError(
-          new Error(
-            `Invalid JSON: ${parseError instanceof Error ? parseError.message : "Unknown error"}`
-          )
-        ),
-      ]);
+    if (payload.procedure === "transaction" && executor.executeTransaction) {
+      const [error, result] = await executor.executeTransaction(payload.queries);
+      return NextResponse.json([error ? serializeError(error) : null, result]);
     }
 
-    const { query } = body;
-
-    if (!query) {
-      return NextResponse.json([
-        serializeError(new Error("Query is required in request body")),
-      ]);
+    if (payload.procedure === "sql-lint" && executor.lintSql) {
+      const [error, result] = await executor.lintSql({
+        schema: payload.schema,
+        schemaVersion: payload.schemaVersion,
+        sql: payload.sql,
+      });
+      return NextResponse.json([error ? serializeError(error) : null, result]);
     }
 
-    // 3. Get connection string from custom header
-    const connectionString = request.headers.get("X-Connection-String");
-
-    if (!connectionString) {
-      return NextResponse.json([
-        serializeError(new Error("Connection string not provided")),
-      ]);
-    }
-
-    // 4. Execute the query against Prisma Postgres
-    const [error, results] = await createPrismaPostgresHttpClient({
-      url: connectionString,
-    }).execute(query);
-
-    // 5. Return results or errors
-    if (error) {
-      return NextResponse.json([serializeError(error)]);
-    }
-
-    return NextResponse.json([null, results]);
+    return new NextResponse(`${payload.procedure} is not supported`, { status: 501 });
   } catch (error) {
     console.error("Studio API error:", error);
     return NextResponse.json([serializeError(error as Error)]);
+  } finally {
+    await sql.end();
   }
 }
