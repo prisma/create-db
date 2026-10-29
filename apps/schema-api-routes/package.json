@@ -3,8 +3,7 @@
   "type": "module",
   "dependencies": {
     "@hono/node-server": "^2.1.5",
-    "hono": "^4.13.14",
-    "vercel": "^65.7.0"
+    "hono": "^4.13.14"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
