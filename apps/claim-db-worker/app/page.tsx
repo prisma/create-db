@@ -3,7 +3,6 @@ import { CodeSnippet } from "@/components/CodeSnippet";
 import { PrismButton } from "@/components/brand/PrismButton";
 import { PrismRay, RoleKicker, SpectralWash, Texture } from "@/components/brand/Brand";
 import {
-  Globe,
   Zap,
   ArrowRightLeft,
   Database,
@@ -56,24 +55,24 @@ const steps = [
 
 const featuresTable = [
   {
-    icon: Globe,
-    title: "Global deployment",
-    description: "Deploy in regions closest to your users for optimal performance",
+    icon: Sparkles,
+    title: "Free to start",
+    description: "No account or credit card. Claimed, it runs on the free plan: 200k operations a month, 2 GB",
   },
   {
     icon: Zap,
-    title: "Instant provisioning",
-    description: "Get a fully configured PostgreSQL database in seconds",
+    title: "Autoscaling",
+    description: "No instance to size or upgrade, and you pay per operation",
+  },
+  {
+    icon: Terminal,
+    title: "Built for agents",
+    description: "An agent can create one with npx create-db and manage it through the Prisma MCP server",
   },
   {
     icon: ArrowRightLeft,
-    title: "Seamless migration",
-    description: "One-click transfer to your Prisma account when ready",
-  },
-  {
-    icon: Sparkles,
-    title: "Zero configuration",
-    description: "No setup, no accounts, no credit cards required",
+    title: "Keep it in one click",
+    description: "Claim it to your Prisma account when you're ready",
   },
 ];
 
