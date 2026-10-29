@@ -37,11 +37,23 @@ export function createSpinner() {
 }
 
 /**
+ * Format the deletion date in local time with the time zone, so the time
+ * stays unambiguous when it's relayed from a sandbox in another zone.
+ * @param deletionDate - ISO deletion date from the database result
+ * @returns The formatted date, e.g. "10/30/2026, 9:02:10 AM UTC"
+ */
+export function formatDeletionDate(deletionDate: string) {
+  return new Date(deletionDate).toLocaleString(undefined, {
+    timeZoneName: "short",
+  });
+}
+
+/**
  * Print formatted database creation result to the console.
  * @param result - The successful database creation result
  */
 export function printDatabaseResult(result: DatabaseResult) {
-  const expiryFormatted = new Date(result.deletionDate).toLocaleString();
+  const expiryFormatted = formatDeletionDate(result.deletionDate);
   const clickableUrl = terminalLink(result.claimUrl, result.claimUrl, {
     fallback: false,
   });
@@ -114,7 +126,7 @@ export function printClaimReminder(
   result: DatabaseResult,
   stream: "stdout" | "stderr" = "stdout"
 ) {
-  const expiryFormatted = new Date(result.deletionDate).toLocaleString();
+  const expiryFormatted = formatDeletionDate(result.deletionDate);
   const line = `Keep your database for free: ${result.claimUrl} (deleted on ${expiryFormatted} if not claimed)`;
   if (stream === "stderr") {
     console.error(line);

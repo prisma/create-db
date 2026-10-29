@@ -5,6 +5,7 @@ import path from "path";
 import {
   writeEnvFile,
   withOutputMode,
+  formatDeletionDate,
   formatJsonResult,
   printClaimReminder,
 } from "../src/cli/output.js";
@@ -185,6 +186,17 @@ describe("withOutputMode", () => {
   it("leaves the input result unchanged", () => {
     withOutputMode(sampleResult, "quiet");
     expect(sampleResult.claimUrl).not.toContain("utm_content");
+  });
+});
+
+describe("formatDeletionDate", () => {
+  it("includes the time zone", () => {
+    const date = new Date(sampleResult.deletionDate);
+    const zone = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" })
+      .formatToParts(date)
+      .find((part) => part.type === "timeZoneName")?.value;
+    expect(zone).toBeTruthy();
+    expect(formatDeletionDate(sampleResult.deletionDate)).toContain(zone);
   });
 });
 

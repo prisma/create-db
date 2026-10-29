@@ -123,6 +123,8 @@ When using `--json` with `create`, the output includes:
 
 `nextStep` is for agents and scripts that run `create-db` for someone else: the database is deleted at `deletionDate` unless that person opens `claimUrl` and claims it.
 
+Add `--env <path>` to also write `DATABASE_URL` and `CLAIM_URL` to that file. If the file can't be written, the JSON is still printed and the command exits with code 1.
+
 When using `--json` with `regions`, the output is an array of region objects:
 
 ```json

@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { execa } from "execa";
 import { fileURLToPath } from "url";
 import path from "path";
+import fs from "fs";
+import os from "os";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = path.resolve(__dirname, "../dist/cli.mjs");
@@ -60,6 +62,24 @@ describe("CLI database creation", () => {
     expect(parsed).toHaveProperty("connectionString");
     expect(parsed).toHaveProperty("claimUrl");
     expect(parsed.success).toBe(true);
+  }, 30000);
+
+  it("writes the env file and prints JSON with --json --env", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "create-db-json-env-"));
+    const envPath = path.join(dir, ".env");
+    try {
+      const result = await runCli(["--json", "--env", envPath]);
+      expect(result.exitCode).toBe(0);
+      const parsed = JSON.parse(result.stdout.trim());
+      expect(parsed.success).toBe(true);
+      expect(parsed.nextStep).toContain(parsed.claimUrl);
+
+      const content = fs.readFileSync(envPath, "utf8");
+      expect(content).toContain(`CLAIM_URL="${parsed.claimUrl}"`);
+      expect(content).toContain("DATABASE_URL=");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   }, 30000);
 
   it("lists regions with regions command", async () => {

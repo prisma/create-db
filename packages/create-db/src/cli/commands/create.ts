@@ -154,12 +154,22 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
     await flushAnalytics();
 
     if (input.json) {
-      printJson(
-        created.success
-          ? formatJsonResult(withOutputMode(created, "json"))
-          : created
-      );
       if (!created.success) {
+        printJson(created);
+        process.exit(1);
+      }
+
+      const result = withOutputMode(created, "json");
+      const writeResult = envEnabled
+        ? writeEnvFile(envPath!, result.connectionString, result.claimUrl)
+        : null;
+
+      // Print the JSON even if the env write failed, so the connection
+      // string and claim URL aren't lost.
+      printJson(formatJsonResult(result));
+
+      if (writeResult && !writeResult.success) {
+        printError(`Failed to write environment variables to ${envPath}: ${writeResult.error}`);
         process.exit(1);
       }
       return;
