@@ -17,12 +17,12 @@
     "prepare": "node .husky/install.mjs"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.5",
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1",
+    "@changesets/cli": "^3.0.3",
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
     "husky": "^9.1.7",
-    "prettier": "^3.0.0",
-    "turbo": "^2.8.16",
-    "typescript": "^5.0.0"
+    "prettier": "^3.9.10",
+    "turbo": "^2.11.10",
+    "typescript": "^7.0.2"
   }
 }
