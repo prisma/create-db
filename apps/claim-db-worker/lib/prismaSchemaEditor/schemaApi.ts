@@ -103,10 +103,12 @@ export const pullSchema = async (
   };
 };
 
+/** Pushes, deleting only the confirmed `dataLoss` subjects; asks again if the push would delete others. */
 export const forcePushSchema = async (
   schema: string,
-  connectionString: string
-): Promise<void> => {
+  connectionString: string,
+  dataLoss: string[]
+): Promise<{ requiresForceReset?: boolean; dataLoss?: string[] }> => {
   const response = await fetch(
       `${API_URL}/push-force`,
     {
@@ -115,11 +117,16 @@ export const forcePushSchema = async (
         "Content-Type": "application/json",
         "X-Connection-String": connectionString,
       },
-      body: JSON.stringify({ schema }),
+      body: JSON.stringify({ schema, dataLoss }),
     }
   );
 
   if (!response.ok) {
     throw await responseError("Push", response);
   }
+
+  return (await response.json()) as {
+    requiresForceReset?: boolean;
+    dataLoss?: string[];
+  };
 };

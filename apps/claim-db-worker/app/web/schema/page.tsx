@@ -199,7 +199,16 @@ export default function SchemaPage() {
     setIsPushing(true);
 
     try {
-      await forcePushSchema(pendingSchema, dbInfo.connectionString);
+      const result = await forcePushSchema(
+        pendingSchema,
+        dbInfo.connectionString,
+        dataLoss
+      );
+      if (result.requiresForceReset) {
+        // The database changed since the user confirmed; show the new list.
+        setDataLoss(result.dataLoss ?? []);
+        return;
+      }
       customToast("success", "Schema pushed to database successfully");
       setShowForceResetModal(false);
       setPendingSchema("");

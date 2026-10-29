@@ -34,12 +34,16 @@ app.post("/", async (c) => {
       }
 
       const update = await prisma.run(["db", "update"]);
-      if (update.error?.code === "CLI.CONSENT_REQUIRED") {
-        // Applying this schema would lose data; the editor asks before pushing
-        // again through /push-force.
-        const dataLoss = (update.error.meta?.unanswered ?? []).map(
-          (consent) => consent.subject
-        );
+      const unanswered = update.error?.meta?.unanswered ?? [];
+      // Applying this schema would delete data; the editor asks before pushing
+      // again through /push-force. Other questions (a rename, an access change)
+      // can't be answered from the editor, so they fall through as a failure.
+      if (
+        update.error?.code === "CLI.CONSENT_REQUIRED" &&
+        unanswered.length > 0 &&
+        unanswered.every((consent) => consent.verbs.includes("delete"))
+      ) {
+        const dataLoss = unanswered.map((consent) => consent.subject);
         return c.json({
           requiresForceReset: true,
           dataLoss,
