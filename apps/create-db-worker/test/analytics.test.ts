@@ -7,21 +7,21 @@ describe('PosthogEventCapture', () => {
 	});
 
 	it('does nothing when POSTHOG_API_HOST is missing', async () => {
-		const fetchSpy = vi.spyOn(global, 'fetch');
+		const fetchSpy = vi.spyOn(globalThis, 'fetch');
 		const capture = new PosthogEventCapture({ POSTHOG_API_KEY: 'key' });
 		await capture.capture('test_event');
 		expect(fetchSpy).not.toHaveBeenCalled();
 	});
 
 	it('does nothing when POSTHOG_API_KEY is missing', async () => {
-		const fetchSpy = vi.spyOn(global, 'fetch');
+		const fetchSpy = vi.spyOn(globalThis, 'fetch');
 		const capture = new PosthogEventCapture({ POSTHOG_API_HOST: 'https://posthog.example.com' });
 		await capture.capture('test_event');
 		expect(fetchSpy).not.toHaveBeenCalled();
 	});
 
 	it('sends a POST request to the capture endpoint', async () => {
-		const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response(null, { status: 200 }));
+		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 200 }));
 		const capture = new PosthogEventCapture({
 			POSTHOG_API_HOST: 'https://posthog.example.com',
 			POSTHOG_API_KEY: 'phc_testkey',
@@ -41,7 +41,7 @@ describe('PosthogEventCapture', () => {
 	});
 
 	it('strips trailing slash from host', async () => {
-		const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response(null, { status: 200 }));
+		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 200 }));
 		const capture = new PosthogEventCapture({
 			POSTHOG_API_HOST: 'https://posthog.example.com///',
 			POSTHOG_API_KEY: 'key',
@@ -52,7 +52,7 @@ describe('PosthogEventCapture', () => {
 	});
 
 	it('throws EventCaptureError on non-ok response', async () => {
-		vi.spyOn(global, 'fetch').mockResolvedValue(new Response(null, { status: 500, statusText: 'Internal Server Error' }));
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 500, statusText: 'Internal Server Error' }));
 		const capture = new PosthogEventCapture({
 			POSTHOG_API_HOST: 'https://posthog.example.com',
 			POSTHOG_API_KEY: 'key',

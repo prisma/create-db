@@ -44,7 +44,7 @@ describe('GET /test', () => {
 
 describe('POST /create', () => {
 	beforeEach(() => {
-		vi.spyOn(global, 'fetch').mockResolvedValue(
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
 			new Response(JSON.stringify({ data: { id: 'proj_123' } }), { status: 201 }),
 		);
 	});
