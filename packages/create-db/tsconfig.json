@@ -4,6 +4,7 @@
 		"module": "ESNext",
 		"moduleResolution": "bundler",
 		"esModuleInterop": true,
+		"resolveJsonModule": true,
 		"verbatimModuleSyntax": true,
 		"strict": true,
 		"skipLibCheck": true,
