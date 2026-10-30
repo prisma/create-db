@@ -20,35 +20,54 @@ type ProjectsResponse = {
 	};
 };
 
+const PROJECTS_PAGE_SIZE = 1000;
+const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
+
 export class DeleteStaleProjectsWorkflow extends WorkflowEntrypoint<Env, Params> {
 	async run(event: WorkflowEvent<Params>, step: WorkflowStep): Promise<void> {
-		const res = await step.do('fetch-projects', async () => {
-			const response = await fetch('https://api.prisma.io/v1/projects?limit=1000', {
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${this.env.INTEGRATION_TOKEN}`,
-				},
+		const projects: Project[] = [];
+		let cursor: string | null = null;
+		let page = 0;
+
+		do {
+			const pageCursor: string | null = cursor;
+			const res: string = await step.do(`fetch-projects-${page}`, async () => {
+				const url = new URL('https://api.prisma.io/v1/projects');
+				url.searchParams.set('limit', String(PROJECTS_PAGE_SIZE));
+				if (pageCursor) {
+					url.searchParams.set('cursor', pageCursor);
+				}
+
+				const response = await fetch(url, {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${this.env.INTEGRATION_TOKEN}`,
+					},
+				});
+
+				if (!response.ok) {
+					throw new Error(`Failed to fetch projects: ${response.statusText}`);
+				}
+
+				const data = await response.text();
+				return data;
 			});
 
-			if (!response.ok) {
-				throw new Error(`Failed to fetch projects: ${response.statusText}`);
-			}
+			const body: ProjectsResponse = JSON.parse(res);
+			projects.push(...body.data);
+			cursor = body.pagination.hasMore ? body.pagination.nextCursor : null;
+			page += 1;
+		} while (cursor);
 
-			const data = await response.text();
-			return data;
-		});
-
-		const projects: ProjectsResponse = JSON.parse(res);
 		const now = Date.now();
-		const twentyFourHours = 24 * 60 * 60 * 1000;
 
-		const staleProjects = projects.data.filter((project) => {
+		const staleProjects = projects.filter((project) => {
 			const createdAt = new Date(project.createdAt).getTime();
-			return now - createdAt > twentyFourHours;
+			return now - createdAt > STALE_AFTER_MS;
 		});
 
-		console.log(`Total projects: ${projects.data.length}, Stale projects: ${staleProjects.length}`);
+		console.log(`Total projects: ${projects.length}, Stale projects: ${staleProjects.length}`);
 
 		for (const project of staleProjects) {
 			await step.do(`delete-project-${project.id}`, async () => {
