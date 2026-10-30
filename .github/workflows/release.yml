@@ -73,20 +73,44 @@ jobs:
                   echo "Using POSTHOG_API_HOST=${POSTHOG_API_HOST}"
 
                   for pkg in ${{ env.WORKSPACES }}; do
-                    echo "Publishing $pkg to npm..."
                     cd "${{ env.PACKAGES_DIR }}/$pkg"
                     export POSTHOG_API_HOST="${POSTHOG_API_HOST}"
                     export POSTHOG_API_KEY="${POSTHOG_API_KEY}"
                     export CREATE_DB_WORKER_URL="${CREATE_DB_WORKER_URL}"
                     export CLAIM_DB_WORKER_URL="${CLAIM_DB_WORKER_URL}"
 
-                    # First try to publish
-                    if ! pnpm publish --access public --no-git-checks; then
-                      echo "Publish failed, trying to bump version and retry..."
-                      npm version patch --no-git-tag-version
-                      pnpm publish --access public --no-git-checks || echo "Publish failed again for $pkg"
+                    version=$(node -p "require('./package.json').version")
+
+                    # Merges that don't bump the version have nothing to publish
+                    if npm view "$pkg@$version" version >/dev/null 2>&1; then
+                      echo "$pkg@$version is already on npm, skipping."
+                    else
+                      echo "Publishing $pkg@$version to npm..."
+                      pnpm publish --access public --no-git-checks
                     fi
                     cd - >/dev/null
+                  done
+
+            - name: ✅ Verify Published Versions
+              run: |
+                  for pkg in ${{ env.WORKSPACES }}; do
+                    version=$(node -p "require('./${{ env.PACKAGES_DIR }}/$pkg/package.json').version")
+
+                    # The registry can take a few seconds to serve a new version
+                    published=""
+                    for attempt in 1 2 3 4 5 6; do
+                      published=$(npm view "$pkg@$version" version 2>/dev/null || true)
+                      if [ "$published" = "$version" ]; then
+                        break
+                      fi
+                      sleep 10
+                    done
+
+                    if [ "$published" != "$version" ]; then
+                      echo "::error::$pkg@$version is not on npm"
+                      exit 1
+                    fi
+                    echo "$pkg@$version is on npm."
                   done
 
             - name: 📝 Ensure Changeset Exists
