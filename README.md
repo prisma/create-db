@@ -173,7 +173,7 @@ CLAIM_DB_WORKER_URL="http://127.0.0.1:9999"
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22.12+ (the published CLIs run on Node.js 20.12+)
 - pnpm
 - Cloudflare account (for worker development)
 

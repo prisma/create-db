@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useCallback, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { cookieUtils } from "@/lib/utils";
 import { useDropContext } from "../contexts/DropContext";
@@ -39,6 +39,35 @@ interface DatabaseProviderProps {
   children: React.ReactNode;
 }
 
+/** The create-db worker's response, as far as this context reads it. */
+interface CreateDatabaseResponse {
+  projectId?: string;
+  databaseId?: string;
+  response?: {
+    data?: {
+      database?: {
+        connectionString: string;
+        directConnection?: { user: string; pass: string; host: string };
+      };
+    };
+  };
+}
+
+const saveToCookie = (data: DatabaseInfo) => {
+  cookieUtils.set(DB_KEY, JSON.stringify(data), 1);
+};
+
+const loadFromCookie = (): Partial<DatabaseInfo> | null => {
+  try {
+    const stored = cookieUtils.get(DB_KEY);
+    if (!stored) return null;
+    const data = JSON.parse(stored);
+    return Date.now() > data.expirationTime ? null : data;
+  } catch {
+    return null;
+  }
+};
+
 export const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
   const [dbInfo, setDbInfo] = useState<DatabaseInfo>({
     connectionString: "",
@@ -51,21 +80,6 @@ export const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
   const router = useRouter();
   const { setIsLoading } = useDropContext();
 
-  const saveToCookie = (data: DatabaseInfo) => {
-    cookieUtils.set(DB_KEY, JSON.stringify(data), 1);
-  };
-
-  const loadFromCookie = () => {
-    try {
-      const stored = cookieUtils.get(DB_KEY);
-      if (!stored) return null;
-      const data = JSON.parse(stored);
-      return Date.now() > data.expirationTime ? null : data;
-    } catch {
-      return null;
-    }
-  };
-
   const clearDatabase = () => {
     cookieUtils.remove(DB_KEY);
     setDbInfo({
@@ -77,7 +91,7 @@ export const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
     });
   };
 
-  const refreshDatabase = async () => {
+  const refreshDatabase = useCallback(async () => {
     setLoading(true);
     setIsLoading(true);
     try {
@@ -85,7 +99,7 @@ export const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
 
-      const result = (await response.json()) as any;
+      const result = (await response.json()) as CreateDatabaseResponse;
       const db = result.response?.data?.database;
 
       if (db) {
@@ -94,23 +108,23 @@ export const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
           : "";
 
         const newDbInfo = {
-          projectId: result.projectId,
+          projectId: result.projectId ?? "",
           connectionString: db.connectionString,
           directConnectionString: directConnString,
           expirationTime: Date.now() + 24 * 60 * 60 * 1000,
-          databaseId: result.databaseId,
+          databaseId: result.databaseId ?? "",
         };
 
         setDbInfo(newDbInfo);
         saveToCookie(newDbInfo);
       }
-    } catch (error) {
+    } catch {
       router.replace(`/error?title=Error&message=Failed to create database`);
     } finally {
       setLoading(false);
       setIsLoading(false);
     }
-  };
+  }, [router, setIsLoading]);
 
   useEffect(() => {
     const initializeDatabase = async () => {
@@ -133,7 +147,7 @@ export const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
     };
 
     initializeDatabase();
-  }, [router, setIsLoading]);
+  }, [refreshDatabase, setIsLoading]);
 
   const value = {
     dbInfo,

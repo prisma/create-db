@@ -101,8 +101,6 @@ const formatBlockFields = (
 ): string[] => {
   if (blockLines.length <= 1) return blockLines;
 
-  const [header, ...fieldLines] = blockLines;
-
   if (blockType === "model") {
     return formatModelFields(blockLines);
   } else {

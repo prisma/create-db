@@ -14,7 +14,9 @@ describe("success page", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useSearchParams).mockReturnValue(mockSearchParams as any);
+    vi.mocked(useSearchParams).mockReturnValue(
+      mockSearchParams as unknown as ReturnType<typeof useSearchParams>
+    );
   });
 
   describe("rendering", () => {

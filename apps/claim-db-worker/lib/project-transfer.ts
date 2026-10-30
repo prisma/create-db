@@ -1,5 +1,4 @@
 import { getEnv } from "./env";
-import { TokenData } from "./auth-utils";
 
 export async function transferProject(
   projectID: string,
@@ -8,7 +7,7 @@ export async function transferProject(
   success: boolean;
   error?: string;
   status?: number;
-  transferResponse: any;
+  transferResponse: unknown;
 }> {
   const env = getEnv();
 
@@ -35,7 +34,7 @@ export async function transferProject(
     if (responseText) {
       try {
         responseData = JSON.parse(responseText);
-      } catch (e) {
+      } catch {
         console.log("Transfer response (not JSON):", responseText);
         responseData = { rawResponse: responseText };
       }

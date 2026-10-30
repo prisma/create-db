@@ -1,19 +1,25 @@
 import { Hono } from "hono";
-import { writeFile, mkdir, rm } from "fs/promises";
-import { spawn } from "child_process";
-import { execSync } from "child_process";
+
+import { withPrismaProject } from "../../prisma.js";
 
 const app = new Hono();
 
 app.post("/", async (c) => {
   try {
     const body = await c.req.json();
-    const { schema } = body as {
+    const { schema, dataLoss } = body as {
       schema: string;
+      dataLoss?: string[];
     };
 
     if (!schema) {
       return c.json({ error: "Schema is required" }, 400);
+    }
+    if (!Array.isArray(dataLoss)) {
+      return c.json(
+        { error: "dataLoss is required: the subjects the user confirmed deleting" },
+        400
+      );
     }
 
     const connectionString = c.req.header("X-Connection-String");
@@ -25,78 +31,52 @@ app.post("/", async (c) => {
       );
     }
 
-    const tempDir = "/tmp";
-    const timestamp = Date.now();
-    const projectDir = `${tempDir}/prisma-${timestamp}`;
-    const schemaPath = `${projectDir}/schema.prisma`;
-    const configPath = `${projectDir}/prisma.config.ts`;
-
-    try {
-      await mkdir(projectDir, { recursive: true });
-      await writeFile(schemaPath, schema);
-
-      const prismaConfig = `import { defineConfig, env } from 'prisma/config';
-
-export default defineConfig({
-  datasource: {
-    url: env('DATABASE_URL'),
-  },
-})`;
-      await writeFile(configPath, prismaConfig);
-
-      const packageJson = `{
-  "name": "temp-prisma-project",
-  "type": "module",
-  "dependencies": {
-    "prisma": "7.2.0"
-  }
-}`;
-      await writeFile(`${projectDir}/package.json`, packageJson);
-
-      execSync('npm install --no-save', {
-        cwd: projectDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-        env: {
-          ...process.env,
-          HOME: tempDir,
-          npm_config_cache: `${tempDir}/.npm-cache`,
-          npm_config_userconfig: `${tempDir}/.npmrc`,
-        },
-      });
-
-      try {
-        const result = execSync(
-          `npx prisma db push --schema=${schemaPath} --accept-data-loss --force-reset`,
-          {
-            env: {
-              ...process.env,
-              DATABASE_URL: connectionString,
-            },
-            cwd: projectDir,
-            encoding: "utf8",
-            stdio: "pipe",
-          }
+    return await withPrismaProject(connectionString, schema, async (prisma) => {
+      const emit = await prisma.run(["contract", "emit"]);
+      if (!emit.ok) {
+        return c.json(
+          { error: "Invalid schema", details: prisma.describe(emit) },
+          400
         );
-      } catch (error) {
-        throw error;
+      }
+
+      let update = await prisma.run(["db", "update"]);
+      const unanswered = update.error?.meta?.unanswered ?? [];
+      if (
+        update.error?.code === "CLI.CONSENT_REQUIRED" &&
+        unanswered.length > 0 &&
+        unanswered.every((consent) => consent.verbs.includes("delete"))
+      ) {
+        // Delete only what the user saw and confirmed. If the database
+        // changed since, ask again with the new list.
+        const confirmed = new Set(dataLoss);
+        if (!unanswered.every((consent) => confirmed.has(consent.subject))) {
+          const subjects = unanswered.map((consent) => consent.subject);
+          return c.json({
+            requiresForceReset: true,
+            dataLoss: subjects,
+            message: `This push deletes data in ${subjects.join(", ")}. Please confirm to continue.`,
+          });
+        }
+        update = await prisma.run([
+          "db",
+          "update",
+          ...unanswered.flatMap((consent) => ["--delete", consent.subject]),
+        ]);
+      }
+      if (!update.ok) {
+        throw new Error(prisma.describe(update));
       }
 
       return c.json({
         success: true,
-        message: "Schema pushed successfully with force reset",
+        message: "Schema pushed successfully",
       });
-    } finally {
-      try {
-        await rm(projectDir, { recursive: true, force: true });
-      } catch (cleanupError) {
-        console.error("Cleanup error:", cleanupError);
-      }
-    }
+    });
   } catch (error) {
     return c.json(
       {
-        error: "Failed to push schema with force reset",
+        error: "Failed to push schema",
         details: error instanceof Error ? error.message : String(error),
       },
       500

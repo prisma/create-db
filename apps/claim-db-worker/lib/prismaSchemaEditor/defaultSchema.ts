@@ -1,11 +1,4 @@
-export const DEFAULT_PRISMA_SCHEMA = `// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma/client"
-}
-
-datasource db {
-  provider = "postgresql"
-}`;
+export const DEFAULT_PRISMA_SCHEMA = `// use prisma-8
+// This is your Prisma 8 schema. Add your models below, then push them to
+// your database.
+`;

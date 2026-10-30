@@ -34,7 +34,7 @@ export async function exchangeCodeForToken(
 
 export async function validateProject(
   projectID: string
-): Promise<any> {
+): Promise<unknown> {
   const env = getEnv();
 
   const projectCheckResponse = await fetch(

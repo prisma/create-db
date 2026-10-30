@@ -1,67 +1,98 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPrismaPostgresHttpClient } from "@prisma/studio-core/data/ppg";
-import { serializeError } from "@prisma/studio-core/data/bff";
+import postgres from "postgres";
+import { serializeError, type StudioBFFRequest } from "@prisma/studio-core/data/bff";
+import {
+  createPostgresJSConnectionConfig,
+  createPostgresJSExecutor,
+} from "@prisma/studio-core/data/postgresjs";
 
-export async function POST(request: NextRequest) {
+/**
+ * The Prisma Postgres host the connection string points at, the only databases
+ * create-db makes, or undefined for anything else.
+ */
+function prismaPostgresHost(connectionString: string) {
   try {
-    // 1. Check if request has content
-    const contentType = request.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      return NextResponse.json([
-        serializeError(new Error("Content-Type must be application/json")),
-      ]);
+    const url = new URL(connectionString);
+    const isPrismaPostgres =
+      (url.protocol === "postgres:" || url.protocol === "postgresql:") &&
+      /^(?:[a-z0-9-]+\.)*db\.prisma\.io$/.test(url.hostname) &&
+      (url.port === "" || url.port === "5432");
+    return isPrismaPostgres ? url.hostname : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Studio's backend: runs the queries Studio sends against the user's database. */
+export async function POST(request: NextRequest) {
+  const connectionString = request.headers.get("X-Connection-String");
+  if (!connectionString) {
+    return NextResponse.json([serializeError(new Error("Connection string not provided"))]);
+  }
+  // This route is public, so it must not open connections to arbitrary hosts.
+  const host = prismaPostgresHost(connectionString);
+  if (!host) {
+    return NextResponse.json([
+      serializeError(new Error("Only Prisma Postgres connection strings are supported")),
+    ]);
+  }
+
+  let payload: StudioBFFRequest;
+  try {
+    payload = (await request.json()) as StudioBFFRequest;
+  } catch (parseError) {
+    return NextResponse.json([
+      serializeError(
+        new Error(
+          `Invalid JSON: ${parseError instanceof Error ? parseError.message : "Unknown error"}`
+        )
+      ),
+    ]);
+  }
+
+  // One client per request: a worker can't keep connections between requests.
+  const config = createPostgresJSConnectionConfig(connectionString);
+  const sql = postgres(config.connectionString, {
+    ...config.options,
+    // postgres.js parses the host itself (a comma means several hosts), so
+    // pin the one checked above.
+    host,
+    port: 5432,
+    max: 1,
+    connect_timeout: 10,
+  });
+  const executor = createPostgresJSExecutor(sql);
+
+  try {
+    if (payload.procedure === "query") {
+      const [error, result] = await executor.execute(payload.query, {
+        schema: payload.schema,
+      });
+      return NextResponse.json([error ? serializeError(error) : null, result]);
     }
 
-    // 2. Extract the query and custom data from the request
-    let body;
-    try {
-      const text = await request.text();
-      if (!text || text.trim() === "") {
-        return NextResponse.json([
-          serializeError(new Error("Request body is empty")),
-        ]);
-      }
-      body = JSON.parse(text) as { query: any };
-    } catch (parseError) {
-      return NextResponse.json([
-        serializeError(
-          new Error(
-            `Invalid JSON: ${parseError instanceof Error ? parseError.message : "Unknown error"}`
-          )
-        ),
-      ]);
+    if (payload.procedure === "transaction" && executor.executeTransaction) {
+      const [error, result] = await executor.executeTransaction(payload.queries);
+      return NextResponse.json([error ? serializeError(error) : null, result]);
     }
 
-    const { query } = body;
-
-    if (!query) {
-      return NextResponse.json([
-        serializeError(new Error("Query is required in request body")),
-      ]);
+    if (payload.procedure === "sql-lint" && executor.lintSql) {
+      const [error, result] = await executor.lintSql({
+        schema: payload.schema,
+        schemaVersion: payload.schemaVersion,
+        sql: payload.sql,
+      });
+      return NextResponse.json([error ? serializeError(error) : null, result]);
     }
 
-    // 3. Get connection string from custom header
-    const connectionString = request.headers.get("X-Connection-String");
-
-    if (!connectionString) {
-      return NextResponse.json([
-        serializeError(new Error("Connection string not provided")),
-      ]);
-    }
-
-    // 4. Execute the query against Prisma Postgres
-    const [error, results] = await createPrismaPostgresHttpClient({
-      url: connectionString,
-    }).execute(query);
-
-    // 5. Return results or errors
-    if (error) {
-      return NextResponse.json([serializeError(error)]);
-    }
-
-    return NextResponse.json([null, results]);
+    return new NextResponse(`${payload.procedure} is not supported`, { status: 501 });
   } catch (error) {
     console.error("Studio API error:", error);
     return NextResponse.json([serializeError(error as Error)]);
+  } finally {
+    // A failed close must not replace the response.
+    await sql.end().catch((error: unknown) => {
+      console.error("Failed to close the Studio connection:", error);
+    });
   }
 }

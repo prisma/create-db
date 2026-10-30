@@ -8,6 +8,7 @@ import {
   formatDeletionDate,
   formatJsonResult,
   printClaimReminder,
+  createSpinner,
 } from "../src/cli/output.js";
 import type { DatabaseResult } from "../src/types.js";
 
@@ -231,5 +232,27 @@ describe("printClaimReminder", () => {
     expect(error).toHaveBeenCalledTimes(1);
     expect(error.mock.calls[0][0]).toContain(sampleResult.claimUrl);
     expect(log).not.toHaveBeenCalled();
+  });
+});
+
+describe("createSpinner", () => {
+  it("prints plain lines instead of animating when stdout isn't a terminal", () => {
+    const isTTY = process.stdout.isTTY;
+    process.stdout.isTTY = false;
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    try {
+      const spinner = createSpinner();
+      spinner.start("us-east-1");
+      spinner.success();
+
+      const output = write.mock.calls.map(([chunk]) => String(chunk)).join("");
+      expect(output).toContain("Creating database in");
+      expect(output).toContain("Database created successfully!");
+      expect(output).not.toMatch(/[◒◐◓◑]/);
+    } finally {
+      write.mockRestore();
+      process.stdout.isTTY = isTTY;
+    }
   });
 });

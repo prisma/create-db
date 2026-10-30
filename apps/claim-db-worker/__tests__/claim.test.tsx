@@ -30,10 +30,12 @@ describe("claim page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    vi.mocked(useSearchParams).mockReturnValue(mockSearchParams as any);
+    vi.mocked(useSearchParams).mockReturnValue(
+      mockSearchParams as unknown as ReturnType<typeof useSearchParams>
+    );
     vi.mocked(useRouter).mockReturnValue({
       push: mockPush,
-    } as any);
+    } as unknown as ReturnType<typeof useRouter>);
     vi.mocked(usePathname).mockReturnValue("/claim");
 
     mockFetch.mockResolvedValue({

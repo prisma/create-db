@@ -9,7 +9,7 @@ export function CodeSnippet() {
     try {
       await navigator.clipboard.writeText(command);
       customToast("success", "Copied to clipboard");
-    } catch (err) {
+    } catch {
       customToast("error", "Failed to copy to clipboard");
     }
   };

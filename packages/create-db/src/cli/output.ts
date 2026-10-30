@@ -24,10 +24,20 @@ export function showCancelled() {
 }
 
 /**
- * Create a spinner for database creation progress.
+ * Create a spinner for database creation progress. When stdout isn't a
+ * terminal (an agent, a pipe, a CI log), print plain step lines instead:
+ * clack's spinner animates regardless and fills the output with frames.
  * @returns An object with start, success, and error methods
  */
 export function createSpinner() {
+  if (!process.stdout.isTTY) {
+    return {
+      start: (region: string) => log.step(`Creating database in ${pc.cyan(region)}...`),
+      success: () => log.success(pc.green("Database created successfully!")),
+      error: (message: string) => log.error(pc.red(`Error: ${message}`)),
+    };
+  }
+
   const s = clackSpinner();
   return {
     start: (region: string) => s.start(`Creating database in ${pc.cyan(region)}...`),
