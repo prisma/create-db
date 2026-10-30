@@ -47,13 +47,16 @@ function ClaimContent() {
         throw new Error("Failed to get auth URL");
       }
 
-      const data = (await response.json()) as { authUrl: string };
-      if (data.authUrl) {
-        window.open(data.authUrl, "_blank");
+      const data = (await response.json()) as { authUrl?: string };
+      if (!data.authUrl) {
+        throw new Error("Missing auth URL");
       }
+      // Sign in in this tab, with the button left disabled: two sign-ins for
+      // one database run two transfers at once, and the one that loses shows
+      // "Transfer Failed" for a claim that worked.
+      window.location.assign(data.authUrl);
     } catch (error) {
       console.error("Error:", error);
-    } finally {
       setIsLoading(false);
     }
   };
