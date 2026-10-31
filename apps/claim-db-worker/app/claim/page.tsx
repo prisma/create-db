@@ -21,6 +21,18 @@ function ClaimContent() {
     }
   }, [pathname, projectID, router]);
 
+  // Back from sign-in restores this page from the bfcache with the button
+  // still disabled.
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        setIsLoading(false);
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
   if (!projectID && !pathname.includes("/test/")) {
     return null;
   }

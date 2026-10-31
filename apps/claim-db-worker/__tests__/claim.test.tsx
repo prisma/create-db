@@ -102,6 +102,19 @@ describe("claim page", () => {
       expect(mockAssign).toHaveBeenCalledTimes(1);
     });
 
+    it("enables the button again when the browser comes back from sign-in", async () => {
+      mockSearchParams.set("projectID", "test-project-123");
+      render(<ClaimPage />);
+
+      const claimButton = screen.getByRole("button", { name: "Claim database" });
+      fireEvent.click(claimButton);
+      await waitFor(() => expect(claimButton).toBeDisabled());
+
+      fireEvent(window, new PageTransitionEvent("pageshow", { persisted: true }));
+
+      await waitFor(() => expect(claimButton).not.toBeDisabled());
+    });
+
     it("handles auth endpoint errors gracefully", async () => {
       const consoleSpy = vi
         .spyOn(console, "error")
