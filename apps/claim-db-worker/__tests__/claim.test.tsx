@@ -5,16 +5,16 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import ClaimPage from "../app/claim/page";
 
 // This test does not check the actual claim flow, but rather the claim page functionality and claim flow logic.
-// It mocks the fetch API and window.open to simulate the claim flow,
+// It mocks the fetch API and window.location to simulate the claim flow,
 // so long as the Management API is functioning properly, this should be as well.
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-const mockWindowOpen = vi.fn();
-Object.defineProperty(window, "open", {
+const mockAssign = vi.fn();
+Object.defineProperty(window, "location", {
   writable: true,
-  value: mockWindowOpen,
+  value: { ...window.location, origin: "http://localhost:3000", assign: mockAssign },
 });
 
 vi.mock("next/navigation", () => ({
@@ -55,7 +55,7 @@ describe("claim page", () => {
   });
 
   describe("functionality", () => {
-    it("completes full claim flow when claim button is clicked", async () => {
+    it("sends the browser to sign in and keeps the button disabled", async () => {
       mockSearchParams.set("projectID", "test-project-123");
       render(<ClaimPage />);
 
@@ -80,15 +80,39 @@ describe("claim page", () => {
       });
 
       await waitFor(() => {
-        expect(mockWindowOpen).toHaveBeenCalledWith(
-          "https://auth.example.com/callback?code=test",
-          "_blank"
+        expect(mockAssign).toHaveBeenCalledWith(
+          "https://auth.example.com/callback?code=test"
         );
       });
 
-      await waitFor(() => {
-        expect(claimButton).not.toBeDisabled();
-      });
+      expect(claimButton).toBeDisabled();
+    });
+
+    it("starts one claim however often the button is clicked", async () => {
+      mockSearchParams.set("projectID", "test-project-123");
+      render(<ClaimPage />);
+
+      const claimButton = screen.getByRole("button", { name: "Claim database" });
+      fireEvent.click(claimButton);
+      await waitFor(() => expect(mockAssign).toHaveBeenCalledTimes(1));
+      fireEvent.click(claimButton);
+      fireEvent.click(claimButton);
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(mockAssign).toHaveBeenCalledTimes(1);
+    });
+
+    it("enables the button again when the browser comes back from sign-in", async () => {
+      mockSearchParams.set("projectID", "test-project-123");
+      render(<ClaimPage />);
+
+      const claimButton = screen.getByRole("button", { name: "Claim database" });
+      fireEvent.click(claimButton);
+      await waitFor(() => expect(claimButton).toBeDisabled());
+
+      fireEvent(window, new PageTransitionEvent("pageshow", { persisted: true }));
+
+      await waitFor(() => expect(claimButton).not.toBeDisabled());
     });
 
     it("handles auth endpoint errors gracefully", async () => {
@@ -111,7 +135,7 @@ describe("claim page", () => {
         expect(consoleSpy).toHaveBeenCalledWith("Error:", expect.any(Error));
       });
 
-      expect(mockWindowOpen).not.toHaveBeenCalled();
+      expect(mockAssign).not.toHaveBeenCalled();
 
       await waitFor(() => {
         expect(claimButton).not.toBeDisabled();
@@ -155,13 +179,12 @@ describe("claim page", () => {
       });
 
       await waitFor(() => {
-        expect(mockWindowOpen).toHaveBeenCalledWith(
-          expect.stringContaining("test-project-123"),
-          "_blank"
+        expect(mockAssign).toHaveBeenCalledWith(
+          expect.stringContaining("test-project-123")
         );
       });
 
-      expect(claimButton).not.toBeDisabled();
+      expect(claimButton).toBeDisabled();
     });
   });
 });
