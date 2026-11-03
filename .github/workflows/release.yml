@@ -72,6 +72,17 @@ jobs:
                   echo "Using CLAIM_DB_WORKER_URL=${CLAIM_DB_WORKER_URL}"
                   echo "Using POSTHOG_API_HOST=${POSTHOG_API_HOST}"
 
+                  # create-pg and create-postgres pin the create-db version they were
+                  # published with, so the three CLIs must move to a new version together
+                  versions=""
+                  for pkg in ${{ env.WORKSPACES }}; do
+                    versions="$versions $pkg@$(node -p "require('./${{ env.PACKAGES_DIR }}/$pkg/package.json').version")"
+                  done
+                  if [ "$(echo $versions | tr ' ' '\n' | sed 's/.*@//' | sort -u | wc -l)" -ne 1 ]; then
+                    echo "::error::The CLIs must share one version, got:$versions"
+                    exit 1
+                  fi
+
                   for pkg in ${{ env.WORKSPACES }}; do
                     cd "${{ env.PACKAGES_DIR }}/$pkg"
                     export POSTHOG_API_HOST="${POSTHOG_API_HOST}"
