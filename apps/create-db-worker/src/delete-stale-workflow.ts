@@ -26,6 +26,7 @@ const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 export class DeleteStaleProjectsWorkflow extends WorkflowEntrypoint<Env, Params> {
 	async run(event: WorkflowEvent<Params>, step: WorkflowStep): Promise<void> {
 		const projects: Project[] = [];
+		const seenCursors = new Set<string>();
 		let cursor: string | null = null;
 		let page = 0;
 
@@ -56,7 +57,15 @@ export class DeleteStaleProjectsWorkflow extends WorkflowEntrypoint<Env, Params>
 
 			const body: ProjectsResponse = JSON.parse(res);
 			projects.push(...body.data);
-			cursor = body.pagination.hasMore ? body.pagination.nextCursor : null;
+
+			const { hasMore, nextCursor } = body.pagination;
+			if (hasMore && (!nextCursor || seenCursors.has(nextCursor))) {
+				throw new Error(`Projects API reported more pages without a new cursor after page ${page}`);
+			}
+			cursor = hasMore ? nextCursor : null;
+			if (cursor) {
+				seenCursors.add(cursor);
+			}
 			page += 1;
 		} while (cursor);
 

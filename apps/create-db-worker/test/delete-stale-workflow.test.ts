@@ -83,6 +83,29 @@ describe('DeleteStaleProjectsWorkflow', () => {
 		expect(requestsTo('DELETE')).toHaveLength(0);
 	});
 
+	it('fails when the API reports more pages without advancing the cursor', async () => {
+		fetchMock
+			.mockResolvedValueOnce(page([{ id: 'stale-1', createdAt: hoursAgo(30) }], 'stale-1'))
+			.mockResolvedValueOnce(page([{ id: 'stale-1', createdAt: hoursAgo(30) }], 'stale-1'));
+
+		await expect(runWorkflow()).rejects.toThrow('without a new cursor');
+		expect(requestsTo('DELETE')).toHaveLength(0);
+	});
+
+	it('fails when the API reports more pages with no cursor', async () => {
+		fetchMock.mockResolvedValueOnce(
+			new Response(
+				JSON.stringify({
+					data: [{ id: 'stale-1', name: 'stale-1', createdAt: hoursAgo(30) }],
+					pagination: { hasMore: true, nextCursor: null },
+				}),
+			),
+		);
+
+		await expect(runWorkflow()).rejects.toThrow('without a new cursor');
+		expect(requestsTo('DELETE')).toHaveLength(0);
+	});
+
 	it('fails when a page cannot be fetched', async () => {
 		fetchMock.mockResolvedValueOnce(new Response(null, { status: 500, statusText: 'Server Error' }));
 
