@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { parseTtlMsInput, isTtlMsInRange, clampTtlMs, MIN_TTL_MS, MAX_TTL_MS } from '../src/ttl';
+import { parseTtlMsInput, isTtlMsInRange, clampTtlMs, MIN_TTL_MS, MAX_TTL_MS, STALE_PROJECT_AGE_MS } from '../src/ttl';
+
+describe('lifetime constants', () => {
+	it('allows up to 72 hours', () => {
+		expect(MAX_TTL_MS).toBe(72 * 60 * 60 * 1000);
+		expect(isTtlMsInRange(72 * 60 * 60 * 1000)).toBe(true);
+		expect(isTtlMsInRange(48 * 60 * 60 * 1000)).toBe(true);
+	});
+
+	it('sweeps only after the maximum lifetime has passed', () => {
+		expect(STALE_PROJECT_AGE_MS).toBeGreaterThan(MAX_TTL_MS);
+	});
+});
 
 describe('parseTtlMsInput', () => {
 	it('returns the value for a valid finite number', () => {

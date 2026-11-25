@@ -50,13 +50,14 @@ describe('DeleteStaleProjectsWorkflow', () => {
 			.mockResolvedValueOnce(
 				page(
 					[
-						{ id: 'stale-1', createdAt: hoursAgo(30) },
+						{ id: 'stale-1', createdAt: hoursAgo(80) },
 						{ id: 'fresh-1', createdAt: hoursAgo(2) },
+						{ id: 'two-days-old', createdAt: hoursAgo(48) },
 					],
 					'fresh-1',
 				),
 			)
-			.mockResolvedValueOnce(page([{ id: 'stale-2', createdAt: hoursAgo(25) }], null))
+			.mockResolvedValueOnce(page([{ id: 'stale-2', createdAt: hoursAgo(75) }], null))
 			.mockImplementation(async () => new Response(null, { status: 200 }));
 
 		const stepNames = await runWorkflow();

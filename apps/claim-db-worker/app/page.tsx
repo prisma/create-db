@@ -48,7 +48,7 @@ const steps = [
     description: (
       <>
         Claim your database to your Prisma account to keep it permanently. Unclaimed databases
-        expire after 24 hours.
+        expire after 72 hours.
       </>
     ),
   },
@@ -168,7 +168,7 @@ async function HomePageContent({ searchParams }: PageProps) {
             </div>
 
             <p className="relative mt-6 text-sm text-muted-foreground">
-              Databases are deleted after 24 hours unless claimed.
+              Databases are deleted after 72 hours unless claimed.
             </p>
           </div>
         </div>

@@ -111,7 +111,7 @@ export const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
           projectId: result.projectId ?? "",
           connectionString: db.connectionString,
           directConnectionString: directConnString,
-          expirationTime: Date.now() + 24 * 60 * 60 * 1000,
+          expirationTime: Date.now() + 72 * 60 * 60 * 1000,
           databaseId: result.databaseId ?? "",
         };
 

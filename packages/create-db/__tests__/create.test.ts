@@ -27,7 +27,7 @@ const runCli = async (
 
 describe("CLI database creation", () => {
   it("creates database with default command", async () => {
-    const result = await runCli([]);
+    const result = await runCli(["--ttl", "30m"]);
     if (result.exitCode !== 0) {
       console.error("CLI failed with exit code:", result.exitCode);
       console.error("stdout:", result.stdout);
@@ -43,7 +43,7 @@ describe("CLI database creation", () => {
   }, 30000);
 
   it("creates database with --json flag", async () => {
-    const result = await runCli(["--json"]);
+    const result = await runCli(["--json", "--ttl", "30m"]);
     if (result.exitCode !== 0) {
       console.error("CLI failed with exit code:", result.exitCode);
       console.error("stdout:", result.stdout);
@@ -68,7 +68,7 @@ describe("CLI database creation", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "create-db-json-env-"));
     const envPath = path.join(dir, ".env");
     try {
-      const result = await runCli(["--json", "--env", envPath]);
+      const result = await runCli(["--json", "--env", envPath, "--ttl", "30m"]);
       expect(result.exitCode).toBe(0);
       const parsed = JSON.parse(result.stdout.trim());
       expect(parsed.success).toBe(true);
