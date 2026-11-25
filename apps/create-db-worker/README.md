@@ -10,7 +10,7 @@ Cloudflare Worker that creates Prisma database projects via the Prisma API.
 ## Key Files
 
 - **Main Logic:** [`src/index.ts`](src/index.ts) - Handles routing, project creation, and rate limiting
-- **Delete Workflow:** [`src/delete-workflow.ts`](src/delete-workflow.ts) - 24-hour delayed deletion logic
+- **Delete Workflow:** [`src/delete-workflow.ts`](src/delete-workflow.ts) - 72-hour delayed deletion logic
 - **Rate Limiter:** [`src/rate-limiter.ts`](src/rate-limiter.ts) - 100 requests/minute limit
 - **Configuration:** [`wrangler.jsonc`](wrangler.jsonc) - KV namespace and deployment settings
 

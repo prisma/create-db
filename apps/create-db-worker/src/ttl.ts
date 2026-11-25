@@ -1,5 +1,5 @@
 export const MIN_TTL_MS = 30 * 60 * 1000;
-export const MAX_TTL_MS = 24 * 60 * 60 * 1000;
+export const MAX_TTL_MS = 72 * 60 * 60 * 1000;
 
 export function parseTtlMsInput(value: unknown): number | undefined {
 	if (typeof value !== 'number' || !Number.isFinite(value)) {

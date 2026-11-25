@@ -93,7 +93,7 @@ function ClaimContent() {
       <p className="mt-10 max-w-[48ch] text-pretty text-muted-foreground">
         *Your database will be{" "}
         <strong className="font-semibold text-foreground">
-          deleted 24 hours after creation
+          deleted 72 hours after creation
         </strong>{" "}
         unless you claim it.
       </p>

@@ -90,9 +90,9 @@ describe("CLI error handling", () => {
   });
 
   it("fails validation when --ttl value is invalid", async () => {
-    const result = await runCli(["--ttl", "25h"]);
+    const result = await runCli(["--ttl", "73h"]);
     expect(result.exitCode).not.toBe(0);
-    expect(result.all).toContain('--ttl value "25h" is invalid');
+    expect(result.all).toContain('--ttl value "73h" is invalid');
   });
 
   it("reports an invalid region as JSON with --json", async () => {
@@ -105,11 +105,11 @@ describe("CLI error handling", () => {
   }, 10000);
 
   it("reports an invalid --ttl as JSON with -j", async () => {
-    const result = await runCli(["-j", "--ttl", "25h"]);
+    const result = await runCli(["-j", "--ttl", "73h"]);
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.stdout);
     expect(output).toMatchObject({ success: false, error: "invalid_arguments" });
-    expect(output.message).toContain('--ttl value "25h" is invalid');
+    expect(output.message).toContain('--ttl value "73h" is invalid');
     expect(output.message).not.toContain("Usage:");
     expect(result.stderr).not.toContain("Usage:");
   });

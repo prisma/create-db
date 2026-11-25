@@ -120,6 +120,7 @@ describe("CreateFlags schema", () => {
         { input: "6h", expectedMs: 21_600_000 },
         { input: "12h", expectedMs: 43_200_000 },
         { input: "24h", expectedMs: 86_400_000 },
+        { input: "72h", expectedMs: 259_200_000 },
       ];
 
       for (const { input, expectedMs } of validTtls) {
@@ -132,7 +133,7 @@ describe("CreateFlags schema", () => {
     });
 
     it("rejects invalid ttl strings", () => {
-      const ttlInputs = ["25h", "7d", "10s", "45s", "one-hour", "24"];
+      const ttlInputs = ["73h", "7d", "10s", "45s", "one-hour", "24"];
 
       for (const ttl of ttlInputs) {
         const result = CreateFlags.safeParse({ ttl });
