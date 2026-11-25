@@ -1,7 +1,8 @@
 import DeleteDbWorkflow from './delete-workflow';
 import DeleteStaleProjectsWorkflow from './delete-stale-workflow';
 import { PosthogEventCapture } from './analytics';
-import { parseTtlMsInput, isTtlMsInRange } from './ttl';
+import { parseTtlMsInput, isTtlMsInRange, clampTtlMs } from './ttl';
+import { FreebuffClick, parseFreebuffClickId } from './freebuff-click';
 interface Env {
 	INTEGRATION_TOKEN: string;
 	DELETE_DB_WORKFLOW: Workflow;
@@ -9,11 +10,13 @@ interface Env {
 	CREATE_DB_RATE_LIMITER: RateLimit;
 	PROGRAMMATIC_RATE_LIMITER: RateLimit;
 	CREATE_DB_DATASET: AnalyticsEngineDataset;
+	FREEBUFF_CLICK: DurableObjectNamespace<FreebuffClick>;
+	FREEBUFF_CONVERSION_API_KEY?: string;
 	POSTHOG_API_KEY?: string;
 	POSTHOG_API_HOST?: string;
 }
 
-export { DeleteDbWorkflow, DeleteStaleProjectsWorkflow };
+export { DeleteDbWorkflow, DeleteStaleProjectsWorkflow, FreebuffClick };
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -134,6 +137,7 @@ export default {
 				userAgent?: string;
 				source?: 'programmatic' | 'cli';
 				ttlMs?: unknown;
+				freebuffClickId?: unknown;
 			};
 
 			let body: CreateDbBody = {};
@@ -145,6 +149,8 @@ export default {
 			}
 
 			const { region, name, analytics: analyticsData, userAgent, source, ttlMs } = body;
+			// A malformed click id is dropped: it must never fail a database creation.
+			const freebuffClickId = parseFreebuffClickId(body.freebuffClickId);
 			const parsedTtlMs = parseTtlMsInput(ttlMs);
 
 			if (ttlMs !== undefined && parsedTtlMs === undefined) {
@@ -237,7 +243,14 @@ export default {
 								.catch((e) => console.error('Error sending PostHog analytics:', e))
 						: Promise.resolve();
 
-					await Promise.all([workflowPromise, analyticsPromise, posthogPromise]);
+					const freebuffPromise =
+						freebuffClickId && projectID
+							? env.FREEBUFF_CLICK.get(env.FREEBUFF_CLICK.idFromName(projectID))
+									.store(freebuffClickId, Date.now() + clampTtlMs(parsedTtlMs))
+									.catch(() => console.error('Error storing the Freebuff click id'))
+							: Promise.resolve();
+
+					await Promise.all([workflowPromise, analyticsPromise, posthogPromise, freebuffPromise]);
 				} catch (e) {
 					console.error('Error in background tasks:', e);
 				}

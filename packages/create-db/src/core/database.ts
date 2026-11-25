@@ -9,6 +9,23 @@ export function getCommandName(): string {
   return "create-db";
 }
 
+/** Freebuff's signed click id: at most 512 characters. */
+const FREEBUFF_CLICK_ID_PATTERN = /^bfc_[A-Za-z0-9._-]{1,508}$/;
+
+/**
+ * The Freebuff ad click id that Freebuff sets in `PRISMA_FREEBUFF_BFCID` when
+ * it runs this command from an ad. It is sent with the create request, in the
+ * request body only, so that a claim of this database can be credited to the
+ * ad. It is never printed, logged or put in a URL. A malformed value is
+ * ignored.
+ */
+export function readFreebuffClickId(
+  env: NodeJS.ProcessEnv = process.env
+): string | undefined {
+  const value = env.PRISMA_FREEBUFF_BFCID;
+  return value && FREEBUFF_CLICK_ID_PATTERN.test(value) ? value : undefined;
+}
+
 export async function createDatabaseCore(
   region: string,
   createDbWorkerUrl: string,
@@ -31,6 +48,11 @@ export async function createDatabaseCore(
 
   if (typeof ttlMs === "number" && Number.isFinite(ttlMs) && ttlMs > 0) {
     payload.ttlMs = Math.floor(ttlMs);
+  }
+
+  const freebuffClickId = readFreebuffClickId();
+  if (freebuffClickId) {
+    payload.freebuffClickId = freebuffClickId;
   }
 
   const resp = await fetch(`${createDbWorkerUrl}/create`, {

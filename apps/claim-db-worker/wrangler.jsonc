@@ -18,6 +18,15 @@
       "dataset": "create_db_dataset",
     },
   ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "FREEBUFF_CLICK",
+        "class_name": "FreebuffClick",
+        "script_name": "create-db-worker",
+      },
+    ],
+  },
   "assets": {
     "binding": "ASSETS",
     "directory": ".open-next/assets",

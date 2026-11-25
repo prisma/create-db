@@ -28,6 +28,10 @@ vi.mock("@/lib/project-transfer", () => ({
   transferProject: vi.fn(),
 }));
 
+vi.mock("@/lib/freebuff", () => ({
+  reportFreebuffClaim: vi.fn(),
+}));
+
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
@@ -111,6 +115,12 @@ describe("auth callback API", () => {
           method: "POST",
           body: expect.stringContaining("create_db:claim_successful"),
         })
+      );
+
+      const { reportFreebuffClaim } = await import("@/lib/freebuff");
+      expect(reportFreebuffClaim).toHaveBeenCalledWith(
+        "test-project-123",
+        "test-workspace-123"
       );
     });
   });
@@ -208,6 +218,9 @@ describe("auth callback API", () => {
         "Failed to transfer the project. Please try again.",
         expect.stringContaining("Insufficient permissions")
       );
+
+      const { reportFreebuffClaim } = await import("@/lib/freebuff");
+      expect(reportFreebuffClaim).not.toHaveBeenCalled();
     });
   });
 });

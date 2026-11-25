@@ -8,6 +8,7 @@ import {
   getBaseUrl,
 } from "@/lib/response-utils";
 import { transferProject } from "@/lib/project-transfer";
+import { reportFreebuffClaim } from "@/lib/freebuff";
 import { buildRateLimitKey } from "@/lib/server/ratelimit";
 
 export async function GET(request: NextRequest) {
@@ -150,6 +151,8 @@ export async function GET(request: NextRequest) {
         },
         request
       );
+
+      reportFreebuffClaim(projectID, workspaceId);
 
       const cleanProjectId = projectID.replace(/^proj_/, "");
       return redirectToSuccess(
