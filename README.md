@@ -251,9 +251,9 @@ npx create-db --help
 ### Database Lifecycle
 
 1. **Creation**: User runs CLI → Worker creates Prisma project → Returns connection string
-2. **Usage**: User gets 72 hours to work with the database
+2. **Usage**: User gets 72 hours to work with the database by default. A custom TTL such as `--ttl 1h` shortens this.
 3. **Claiming**: User can claim ownership via OAuth (optional)
-4. **Deletion**: Unclaimed databases are automatically deleted after 72 hours
+4. **Deletion**: Unclaimed databases are automatically deleted when their TTL ends. The default TTL is 72 hours.
 
 ### Rate Limiting
 

@@ -268,7 +268,7 @@ if (result.success) {
 
 ## Claiming a Database
 
-When you create a database, it is temporary and will be deleted after **72 hours**.
+When you create a database, it is temporary and will be deleted after **72 hours** by default. A shorter `--ttl` value deletes it sooner.
 
 The output includes a **claim URL** that allows you to keep the database permanently for free.
 
