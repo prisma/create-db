@@ -89,6 +89,11 @@ export function printDatabaseResult(result: DatabaseResult) {
       pc.dim(`  Database will be deleted on ${expiryFormatted} if not claimed.`)
     )
   );
+  log.message(
+    pc.italic(
+      pc.dim("  Deploying or sharing an app with it? Claim it first: an unclaimed database is deleted and the app stops working.")
+    )
+  );
 }
 
 /** How the CLI printed its result; recorded on the claim URL as `utm_content`. */
@@ -123,7 +128,7 @@ export function withOutputMode(
 export function formatJsonResult(result: DatabaseResult) {
   return {
     ...result,
-    nextStep: `The database is deleted at ${result.deletionDate} unless the user claims it, which keeps it for free. Give the user this claim URL: ${result.claimUrl}`,
+    nextStep: `The database is deleted at ${result.deletionDate} unless the user claims it, which keeps it for free. If an app you deploy or share uses this database, the user must claim it before then or the app stops working. Give the user this claim URL: ${result.claimUrl}`,
   };
 }
 
