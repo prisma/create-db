@@ -1,8 +1,9 @@
+import { WorkerEntrypoint } from 'cloudflare:workers';
 import DeleteDbWorkflow from './delete-workflow';
 import DeleteStaleProjectsWorkflow from './delete-stale-workflow';
 import { PosthogEventCapture } from './analytics';
 import { parseTtlMsInput, isTtlMsInRange, clampTtlMs } from './ttl';
-import { FreebuffClick, parseFreebuffClickId } from './freebuff-click';
+import { type ClaimReport, FreebuffClick, parseFreebuffClickId } from './freebuff-click';
 interface Env {
 	INTEGRATION_TOKEN: string;
 	DELETE_DB_WORKFLOW: Workflow;
@@ -18,7 +19,7 @@ interface Env {
 
 export { DeleteDbWorkflow, DeleteStaleProjectsWorkflow, FreebuffClick };
 
-export default {
+export const handler = {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const analytics = new PosthogEventCapture(env);
 
@@ -273,3 +274,22 @@ export default {
 		ctx.waitUntil(env.DELETE_STALE_WORKFLOW.create({ params: {} }));
 	},
 } satisfies ExportedHandler<Env>;
+
+export default class CreateDbWorker extends WorkerEntrypoint<Env> {
+	fetch(request: Request): Promise<Response> {
+		return handler.fetch(request, this.env, this.ctx);
+	}
+
+	scheduled(controller: ScheduledController): Promise<void> {
+		return handler.scheduled(controller, this.env, this.ctx);
+	}
+
+	/**
+	 * Reports the claim of a project to Freebuff when the project came from a
+	 * Freebuff ad. The claim worker calls this through its service binding; it
+	 * is not reachable over HTTP.
+	 */
+	reportFreebuffClaim(projectID: string, accountId: string): Promise<ClaimReport> {
+		return this.env.FREEBUFF_CLICK.get(this.env.FREEBUFF_CLICK.idFromName(projectID)).reportClaim(accountId);
+	}
+}

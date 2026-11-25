@@ -6,15 +6,15 @@ vi.mock("@opennextjs/cloudflare", () => ({
   getCloudflareContext: vi.fn(),
 }));
 
-function cloudflareContext(reportClaim: (accountId: string) => Promise<string>) {
-  const idFromName = vi.fn((name: string) => `id:${name}`);
-  const get = vi.fn(() => ({ reportClaim }));
+function cloudflareContext(
+  reportFreebuffClaim: (projectID: string, accountId: string) => Promise<string>
+) {
   const waitUntil = vi.fn();
   vi.mocked(getCloudflareContext).mockReturnValue({
-    env: { FREEBUFF_CLICK: { idFromName, get } },
+    env: { CREATE_DB_WORKER: { reportFreebuffClaim } },
     ctx: { waitUntil },
   } as unknown as ReturnType<typeof getCloudflareContext>);
-  return { idFromName, get, waitUntil };
+  return { waitUntil };
 }
 
 describe("reportFreebuffClaim", () => {
@@ -25,13 +25,11 @@ describe("reportFreebuffClaim", () => {
 
   it("reports the claim for the project, after the response", async () => {
     const reportClaim = vi.fn().mockResolvedValue("reported");
-    const { idFromName, get, waitUntil } = cloudflareContext(reportClaim);
+    const { waitUntil } = cloudflareContext(reportClaim);
 
     reportFreebuffClaim("proj_1", "workspace_1");
 
-    expect(idFromName).toHaveBeenCalledWith("proj_1");
-    expect(get).toHaveBeenCalledWith("id:proj_1");
-    expect(reportClaim).toHaveBeenCalledWith("workspace_1");
+    expect(reportClaim).toHaveBeenCalledWith("proj_1", "workspace_1");
     expect(waitUntil).toHaveBeenCalledTimes(1);
     await expect(waitUntil.mock.calls[0]?.[0]).resolves.toBe("reported");
   });

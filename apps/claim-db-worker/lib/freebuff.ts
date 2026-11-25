@@ -1,9 +1,8 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-/** The `FreebuffClick` Durable Object of the create-db worker, as this worker uses it. */
-type FreebuffClickNamespace = {
-  idFromName(name: string): unknown;
-  get(id: unknown): { reportClaim(accountId: string): Promise<string> };
+/** The create-db worker, as this worker calls it through its service binding. */
+type CreateDbWorker = {
+  reportFreebuffClaim(projectID: string, accountId: string): Promise<string>;
 };
 
 /**
@@ -21,16 +20,15 @@ export function reportFreebuffClaim(projectID: string, accountId: string): void 
 
   try {
     const { env, ctx } = getCloudflareContext();
-    const freebuffClick = (env as { FREEBUFF_CLICK?: FreebuffClickNamespace })
-      .FREEBUFF_CLICK;
-    if (!freebuffClick) {
+    const createDbWorker = (env as { CREATE_DB_WORKER?: CreateDbWorker })
+      .CREATE_DB_WORKER;
+    if (!createDbWorker) {
       return;
     }
 
     ctx.waitUntil(
-      freebuffClick
-        .get(freebuffClick.idFromName(projectID))
-        .reportClaim(accountId)
+      createDbWorker
+        .reportFreebuffClaim(projectID, accountId)
         .catch(() => console.error("Failed to report the claim to Freebuff"))
     );
   } catch {

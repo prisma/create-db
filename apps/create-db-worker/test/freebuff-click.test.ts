@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { env, createExecutionContext, waitOnExecutionContext, runInDurableObject, runDurableObjectAlarm } from 'cloudflare:test';
-import worker from '../src/index';
+import CreateDbWorker, { handler as worker } from '../src/index';
 import { FreebuffClick, parseFreebuffClickId } from '../src/freebuff-click';
 
 const CLICK_ID = 'bfc_1.signed-click.id';
@@ -283,5 +283,36 @@ describe('POST /create with a Freebuff click id', () => {
 
 		expect(response.status).toBe(201);
 		expect(stored).toEqual({});
+	});
+});
+
+describe('reportFreebuffClaim', () => {
+	it('reports the claim of the project that holds the click id', async () => {
+		const fetchMock = freebuffAnswers(Response.json({ accepted: true }));
+		const projectID = `proj_${crypto.randomUUID()}`;
+		await namespace.get(namespace.idFromName(projectID)).store(CLICK_ID, Date.now() + 60 * 60_000);
+		const createDbWorker = new CreateDbWorker(createExecutionContext(), {
+			...env,
+			FREEBUFF_CONVERSION_API_KEY: 'fbadv_test_key',
+		} as any);
+
+		expect(await createDbWorker.reportFreebuffClaim(`proj_${crypto.randomUUID()}`, 'workspace_1')).toBe('no-click');
+		expect(fetchMock).not.toHaveBeenCalled();
+		expect(await createDbWorker.reportFreebuffClaim(projectID, 'workspace_1')).not.toBe('no-click');
+	});
+
+	it('is not reachable over HTTP', async () => {
+		const ctx = createExecutionContext();
+		const response = await worker.fetch(
+			new Request('https://worker.example.com/reportFreebuffClaim', {
+				method: 'POST',
+				body: JSON.stringify(['proj_1', 'workspace_1']),
+			}),
+			{ ...env, CREATE_DB_RATE_LIMITER: { limit: vi.fn().mockResolvedValue({ success: true }) } } as any,
+			ctx,
+		);
+		await waitOnExecutionContext(ctx);
+
+		expect(response.status).toBe(405);
 	});
 });
