@@ -80,7 +80,7 @@ function ClaimContent() {
         <strong className="font-semibold text-foreground">
           deleted 72 hours after creation
         </strong>{" "}
-        unless you claim it.
+        (sooner if it was created with a shorter lifetime) unless you claim it.
       </p>
     </StatePanel>
   );

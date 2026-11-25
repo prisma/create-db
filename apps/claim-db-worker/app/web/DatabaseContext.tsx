@@ -54,7 +54,8 @@ interface CreateDatabaseResponse {
 }
 
 const saveToCookie = (data: DatabaseInfo) => {
-  cookieUtils.set(DB_KEY, JSON.stringify(data), 1);
+  // Unclaimed databases live 72 hours; keep the cookie as long.
+  cookieUtils.set(DB_KEY, JSON.stringify(data), 3);
 };
 
 const loadFromCookie = (): Partial<DatabaseInfo> | null => {
