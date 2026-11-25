@@ -1,8 +1,8 @@
 # create-pg
 
-`create-pg` is an alias for [`create-db`](https://www.npmjs.com/package/create-db) - an open-source CLI tool and library that provisions [**temporary Prisma Postgres databases**](https://www.prisma.io/postgres?utm_source=create_db_npm_docs) with a single command.
+`create-pg` is an alias for [`create-db`](https://www.npmjs.com/package/create-db) - an open-source CLI tool and library that provisions [**Prisma Postgres databases**](https://www.prisma.io/postgres?utm_source=create_db_npm_docs) with a single command.
 
-Each database is available for **24 hours** by default. To keep the database permanently, you can **claim it for free** using the URL displayed in the output.
+Each database is free to keep: **claim it for free** with a Prisma account (no card) using the URL in the output. Unclaimed, it is deleted after **72 hours**.
 
 ## Quick Start
 

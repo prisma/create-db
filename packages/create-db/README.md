@@ -1,8 +1,8 @@
 # create-db
 
-`create-db` is an open-source CLI tool and library that provisions [**temporary Prisma Postgres databases**](https://www.prisma.io/postgres?utm_source=create_db_npm_docs) with a single command.
+`create-db` is an open-source CLI tool and library that provisions [**Prisma Postgres databases**](https://www.prisma.io/postgres?utm_source=create_db_npm_docs) with a single command.
 
-Each database is available for **24 hours** by default. To keep the database permanently, you can **claim it for free** using the URL displayed in the output.
+Each database is free to keep: **claim it for free** with a Prisma account (no card) using the URL in the output. Unclaimed, it is deleted after **72 hours**.
 
 This tool is designed for developers and coding agents who need a Postgres database now, without manual setup or creating an account: to test, to prototype, or to back an app they deploy or share. For a deployed app, claim the database before its deletion time: an unclaimed database is deleted, and the app stops working.
 
@@ -38,7 +38,7 @@ npx create-db regions    # List available regions
 | `--interactive` | `-i` | Interactive mode to select a region |
 | `--json` | `-j` | Output machine-readable JSON |
 | `--env <path>` | `-e` | Write DATABASE_URL and CLAIM_URL to specified .env file |
-| `--ttl <duration>` | `-t` | Custom database TTL (`30m`, `1h` ... `24h`) |
+| `--ttl <duration>` | `-t` | Delete sooner than the 72h default (`30m`, `1h` ... `72h`) |
 | `--copy` | `-c` | Copy connection string to clipboard |
 | `--quiet` | `-q` | Output only the connection string (the claim URL goes to stderr) |
 | `--open` | `-o` | Open claim URL in browser |
@@ -95,7 +95,7 @@ npx create-db -o
 # Combine flags
 npx create-db -r eu-central-1 -j
 npx create-db -i -e .env
-npx create-db -t 24h -c -o
+npx create-db -t 8h -c -o
 
 # List available regions
 npx create-db regions
@@ -183,7 +183,7 @@ if (result.success) {
 |--------|------|-------------|
 | `region` | `RegionId` | AWS region for the database (optional, defaults to `us-east-1`) |
 | `userAgent` | `string` | Custom user agent string for tracking (optional) |
-| `ttl` | `string` | TTL string (`30m`, `1h` ... `24h`) |
+| `ttl` | `string` | TTL string (`30m`, `1h` ... `72h`); default and maximum `72h` |
 
 ### `regions()`
 
@@ -269,7 +269,7 @@ if (result.success) {
 
 ## Claiming a Database
 
-When you create a database, it is temporary and will be deleted after **24 hours**.
+Unclaimed, a database is deleted after **72 hours**, or sooner if you set `--ttl`.
 
 The output includes a **claim URL** that allows you to keep the database permanently for free.
 

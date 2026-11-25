@@ -21,7 +21,7 @@ This monorepo contains tools and services that enable developers to quickly prov
 | `--interactive`, `-i` | Enable interactive region selection                          | `--interactive`        |
 | `--json`, `-j`        | Output machine-readable JSON                                 | `--json`               |
 | `--env`, `-e`         | Write `DATABASE_URL` and `CLAIM_URL` to the specified file   | `--env .env`           |
-| `--ttl`, `-t`         | Set auto-delete TTL (`30m`, `1h` ... `24h`)                  | `--ttl 5h`             |
+| `--ttl`, `-t`         | Set auto-delete TTL (`30m`, `1h` ... `72h`)                  | `--ttl 5h`             |
 | `--copy`, `-c`        | Copy connection string to clipboard                          | `--copy`               |
 | `--quiet`, `-q`       | Output only the connection string (claim URL on stderr)      | `--quiet`              |
 | `--open`, `-o`        | Open claim URL in browser                                    | `--open`               |
@@ -106,7 +106,7 @@ The create-db web application provides a browser-based interface for creating an
 - **Features**:
   - Rate limiting (100 requests/minute)
   - Region listing endpoint
-  - Automatic 24-hour deletion scheduling
+  - Automatic deletion scheduling (72 hours by default)
   - Health check endpoint
   - Analytics tracking
 
@@ -251,9 +251,9 @@ npx create-db --help
 ### Database Lifecycle
 
 1. **Creation**: User runs CLI → Worker creates Prisma project → Returns connection string
-2. **Usage**: User gets 24 hours to work with the database
+2. **Usage**: User gets 72 hours to work with the database
 3. **Claiming**: User can claim ownership via OAuth (optional)
-4. **Deletion**: Unclaimed databases are automatically deleted after 24 hours
+4. **Deletion**: Unclaimed databases are automatically deleted after 72 hours
 
 ### Rate Limiting
 
@@ -303,7 +303,7 @@ pnpm changeset publish --filter create-postgres
 **Create DB Worker** (`create-db-worker/wrangler.jsonc`):
 
 - Rate limiting: 100 requests/minute
-- Workflow: Delete DB workflow for 24-hour deletion
+- Workflow: Delete DB workflow for deletion after the TTL (72 hours by default)
 - Analytics: Create DB dataset tracking
 
 **Claim DB Worker** (`claim-db-worker/wrangler.jsonc`):
@@ -384,7 +384,7 @@ create-db/
 ├── create-db-worker/         # Database creation worker
 │   ├── src/
 │   │   ├── index.ts         # Main worker logic
-│   │   └── delete-workflow.ts # 24-hour deletion workflow
+│   │   └── delete-workflow.ts # deletion after the TTL (72 h default)
 │   └── wrangler.jsonc
 ├── claim-db-worker/          # Database claiming worker
 │   ├── src/
