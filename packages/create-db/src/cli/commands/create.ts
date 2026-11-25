@@ -1,3 +1,4 @@
+import { version } from "../../../package.json";
 import { select, isCancel } from "@clack/prompts";
 import { randomUUID } from "crypto";
 
@@ -103,6 +104,7 @@ export async function handleCreate(input: CreateFlagsInput): Promise<void> {
       "has-open-flag": input.open,
       "ttl-ms": ttlMs,
       "user-agent": userAgent || undefined,
+      "cli-version": version,
       "node-version": process.version,
       platform: process.platform,
       arch: process.arch,

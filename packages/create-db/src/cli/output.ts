@@ -119,6 +119,16 @@ export function withOutputMode(
 }
 
 /**
+ * A short message for the person, ready to show as is. Agents paraphrase a
+ * `nextStep` and often drop the claim URL; a finished sentence survives.
+ * @param result - The successful database creation result
+ * @returns The message, with the claim URL and deletion time
+ */
+export function formatUserMessage(result: DatabaseResult) {
+  return `Your Prisma Postgres database is ready: free, no account needed. To keep it, claim it for free with a Prisma account (no card): ${result.claimUrl} . Unclaimed, it is deleted on ${formatDeletionDate(result.deletionDate)}. Claim it before you deploy or share an app that uses it.`;
+}
+
+/**
  * Build the JSON printed by `--json`: the result plus a `nextStep` telling the
  * agent or script to pass the claim URL on, since the database is deleted
  * unless someone claims it.
@@ -128,7 +138,8 @@ export function withOutputMode(
 export function formatJsonResult(result: DatabaseResult) {
   return {
     ...result,
-    nextStep: `The database is deleted at ${result.deletionDate} unless the user claims it, which keeps it for free. If an app you deploy or share uses this database, the user must claim it before then or the app stops working. Give the user this claim URL: ${result.claimUrl}`,
+    userMessage: formatUserMessage(result),
+    nextStep: `Show the user userMessage, word for word, in your reply. The database is deleted at ${result.deletionDate} unless the user claims it, which keeps it for free. If an app you deploy or share uses this database, the user must claim it before then or the app stops working. Give the user this claim URL: ${result.claimUrl}`,
   };
 }
 
@@ -175,6 +186,13 @@ export function printSuccess(message: string) {
 }
 
 /**
+ * Written above the variables, so an agent that reads .env later (for
+ * example when asked to deploy) sees that the database must be claimed.
+ */
+export const ENV_FILE_COMMENT =
+  "# Prisma Postgres from create-db: free, no account needed. Open CLAIM_URL to keep it for free. Unclaimed, it is deleted. Claim it before you deploy or share an app that uses it.";
+
+/**
  * Write database credentials to an env file.
  * @param envPath - Path to the env file
  * @param connectionString - Database connection string
@@ -188,6 +206,7 @@ export function writeEnvFile(
 ): { success: true } | { success: false; error: string } {
   try {
     const lines = [
+      ENV_FILE_COMMENT,
       `DATABASE_URL="${connectionString ?? ""}"`,
       `CLAIM_URL="${claimUrl}"`,
       "",
