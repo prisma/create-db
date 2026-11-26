@@ -7,6 +7,9 @@ describe("parseTtlToMilliseconds", () => {
     expect(parseTtlToMilliseconds("1h")).toBe(3_600_000);
     expect(parseTtlToMilliseconds("6h")).toBe(21_600_000);
     expect(parseTtlToMilliseconds("24h")).toBe(86_400_000);
+    expect(parseTtlToMilliseconds("25h")).toBe(90_000_000);
+    expect(parseTtlToMilliseconds("48h")).toBe(172_800_000);
+    expect(parseTtlToMilliseconds("72h")).toBe(259_200_000);
   });
 
   it("is case-insensitive", () => {
@@ -22,7 +25,7 @@ describe("parseTtlToMilliseconds", () => {
     expect(parseTtlToMilliseconds("10s")).toBeNull();
     expect(parseTtlToMilliseconds("45s")).toBeNull();
     expect(parseTtlToMilliseconds("1d")).toBeNull();
-    expect(parseTtlToMilliseconds("25h")).toBeNull();
+    expect(parseTtlToMilliseconds("73h")).toBeNull();
     expect(parseTtlToMilliseconds("7d")).toBeNull();
     expect(parseTtlToMilliseconds("abc")).toBeNull();
   });

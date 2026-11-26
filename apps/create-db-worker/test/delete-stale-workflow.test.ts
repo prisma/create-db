@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DeleteStaleProjectsWorkflow } from '../src/delete-stale-workflow';
+import { MAX_TTL_MS } from '../src/ttl';
 
 const HOUR_MS = 60 * 60 * 1000;
+const MAX_TTL_HOURS = MAX_TTL_MS / HOUR_MS;
 
 function hoursAgo(hours: number) {
 	return new Date(Date.now() - hours * HOUR_MS).toISOString();
@@ -50,13 +52,14 @@ describe('DeleteStaleProjectsWorkflow', () => {
 			.mockResolvedValueOnce(
 				page(
 					[
-						{ id: 'stale-1', createdAt: hoursAgo(30) },
+						{ id: 'stale-1', createdAt: hoursAgo(MAX_TTL_HOURS + 6) },
 						{ id: 'fresh-1', createdAt: hoursAgo(2) },
+						{ id: 'fresh-2', createdAt: hoursAgo(25) },
 					],
-					'fresh-1',
+					'fresh-2',
 				),
 			)
-			.mockResolvedValueOnce(page([{ id: 'stale-2', createdAt: hoursAgo(25) }], null))
+			.mockResolvedValueOnce(page([{ id: 'stale-2', createdAt: hoursAgo(MAX_TTL_HOURS + 1) }], null))
 			.mockImplementation(async () => new Response(null, { status: 200 }));
 
 		const stepNames = await runWorkflow();
@@ -64,7 +67,7 @@ describe('DeleteStaleProjectsWorkflow', () => {
 		const lists = requestsTo('GET');
 		expect(lists).toHaveLength(2);
 		expect(lists[0].searchParams.get('cursor')).toBeNull();
-		expect(lists[1].searchParams.get('cursor')).toBe('fresh-1');
+		expect(lists[1].searchParams.get('cursor')).toBe('fresh-2');
 
 		expect(requestsTo('DELETE').map((url) => url.pathname)).toEqual([
 			'/v1/projects/stale-1',
@@ -85,8 +88,8 @@ describe('DeleteStaleProjectsWorkflow', () => {
 
 	it('fails when the API reports more pages without advancing the cursor', async () => {
 		fetchMock
-			.mockResolvedValueOnce(page([{ id: 'stale-1', createdAt: hoursAgo(30) }], 'stale-1'))
-			.mockResolvedValueOnce(page([{ id: 'stale-1', createdAt: hoursAgo(30) }], 'stale-1'));
+			.mockResolvedValueOnce(page([{ id: 'stale-1', createdAt: hoursAgo(MAX_TTL_HOURS + 6) }], 'stale-1'))
+			.mockResolvedValueOnce(page([{ id: 'stale-1', createdAt: hoursAgo(MAX_TTL_HOURS + 6) }], 'stale-1'));
 
 		await expect(runWorkflow()).rejects.toThrow('without a new cursor');
 		expect(requestsTo('DELETE')).toHaveLength(0);
@@ -96,7 +99,7 @@ describe('DeleteStaleProjectsWorkflow', () => {
 		fetchMock.mockResolvedValueOnce(
 			new Response(
 				JSON.stringify({
-					data: [{ id: 'stale-1', name: 'stale-1', createdAt: hoursAgo(30) }],
+					data: [{ id: 'stale-1', name: 'stale-1', createdAt: hoursAgo(MAX_TTL_HOURS + 6) }],
 					pagination: { hasMore: true, nextCursor: null },
 				}),
 			),

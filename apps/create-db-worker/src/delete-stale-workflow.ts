@@ -1,4 +1,5 @@
 import { WorkflowEntrypoint, WorkflowEvent, WorkflowStep } from 'cloudflare:workers';
+import { MAX_TTL_MS } from './ttl';
 
 type Params = Record<string, never>;
 
@@ -21,7 +22,6 @@ type ProjectsResponse = {
 };
 
 const PROJECTS_PAGE_SIZE = 1000;
-const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 
 export class DeleteStaleProjectsWorkflow extends WorkflowEntrypoint<Env, Params> {
 	async run(event: WorkflowEvent<Params>, step: WorkflowStep): Promise<void> {
@@ -73,7 +73,7 @@ export class DeleteStaleProjectsWorkflow extends WorkflowEntrypoint<Env, Params>
 
 		const staleProjects = projects.filter((project) => {
 			const createdAt = new Date(project.createdAt).getTime();
-			return now - createdAt > STALE_AFTER_MS;
+			return now - createdAt > MAX_TTL_MS;
 		});
 
 		console.log(`Total projects: ${projects.length}, Stale projects: ${staleProjects.length}`);

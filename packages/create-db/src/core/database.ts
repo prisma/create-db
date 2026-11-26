@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import type { ApiResponse, CreateDatabaseResult } from "../types.js";
 import { sendAnalytics } from "../utils/analytics.js";
+import { MAX_TTL_MS } from "../utils/ttl.js";
 
 export function getCommandName(): string {
   const executable = process.argv[1] || "create-db";
@@ -131,7 +132,7 @@ export async function createDatabaseCore(
   const ttlMsToUse =
     typeof ttlMs === "number" && Number.isFinite(ttlMs) && ttlMs > 0
       ? Math.floor(ttlMs)
-      : 24 * 60 * 60 * 1000;
+      : MAX_TTL_MS;
   const expiryDate = new Date(Date.now() + ttlMsToUse);
 
   void sendAnalytics(

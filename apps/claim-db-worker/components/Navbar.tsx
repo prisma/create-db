@@ -41,7 +41,7 @@ export function Navbar() {
                   {formatRemaining(timeRemaining!)}
                 </span>
                 <p className="hidden text-sm text-muted-foreground xl:block">
-                  Deleted after 24 hours unless claimed.{" "}
+                  Deleted after 72 hours unless claimed.{" "}
                   <strong className="font-semibold text-foreground">
                     Do not store sensitive data.
                   </strong>
