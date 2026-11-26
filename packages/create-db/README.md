@@ -4,7 +4,7 @@
 
 Each database is available for **24 hours** by default. To keep the database permanently, you can **claim it for free** using the URL displayed in the output.
 
-This tool is designed for developers who need a fast way to test, prototype, or integrate Prisma Postgres without manual setup or creating an account.
+This tool is designed for developers and coding agents who need a Postgres database now, without manual setup or creating an account: to test, to prototype, or to back an app they deploy or share. For a deployed app, claim the database before its deletion time: an unclaimed database is deleted, and the app stops working.
 
 ## Installation and Usage
 
@@ -117,7 +117,8 @@ When using `--json` with `create`, the output includes:
   "region": "us-east-1",
   "name": "2025-12-12T12:00:00.000Z",
   "projectId": "proj_...",
-  "nextStep": "The database is deleted at 2025-12-13T12:00:00.000Z unless the user claims it, which keeps it for free. Give the user this claim URL: https://create-db.prisma.io/claim?projectID=..."
+  "userMessage": "Your Prisma Postgres database is ready: free, no account needed. To keep it, claim it for free with a Prisma account (no card): https://create-db.prisma.io/claim?projectID=... . Unclaimed, it is deleted on 12/13/2025, 12:00:00 PM UTC. Claim it before you deploy or share an app that uses it.",
+  "nextStep": "Show the user userMessage, word for word, in your reply. The database is deleted at 2025-12-13T12:00:00.000Z unless the user claims it, which keeps it for free. If an app you deploy or share uses this database, the user must claim it before then or the app stops working. Give the user this claim URL: https://create-db.prisma.io/claim?projectID=..."
 }
 ```
 
