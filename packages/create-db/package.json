@@ -1,6 +1,6 @@
 {
   "name": "create-db",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Create a Prisma Postgres database with one command and no account, for local work, coding agents or your app's first deploy. Claim it for free to keep it.",
   "type": "module",
   "exports": {
