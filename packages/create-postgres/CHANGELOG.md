@@ -1,5 +1,13 @@
 # create-postgres
 
+## 1.4.1
+
+### Patch Changes
+
+- 0c2dd5c: Send the Freebuff ad click id from `PRISMA_FREEBUFF_BFCID` with the create request, so a claimed database can be credited to the ad.
+- Updated dependencies [0c2dd5c]
+  - create-db@1.4.1
+
 ## 1.4.0
 
 ### Patch Changes
