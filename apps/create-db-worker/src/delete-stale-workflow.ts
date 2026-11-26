@@ -21,34 +21,62 @@ type ProjectsResponse = {
 	};
 };
 
+const PROJECTS_PAGE_SIZE = 1000;
+
 export class DeleteStaleProjectsWorkflow extends WorkflowEntrypoint<Env, Params> {
 	async run(event: WorkflowEvent<Params>, step: WorkflowStep): Promise<void> {
-		const res = await step.do('fetch-projects', async () => {
-			const response = await fetch('https://api.prisma.io/v1/projects?limit=1000', {
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${this.env.INTEGRATION_TOKEN}`,
-				},
+		const projects: Project[] = [];
+		const seenCursors = new Set<string>();
+		let cursor: string | null = null;
+		let page = 0;
+
+		do {
+			const pageCursor: string | null = cursor;
+			const res: string = await step.do(`fetch-projects-${page}`, async () => {
+				const url = new URL('https://api.prisma.io/v1/projects');
+				url.searchParams.set('limit', String(PROJECTS_PAGE_SIZE));
+				if (pageCursor) {
+					url.searchParams.set('cursor', pageCursor);
+				}
+
+				const response = await fetch(url, {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${this.env.INTEGRATION_TOKEN}`,
+					},
+				});
+
+				if (!response.ok) {
+					throw new Error(`Failed to fetch projects: ${response.statusText}`);
+				}
+
+				const data = await response.text();
+				return data;
 			});
 
-			if (!response.ok) {
-				throw new Error(`Failed to fetch projects: ${response.statusText}`);
+			const body: ProjectsResponse = JSON.parse(res);
+			projects.push(...body.data);
+
+			const { hasMore, nextCursor } = body.pagination;
+			if (hasMore && (!nextCursor || seenCursors.has(nextCursor))) {
+				throw new Error(`Projects API reported more pages without a new cursor after page ${page}`);
 			}
+			cursor = hasMore ? nextCursor : null;
+			if (cursor) {
+				seenCursors.add(cursor);
+			}
+			page += 1;
+		} while (cursor);
 
-			const data = await response.text();
-			return data;
-		});
-
-		const projects: ProjectsResponse = JSON.parse(res);
 		const now = Date.now();
 
-		const staleProjects = projects.data.filter((project) => {
+		const staleProjects = projects.filter((project) => {
 			const createdAt = new Date(project.createdAt).getTime();
 			return now - createdAt > MAX_TTL_MS;
 		});
 
-		console.log(`Total projects: ${projects.data.length}, Stale projects: ${staleProjects.length}`);
+		console.log(`Total projects: ${projects.length}, Stale projects: ${staleProjects.length}`);
 
 		for (const project of staleProjects) {
 			await step.do(`delete-project-${project.id}`, async () => {
