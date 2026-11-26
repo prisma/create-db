@@ -8,6 +8,7 @@ import {
   getBaseUrl,
 } from "@/lib/response-utils";
 import { transferProject } from "@/lib/project-transfer";
+import { reportFreebuffClaim } from "@/lib/freebuff";
 import { buildRateLimitKey } from "@/lib/server/ratelimit";
 
 export async function GET(request: NextRequest) {
@@ -108,6 +109,10 @@ export async function GET(request: NextRequest) {
       tokenData.access_token
     );
     if (transferResult.success) {
+      // The claim is done here. Report it before the lookups below, so a
+      // failed lookup or slow analytics cannot lose the report.
+      reportFreebuffClaim(projectID);
+
       // Fetch project details with user's token to get workspace ID
       const projectDetailsRes = await fetch(
         `https://api.prisma.io/v1/projects/${projectID}`,

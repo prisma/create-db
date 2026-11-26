@@ -1,7 +1,9 @@
+import { WorkerEntrypoint } from 'cloudflare:workers';
 import DeleteDbWorkflow from './delete-workflow';
 import DeleteStaleProjectsWorkflow from './delete-stale-workflow';
 import { PosthogEventCapture } from './analytics';
-import { parseTtlMsInput, isTtlMsInRange } from './ttl';
+import { parseTtlMsInput, isTtlMsInRange, clampTtlMs } from './ttl';
+import { type ClaimReport, FreebuffClick, parseFreebuffClickId } from './freebuff-click';
 interface Env {
 	INTEGRATION_TOKEN: string;
 	DELETE_DB_WORKFLOW: Workflow;
@@ -9,13 +11,15 @@ interface Env {
 	CREATE_DB_RATE_LIMITER: RateLimit;
 	PROGRAMMATIC_RATE_LIMITER: RateLimit;
 	CREATE_DB_DATASET: AnalyticsEngineDataset;
+	FREEBUFF_CLICK: DurableObjectNamespace<FreebuffClick>;
+	FREEBUFF_CONVERSION_API_KEY?: string;
 	POSTHOG_API_KEY?: string;
 	POSTHOG_API_HOST?: string;
 }
 
-export { DeleteDbWorkflow, DeleteStaleProjectsWorkflow };
+export { DeleteDbWorkflow, DeleteStaleProjectsWorkflow, FreebuffClick };
 
-export default {
+export const handler = {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const analytics = new PosthogEventCapture(env);
 
@@ -134,6 +138,7 @@ export default {
 				userAgent?: string;
 				source?: 'programmatic' | 'cli';
 				ttlMs?: unknown;
+				freebuffClickId?: unknown;
 			};
 
 			let body: CreateDbBody = {};
@@ -145,6 +150,8 @@ export default {
 			}
 
 			const { region, name, analytics: analyticsData, userAgent, source, ttlMs } = body;
+			// A malformed click id is dropped: it must never fail a database creation.
+			const freebuffClickId = parseFreebuffClickId(body.freebuffClickId);
 			const parsedTtlMs = parseTtlMsInput(ttlMs);
 
 			if (ttlMs !== undefined && parsedTtlMs === undefined) {
@@ -245,6 +252,24 @@ export default {
 
 			ctx.waitUntil(backgroundTasks());
 
+			// Only for a database created from a Freebuff ad: store the click id
+			// before answering, so a claim always finds it. A failure here must
+			// not fail the creation.
+			if (freebuffClickId) {
+				try {
+					const created = JSON.parse(prismaText);
+					const projectID = created.data ? created.data.id : created.id;
+					if (projectID) {
+						await env.FREEBUFF_CLICK.get(env.FREEBUFF_CLICK.idFromName(projectID)).store(
+							freebuffClickId,
+							Date.now() + clampTtlMs(parsedTtlMs),
+						);
+					}
+				} catch {
+					console.error('Error storing the Freebuff click id');
+				}
+			}
+
 			return new Response(prismaText, {
 				status: prismaResponse.status,
 				headers: { 'Content-Type': 'application/json' },
@@ -260,3 +285,22 @@ export default {
 		ctx.waitUntil(env.DELETE_STALE_WORKFLOW.create({ params: {} }));
 	},
 } satisfies ExportedHandler<Env>;
+
+export default class CreateDbWorker extends WorkerEntrypoint<Env> {
+	fetch(request: Request): Promise<Response> {
+		return handler.fetch(request, this.env, this.ctx);
+	}
+
+	scheduled(controller: ScheduledController): Promise<void> {
+		return handler.scheduled(controller, this.env, this.ctx);
+	}
+
+	/**
+	 * Reports the claim of a project to Freebuff when the project came from a
+	 * Freebuff ad. The claim worker calls this through its service binding; it
+	 * is not reachable over HTTP.
+	 */
+	reportFreebuffClaim(projectID: string): Promise<ClaimReport> {
+		return this.env.FREEBUFF_CLICK.get(this.env.FREEBUFF_CLICK.idFromName(projectID)).reportClaim(projectID);
+	}
+}

@@ -323,6 +323,20 @@ pnpm changeset publish --filter create-postgres
 | `CLIENT_ID`            | OAuth client ID        | Claim worker secrets |
 | `POSTHOG_API_KEY`      | Analytics key          | Claim worker secrets |
 | `POSTHOG_API_HOST`     | Analytics host         | Claim worker secrets |
+| `FREEBUFF_CONVERSION_API_KEY` | Freebuff Ads server API key (`ingest` scope) | Create worker secrets |
+| `PRISMA_FREEBUFF_BFCID` | Freebuff ad click id, set by Freebuff when it runs `create-db` from an ad | The shell that runs `create-db` |
+
+### Freebuff ad conversions
+
+A database created from a Freebuff ad can be credited to that ad when it is claimed.
+
+1. Freebuff sets `PRISMA_FREEBUFF_BFCID` when it runs `create-db`. The CLI sends the click id in the body of the create request.
+2. The Create DB Worker keeps it for that project in the `FreebuffClick` Durable Object until the database expires, then deletes it.
+3. After a successful claim, the Claim DB Worker calls the Create DB Worker through a service binding, and that worker reports `signup_completed` to Freebuff. Creating a database or opening a claim link reports nothing.
+
+The click id is never logged, put in a URL or returned in a response. Without `FREEBUFF_CONVERSION_API_KEY` nothing is sent. A failed report never fails a database creation or a claim.
+
+Set the key with `npx wrangler secret put FREEBUFF_CONVERSION_API_KEY` in `create-db-worker`. The two workers can be deployed in any order: until the Create DB Worker has the new code, the Claim DB Worker's call fails quietly and the claim still succeeds.
 
 ## API Reference
 

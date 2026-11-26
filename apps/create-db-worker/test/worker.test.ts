@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
-import worker from '../src/index';
+import { handler as worker } from '../src/index';
 
 const mockEnv = {
 	...env,

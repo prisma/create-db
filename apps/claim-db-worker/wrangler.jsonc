@@ -18,6 +18,12 @@
       "dataset": "create_db_dataset",
     },
   ],
+  "services": [
+    {
+      "binding": "CREATE_DB_WORKER",
+      "service": "create-db-worker",
+    },
+  ],
   "assets": {
     "binding": "ASSETS",
     "directory": ".open-next/assets",

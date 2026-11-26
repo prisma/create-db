@@ -20,6 +20,20 @@
 			"class_name": "DeleteStaleProjectsWorkflow",
 		},
 	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "FREEBUFF_CLICK",
+				"class_name": "FreebuffClick",
+			},
+		],
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["FreebuffClick"],
+		},
+	],
 	"triggers": {
 		"crons": ["0 0 * * *"],
 	},

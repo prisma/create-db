@@ -28,6 +28,10 @@ vi.mock("@/lib/project-transfer", () => ({
   transferProject: vi.fn(),
 }));
 
+vi.mock("@/lib/freebuff", () => ({
+  reportFreebuffClaim: vi.fn(),
+}));
+
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
@@ -112,6 +116,42 @@ describe("auth callback API", () => {
           body: expect.stringContaining("create_db:claim_successful"),
         })
       );
+
+      const { reportFreebuffClaim } = await import("@/lib/freebuff");
+      expect(reportFreebuffClaim).toHaveBeenCalledWith("test-project-123");
+    });
+
+    it("reports the claim even when the lookups after it fail", async () => {
+      const { exchangeCodeForToken, validateProject } = await import(
+        "@/lib/auth-utils"
+      );
+      const { transferProject } = await import("@/lib/project-transfer");
+
+      vi.mocked(exchangeCodeForToken).mockResolvedValue({
+        access_token: "test-token",
+      });
+      vi.mocked(validateProject).mockResolvedValue(undefined);
+      vi.mocked(transferProject).mockResolvedValue({
+        success: true,
+        status: 200,
+        transferResponse: {},
+      });
+
+      mockFetch
+        .mockRejectedValueOnce(new Error("project request failed"))
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({}),
+        });
+
+      await GET(
+        new NextRequest(
+          "http://localhost:3000/api/auth/callback?code=test-code&state=test-state&projectID=test-project-123"
+        )
+      );
+
+      const { reportFreebuffClaim } = await import("@/lib/freebuff");
+      expect(reportFreebuffClaim).toHaveBeenCalledWith("test-project-123");
     });
   });
 
@@ -208,6 +248,9 @@ describe("auth callback API", () => {
         "Failed to transfer the project. Please try again.",
         expect.stringContaining("Insufficient permissions")
       );
+
+      const { reportFreebuffClaim } = await import("@/lib/freebuff");
+      expect(reportFreebuffClaim).not.toHaveBeenCalled();
     });
   });
 });
