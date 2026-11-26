@@ -4,6 +4,8 @@ import os from "os";
 import path from "path";
 import {
   writeEnvFile,
+  ENV_FILE_COMMENT,
+  formatUserMessage,
   withOutputMode,
   formatDeletionDate,
   formatJsonResult,
@@ -65,7 +67,7 @@ describe("writeEnvFile", () => {
 
     const content = fs.readFileSync(envFilePath, "utf8");
     expect(content).toBe(
-      'EXISTING=value\nDATABASE_URL="postgresql://test"\nCLAIM_URL="https://claim"\n'
+      `EXISTING=value\n${ENV_FILE_COMMENT}\nDATABASE_URL="postgresql://test"\nCLAIM_URL="https://claim"\n`
     );
   });
 
@@ -82,7 +84,7 @@ describe("writeEnvFile", () => {
 
     const content = fs.readFileSync(envFilePath, "utf8");
     expect(content).toBe(
-      'EXISTING=value\nDATABASE_URL="postgresql://test"\nCLAIM_URL="https://claim"\n'
+      `EXISTING=value\n${ENV_FILE_COMMENT}\nDATABASE_URL="postgresql://test"\nCLAIM_URL="https://claim"\n`
     );
   });
 
@@ -98,7 +100,7 @@ describe("writeEnvFile", () => {
     expect(result.success).toBe(true);
 
     const content = fs.readFileSync(envFilePath, "utf8");
-    expect(content).toBe('DATABASE_URL="postgresql://test"\nCLAIM_URL="https://claim"\n');
+    expect(content).toBe(`${ENV_FILE_COMMENT}\nDATABASE_URL="postgresql://test"\nCLAIM_URL="https://claim"\n`);
   });
 
   it("returns error for invalid path", () => {
@@ -208,6 +210,21 @@ describe("formatJsonResult", () => {
     expect(json.nextStep).toContain(sampleResult.claimUrl);
     expect(json.nextStep).toContain(sampleResult.deletionDate);
     expect(json.nextStep.endsWith(sampleResult.claimUrl)).toBe(true);
+  });
+});
+
+describe("formatUserMessage", () => {
+  it("is a ready-to-show message with the claim URL, the deletion time and the deploy warning", () => {
+    const message = formatUserMessage(sampleResult);
+    expect(message).toContain(sampleResult.claimUrl);
+    expect(message).toContain(formatDeletionDate(sampleResult.deletionDate));
+    expect(message).toContain("before you deploy or share");
+  });
+
+  it("is included in the --json output, and nextStep tells the agent to show it", () => {
+    const json = formatJsonResult(sampleResult);
+    expect(json.userMessage).toBe(formatUserMessage(sampleResult));
+    expect(json.nextStep.startsWith("Show the user userMessage")).toBe(true);
   });
 });
 
