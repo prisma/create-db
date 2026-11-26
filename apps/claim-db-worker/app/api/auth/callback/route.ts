@@ -127,6 +127,10 @@ export async function GET(request: NextRequest) {
         ""
       );
 
+      // The claim is done here. Report it before the lookups below, so a
+      // failed lookup or slow analytics cannot lose the report.
+      reportFreebuffClaim(projectID, workspaceId);
+
       // Fetch databases to get database ID
       const databasesRes = await fetch(
         `https://api.prisma.io/v1/projects/${projectID}/databases`,
@@ -151,8 +155,6 @@ export async function GET(request: NextRequest) {
         },
         request
       );
-
-      reportFreebuffClaim(projectID, workspaceId);
 
       const cleanProjectId = projectID.replace(/^proj_/, "");
       return redirectToSuccess(

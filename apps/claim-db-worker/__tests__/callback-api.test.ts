@@ -123,6 +123,48 @@ describe("auth callback API", () => {
         "test-workspace-123"
       );
     });
+
+    it("reports the claim even when the database lookup fails", async () => {
+      const { exchangeCodeForToken, validateProject } = await import(
+        "@/lib/auth-utils"
+      );
+      const { transferProject } = await import("@/lib/project-transfer");
+
+      vi.mocked(exchangeCodeForToken).mockResolvedValue({
+        access_token: "test-token",
+      });
+      vi.mocked(validateProject).mockResolvedValue(undefined);
+      vi.mocked(transferProject).mockResolvedValue({
+        success: true,
+        status: 200,
+        transferResponse: {},
+      });
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            data: { workspace: { id: "wksp_test-workspace-123" } },
+          }),
+        })
+        .mockRejectedValueOnce(new Error("databases request failed"))
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({}),
+        });
+
+      await GET(
+        new NextRequest(
+          "http://localhost:3000/api/auth/callback?code=test-code&state=test-state&projectID=test-project-123"
+        )
+      );
+
+      const { reportFreebuffClaim } = await import("@/lib/freebuff");
+      expect(reportFreebuffClaim).toHaveBeenCalledWith(
+        "test-project-123",
+        "test-workspace-123"
+      );
+    });
   });
 
   describe("error handling", () => {
