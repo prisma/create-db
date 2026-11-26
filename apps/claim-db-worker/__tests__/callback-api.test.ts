@@ -118,13 +118,10 @@ describe("auth callback API", () => {
       );
 
       const { reportFreebuffClaim } = await import("@/lib/freebuff");
-      expect(reportFreebuffClaim).toHaveBeenCalledWith(
-        "test-project-123",
-        "test-workspace-123"
-      );
+      expect(reportFreebuffClaim).toHaveBeenCalledWith("test-project-123");
     });
 
-    it("reports the claim even when the database lookup fails", async () => {
+    it("reports the claim even when the lookups after it fail", async () => {
       const { exchangeCodeForToken, validateProject } = await import(
         "@/lib/auth-utils"
       );
@@ -141,13 +138,7 @@ describe("auth callback API", () => {
       });
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            data: { workspace: { id: "wksp_test-workspace-123" } },
-          }),
-        })
-        .mockRejectedValueOnce(new Error("databases request failed"))
+        .mockRejectedValueOnce(new Error("project request failed"))
         .mockResolvedValue({
           ok: true,
           json: async () => ({}),
@@ -160,10 +151,7 @@ describe("auth callback API", () => {
       );
 
       const { reportFreebuffClaim } = await import("@/lib/freebuff");
-      expect(reportFreebuffClaim).toHaveBeenCalledWith(
-        "test-project-123",
-        "test-workspace-123"
-      );
+      expect(reportFreebuffClaim).toHaveBeenCalledWith("test-project-123");
     });
   });
 

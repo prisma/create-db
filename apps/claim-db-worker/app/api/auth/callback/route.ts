@@ -109,6 +109,10 @@ export async function GET(request: NextRequest) {
       tokenData.access_token
     );
     if (transferResult.success) {
+      // The claim is done here. Report it before the lookups below, so a
+      // failed lookup or slow analytics cannot lose the report.
+      reportFreebuffClaim(projectID);
+
       // Fetch project details with user's token to get workspace ID
       const projectDetailsRes = await fetch(
         `https://api.prisma.io/v1/projects/${projectID}`,
@@ -126,10 +130,6 @@ export async function GET(request: NextRequest) {
         /^wksp_/,
         ""
       );
-
-      // The claim is done here. Report it before the lookups below, so a
-      // failed lookup or slow analytics cannot lose the report.
-      reportFreebuffClaim(projectID, workspaceId);
 
       // Fetch databases to get database ID
       const databasesRes = await fetch(

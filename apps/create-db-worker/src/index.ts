@@ -244,20 +244,31 @@ export const handler = {
 								.catch((e) => console.error('Error sending PostHog analytics:', e))
 						: Promise.resolve();
 
-					const freebuffPromise =
-						freebuffClickId && projectID
-							? env.FREEBUFF_CLICK.get(env.FREEBUFF_CLICK.idFromName(projectID))
-									.store(freebuffClickId, Date.now() + clampTtlMs(parsedTtlMs))
-									.catch(() => console.error('Error storing the Freebuff click id'))
-							: Promise.resolve();
-
-					await Promise.all([workflowPromise, analyticsPromise, posthogPromise, freebuffPromise]);
+					await Promise.all([workflowPromise, analyticsPromise, posthogPromise]);
 				} catch (e) {
 					console.error('Error in background tasks:', e);
 				}
 			};
 
 			ctx.waitUntil(backgroundTasks());
+
+			// Only for a database created from a Freebuff ad: store the click id
+			// before answering, so a claim always finds it. A failure here must
+			// not fail the creation.
+			if (freebuffClickId) {
+				try {
+					const created = JSON.parse(prismaText);
+					const projectID = created.data ? created.data.id : created.id;
+					if (projectID) {
+						await env.FREEBUFF_CLICK.get(env.FREEBUFF_CLICK.idFromName(projectID)).store(
+							freebuffClickId,
+							Date.now() + clampTtlMs(parsedTtlMs),
+						);
+					}
+				} catch {
+					console.error('Error storing the Freebuff click id');
+				}
+			}
 
 			return new Response(prismaText, {
 				status: prismaResponse.status,
@@ -289,7 +300,7 @@ export default class CreateDbWorker extends WorkerEntrypoint<Env> {
 	 * Freebuff ad. The claim worker calls this through its service binding; it
 	 * is not reachable over HTTP.
 	 */
-	reportFreebuffClaim(projectID: string, accountId: string): Promise<ClaimReport> {
-		return this.env.FREEBUFF_CLICK.get(this.env.FREEBUFF_CLICK.idFromName(projectID)).reportClaim(accountId);
+	reportFreebuffClaim(projectID: string): Promise<ClaimReport> {
+		return this.env.FREEBUFF_CLICK.get(this.env.FREEBUFF_CLICK.idFromName(projectID)).reportClaim(projectID);
 	}
 }

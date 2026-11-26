@@ -22,7 +22,7 @@ function click({ apiKey = 'fbadv_test_key' }: { apiKey?: string | null } = {}) {
 	return {
 		stub,
 		store: (expiresAt = Date.now() + 60 * 60_000) => withKey((instance) => instance.store(CLICK_ID, expiresAt)),
-		reportClaim: (accountId = 'workspace_1') => withKey((instance) => instance.reportClaim(accountId)),
+		reportClaim: (projectID = 'proj_1') => withKey((instance) => instance.reportClaim(projectID)),
 		alarm: () => withKey((instance) => instance.alarm()),
 		stored: () => runInDurableObject(stub, async (_, state) => Object.fromEntries(await state.storage.list())),
 		alarmTime: () => runInDurableObject(stub, (_, state) => state.storage.getAlarm()),
@@ -75,7 +75,7 @@ describe('FreebuffClick', () => {
 		const project = click();
 		await project.store();
 
-		expect(await project.reportClaim('workspace_1')).toBe('reported');
+		expect(await project.reportClaim('proj_1')).toBe('reported');
 		expect(await project.alarmTime()).toBeNull();
 
 		const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -87,12 +87,12 @@ describe('FreebuffClick', () => {
 		expect(sentBody(fetchMock)).toEqual({
 			clickId: CLICK_ID,
 			eventType: 'signup_completed',
-			eventId: 'signup_completed:prisma:workspace_1',
+			eventId: 'signup_completed:prisma:proj_1',
 			occurredAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T.*Z$/),
 		});
 		expect(await project.stored()).toEqual({});
 
-		expect(await project.reportClaim('workspace_1')).toBe('no-click');
+		expect(await project.reportClaim('proj_1')).toBe('no-click');
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 	});
 
@@ -197,7 +197,9 @@ describe('FreebuffClick', () => {
 	});
 
 	it('never logs the click id or the API key', async () => {
-		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const logs = (['log', 'info', 'warn', 'error'] as const).map((level) =>
+			vi.spyOn(console, level).mockImplementation(() => {}),
+		);
 		freebuffAnswers(new Response(`rejected ${CLICK_ID}`, { status: 400 }), new Error(`failed for ${CLICK_ID}`));
 		const first = click();
 		await first.store();
@@ -206,8 +208,8 @@ describe('FreebuffClick', () => {
 		await second.store();
 		await second.reportClaim();
 
-		const logged = JSON.stringify(warn.mock.calls);
-		expect(warn).toHaveBeenCalledTimes(2);
+		const logged = JSON.stringify(logs.flatMap((log) => log.mock.calls));
+		expect(logs.flatMap((log) => log.mock.calls)).toHaveLength(2);
 		expect(logged).not.toContain(CLICK_ID);
 		expect(logged).not.toContain('fbadv_test_key');
 	});
@@ -238,12 +240,14 @@ describe('POST /create with a Freebuff click id', () => {
 			mockEnv as any,
 			ctx,
 		);
-		await waitOnExecutionContext(ctx);
 		const stub = namespace.get(namespace.idFromName(projectId));
+		// Read before the background tasks finish: the click id is stored before the response.
+		const stored = await runInDurableObject(stub, async (_, state) => Object.fromEntries(await state.storage.list()));
+		await waitOnExecutionContext(ctx);
 		return {
 			response,
 			fetchMock,
-			stored: await runInDurableObject(stub, async (_, state) => Object.fromEntries(await state.storage.list())),
+			stored,
 			alarmTime: await runInDurableObject(stub, (_, state) => state.storage.getAlarm()),
 			runAlarm: () => runDurableObjectAlarm(stub),
 		};
@@ -287,18 +291,16 @@ describe('POST /create with a Freebuff click id', () => {
 });
 
 describe('reportFreebuffClaim', () => {
-	it('reports the claim of the project that holds the click id', async () => {
-		const fetchMock = freebuffAnswers(Response.json({ accepted: true }));
+	it('finds the click id of the claimed project and of no other', async () => {
+		const fetchMock = freebuffAnswers();
 		const projectID = `proj_${crypto.randomUUID()}`;
 		await namespace.get(namespace.idFromName(projectID)).store(CLICK_ID, Date.now() + 60 * 60_000);
-		const createDbWorker = new CreateDbWorker(createExecutionContext(), {
-			...env,
-			FREEBUFF_CONVERSION_API_KEY: 'fbadv_test_key',
-		} as any);
+		const createDbWorker = new CreateDbWorker(createExecutionContext(), env as any);
 
-		expect(await createDbWorker.reportFreebuffClaim(`proj_${crypto.randomUUID()}`, 'workspace_1')).toBe('no-click');
+		expect(await createDbWorker.reportFreebuffClaim(`proj_${crypto.randomUUID()}`)).toBe('no-click');
+		// The test worker has no API key, so the report stops once the click id is found.
+		expect(await createDbWorker.reportFreebuffClaim(projectID)).toBe('no-api-key');
 		expect(fetchMock).not.toHaveBeenCalled();
-		expect(await createDbWorker.reportFreebuffClaim(projectID, 'workspace_1')).not.toBe('no-click');
 	});
 
 	it('is not reachable over HTTP', async () => {
@@ -306,7 +308,7 @@ describe('reportFreebuffClaim', () => {
 		const response = await worker.fetch(
 			new Request('https://worker.example.com/reportFreebuffClaim', {
 				method: 'POST',
-				body: JSON.stringify(['proj_1', 'workspace_1']),
+				body: JSON.stringify(['proj_1']),
 			}),
 			{ ...env, CREATE_DB_RATE_LIMITER: { limit: vi.fn().mockResolvedValue({ success: true }) } } as any,
 			ctx,

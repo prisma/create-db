@@ -2,7 +2,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 /** The create-db worker, as this worker calls it through its service binding. */
 type CreateDbWorker = {
-  reportFreebuffClaim(projectID: string, accountId: string): Promise<string>;
+  reportFreebuffClaim(projectID: string): Promise<string>;
 };
 
 /**
@@ -13,11 +13,7 @@ type CreateDbWorker = {
  * Runs after the response and never throws: an ad report must not fail or
  * slow down a claim.
  */
-export function reportFreebuffClaim(projectID: string, accountId: string): void {
-  if (!accountId) {
-    return;
-  }
-
+export function reportFreebuffClaim(projectID: string): void {
   try {
     const { env, ctx } = getCloudflareContext();
     const createDbWorker = (env as { CREATE_DB_WORKER?: CreateDbWorker })
@@ -28,7 +24,7 @@ export function reportFreebuffClaim(projectID: string, accountId: string): void 
 
     ctx.waitUntil(
       createDbWorker
-        .reportFreebuffClaim(projectID, accountId)
+        .reportFreebuffClaim(projectID)
         .catch(() => console.error("Failed to report the claim to Freebuff"))
     );
   } catch {

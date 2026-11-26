@@ -7,7 +7,7 @@ vi.mock("@opennextjs/cloudflare", () => ({
 }));
 
 function cloudflareContext(
-  reportFreebuffClaim: (projectID: string, accountId: string) => Promise<string>
+  reportFreebuffClaim: (projectID: string) => Promise<string>
 ) {
   const waitUntil = vi.fn();
   vi.mocked(getCloudflareContext).mockReturnValue({
@@ -27,9 +27,9 @@ describe("reportFreebuffClaim", () => {
     const reportClaim = vi.fn().mockResolvedValue("reported");
     const { waitUntil } = cloudflareContext(reportClaim);
 
-    reportFreebuffClaim("proj_1", "workspace_1");
+    reportFreebuffClaim("proj_1");
 
-    expect(reportClaim).toHaveBeenCalledWith("proj_1", "workspace_1");
+    expect(reportClaim).toHaveBeenCalledWith("proj_1");
     expect(waitUntil).toHaveBeenCalledTimes(1);
     await expect(waitUntil.mock.calls[0]?.[0]).resolves.toBe("reported");
   });
@@ -39,7 +39,7 @@ describe("reportFreebuffClaim", () => {
       vi.fn().mockRejectedValue(new Error("create-db worker is down"))
     );
 
-    expect(() => reportFreebuffClaim("proj_1", "workspace_1")).not.toThrow();
+    expect(() => reportFreebuffClaim("proj_1")).not.toThrow();
     await expect(waitUntil.mock.calls[0]?.[0]).resolves.toBeUndefined();
   });
 
@@ -48,20 +48,11 @@ describe("reportFreebuffClaim", () => {
       env: {},
       ctx: { waitUntil: vi.fn() },
     } as unknown as ReturnType<typeof getCloudflareContext>);
-    expect(() => reportFreebuffClaim("proj_1", "workspace_1")).not.toThrow();
+    expect(() => reportFreebuffClaim("proj_1")).not.toThrow();
 
     vi.mocked(getCloudflareContext).mockImplementation(() => {
       throw new Error("no Cloudflare context");
     });
-    expect(() => reportFreebuffClaim("proj_1", "workspace_1")).not.toThrow();
-  });
-
-  it("reports nothing without an account id", () => {
-    const reportClaim = vi.fn();
-    cloudflareContext(reportClaim);
-
-    reportFreebuffClaim("proj_1", "");
-
-    expect(reportClaim).not.toHaveBeenCalled();
+    expect(() => reportFreebuffClaim("proj_1")).not.toThrow();
   });
 });

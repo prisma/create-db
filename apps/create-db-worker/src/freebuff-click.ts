@@ -75,11 +75,11 @@ export class FreebuffClick extends DurableObject<Env> {
 	}
 
 	/**
-	 * Reports the claim of this project by `accountId` to Freebuff. The event
-	 * id and time are fixed on the first call, so a repeated call or a retry
-	 * sends the same conversion and Freebuff counts it once.
+	 * Reports the claim of this project to Freebuff. The event id is the
+	 * project's, and the time is fixed on the first call, so a repeated call or
+	 * a retry sends the same conversion and Freebuff counts it once.
 	 */
-	async reportClaim(accountId: string): Promise<ClaimReport> {
+	async reportClaim(projectID: string): Promise<ClaimReport> {
 		const clickId = await this.ctx.storage.get<string>('clickId');
 		if (!clickId) {
 			return 'no-click';
@@ -90,7 +90,7 @@ export class FreebuffClick extends DurableObject<Env> {
 			conversion = {
 				clickId,
 				eventType: 'signup_completed',
-				eventId: `signup_completed:prisma:${accountId}`,
+				eventId: `signup_completed:prisma:${projectID}`,
 				occurredAt: new Date().toISOString(),
 			};
 			await this.ctx.storage.put({ conversion, attempts: 0 });
