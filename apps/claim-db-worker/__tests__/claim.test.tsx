@@ -88,6 +88,34 @@ describe("claim page", () => {
       expect(claimButton).toBeDisabled();
     });
 
+    it("sends the CLI's tags on this page to the auth URL route", async () => {
+      mockSearchParams.set("projectID", "test-project-123");
+      mockSearchParams.set("utm_source", "create-pg");
+      mockSearchParams.set("utm_medium", "cli");
+      mockSearchParams.set("utm_content", "json");
+      render(<ClaimPage />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Claim database" }));
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          "/api/auth/url",
+          expect.objectContaining({ method: "POST" })
+        );
+      });
+      const body = JSON.parse(
+        (mockFetch.mock.calls[0]![1] as { body: string }).body
+      );
+      expect(body.utm).toEqual({
+        utm_source: "create-pg",
+        utm_medium: "cli",
+        utm_content: "json",
+      });
+      mockSearchParams.delete("utm_source");
+      mockSearchParams.delete("utm_medium");
+      mockSearchParams.delete("utm_content");
+    });
+
     it("starts one claim however often the button is clicked", async () => {
       mockSearchParams.set("projectID", "test-project-123");
       render(<ClaimPage />);

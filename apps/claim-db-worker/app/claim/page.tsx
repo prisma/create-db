@@ -52,7 +52,15 @@ function ClaimContent() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ redirectUri: redirectUri.toString() }),
+        body: JSON.stringify({
+          redirectUri: redirectUri.toString(),
+          // The CLI's tags on this page's URL; the server keeps known values only.
+          utm: {
+            utm_source: searchParams.get("utm_source") ?? undefined,
+            utm_medium: searchParams.get("utm_medium") ?? undefined,
+            utm_content: searchParams.get("utm_content") ?? undefined,
+          },
+        }),
       });
 
       if (!response.ok) {
