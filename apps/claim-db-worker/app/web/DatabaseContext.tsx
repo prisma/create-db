@@ -53,8 +53,11 @@ interface CreateDatabaseResponse {
   };
 }
 
+const CLAIM_WINDOW_DAYS = 3;
+const CLAIM_WINDOW_MS = CLAIM_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
 const saveToCookie = (data: DatabaseInfo) => {
-  cookieUtils.set(DB_KEY, JSON.stringify(data), 1);
+  cookieUtils.set(DB_KEY, JSON.stringify(data), CLAIM_WINDOW_DAYS);
 };
 
 const loadFromCookie = (): Partial<DatabaseInfo> | null => {
@@ -111,7 +114,7 @@ export const DatabaseProvider = ({ children }: DatabaseProviderProps) => {
           projectId: result.projectId ?? "",
           connectionString: db.connectionString,
           directConnectionString: directConnString,
-          expirationTime: Date.now() + 24 * 60 * 60 * 1000,
+          expirationTime: Date.now() + CLAIM_WINDOW_MS,
           databaseId: result.databaseId ?? "",
         };
 

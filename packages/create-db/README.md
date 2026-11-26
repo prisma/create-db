@@ -2,7 +2,7 @@
 
 `create-db` is an open-source CLI tool and library that provisions [**temporary Prisma Postgres databases**](https://www.prisma.io/postgres?utm_source=create_db_npm_docs) with a single command.
 
-Each database is available for **24 hours** by default. To keep the database permanently, you can **claim it for free** using the URL displayed in the output.
+Each database is available for **72 hours** by default. To keep the database permanently, you can **claim it for free** using the URL displayed in the output.
 
 This tool is designed for developers and coding agents who need a Postgres database now, without manual setup or creating an account: to test, to prototype, or to back an app they deploy or share. For a deployed app, claim the database before its deletion time: an unclaimed database is deleted, and the app stops working.
 
@@ -38,7 +38,7 @@ npx create-db regions    # List available regions
 | `--interactive` | `-i` | Interactive mode to select a region |
 | `--json` | `-j` | Output machine-readable JSON |
 | `--env <path>` | `-e` | Write DATABASE_URL and CLAIM_URL to specified .env file |
-| `--ttl <duration>` | `-t` | Custom database TTL (`30m`, `1h` ... `24h`) |
+| `--ttl <duration>` | `-t` | Custom database TTL (`30m`, `1h` ... `72h`) |
 | `--copy` | `-c` | Copy connection string to clipboard |
 | `--quiet` | `-q` | Output only the connection string (the claim URL goes to stderr) |
 | `--open` | `-o` | Open claim URL in browser |
@@ -183,7 +183,7 @@ if (result.success) {
 |--------|------|-------------|
 | `region` | `RegionId` | AWS region for the database (optional, defaults to `us-east-1`) |
 | `userAgent` | `string` | Custom user agent string for tracking (optional) |
-| `ttl` | `string` | TTL string (`30m`, `1h` ... `24h`) |
+| `ttl` | `string` | TTL string (`30m`, `1h` ... `72h`) |
 
 ### `regions()`
 
@@ -269,7 +269,7 @@ if (result.success) {
 
 ## Claiming a Database
 
-When you create a database, it is temporary and will be deleted after **24 hours**.
+When you create a database, it is temporary and will be deleted after **72 hours** by default. A shorter `--ttl` value deletes it sooner.
 
 The output includes a **claim URL** that allows you to keep the database permanently for free.
 
