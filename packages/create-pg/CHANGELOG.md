@@ -1,5 +1,12 @@
 # create-pg
 
+## 1.4.0
+
+### Patch Changes
+
+- Updated dependencies [5111a47]
+  - create-db@1.4.0
+
 ## 1.0.0
 
 ### Major Changes
